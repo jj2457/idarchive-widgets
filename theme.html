@@ -130,7 +130,8 @@
     box.innerHTML = '';
     PREVIEW.forEach(function (id) {
       var f = document.createElement('iframe');
-      f.src = id + '.html?' + params().toString();
+      // a `now` on this page pins only these previews' clocks, never the links below
+      f.src = id + '.html?' + params().toString() + (new URLSearchParams(location.search).get('now') ? '&now=' + encodeURIComponent(new URLSearchParams(location.search).get('now')) : '');
       f.style.height = (id === 'progress' ? 290 : 210) + 'px';
       f.title = id;
       box.appendChild(f);

@@ -310,9 +310,13 @@
   }
 
   function update() {
+  // A `now` on this page only pins the preview's clock (for product photos of a future year).
+  // It is never added to the link the reader copies.
+  function previewNow() { return (new URLSearchParams(location.search).get('now') ? '&now=' + encodeURIComponent(new URLSearchParams(location.search).get('now')) : ''); }
+
     var w = WIDGETS.filter(function (x) { return x.id === state.widget; })[0], url = urlFor(state.widget);
     var f = document.getElementById('frameEl');
-    f.style.height = w.h + 'px'; f.src = url + (url.indexOf('?') < 0 ? '?' : '&') + 'lock=1&settings=0'; // preview shows exactly the chosen settings
+    f.style.height = w.h + 'px'; f.src = url + (url.indexOf('?') < 0 ? '?' : '&') + 'lock=1&settings=0' + previewNow(); // preview shows exactly the chosen settings
     document.getElementById('url').value = url;
     document.getElementById('stage').className = 'stage' + (state.mode === 'dark' ? ' dark' : '');
     document.getElementById('screen').className = 'screen' + (state.device === 'mobile' ? ' mobile' : '');
