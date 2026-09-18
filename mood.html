@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Mood</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .lab { font-size: 10px; letter-spacing: .14em; color: var(--sub); margin: 14px 0 8px; }
+  .scale { display: flex; gap: 6px; }
+  .scale button { flex: 1; padding: 10px 0; font-size: 11px; letter-spacing: .06em; border-radius: calc(var(--r) * .5); }
+  .scale button.on { background: var(--soft); border-color: var(--soft); color: var(--ink); }
+  .week { margin-top: 16px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+  .w { text-align: center; font-size: 9px; letter-spacing: .08em; color: var(--sub); }
+  .bar { height: 34px; border-radius: 5px; background: var(--tint); border: 1px solid var(--line); display: flex; align-items: flex-end; overflow: hidden; }
+  .bar i { display: block; width: 100%; background: var(--soft); }
+  .foot { margin-top: 12px; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge">MOOD</div><span class="caps" id="date"></span></div>
+  <div class="grow">
+    <div class="lab">오늘의 기분</div>
+    <div class="scale" id="mood"></div>
+    <div class="lab">에너지</div>
+    <div class="scale" id="energy"></div>
+    <div class="week" id="week"></div>
+  </div>
+  <div class="foot">이 기기에 저장돼요 · 최근 7일</div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // Mood and energy on a 1–5 scale, one entry per planner day, kept on this device.
+  var FROM = Math.min(23, Math.max(0, +IDP.opt('mood', 'from', 5) || 5));
+  var KEY = 'idarchive.mood.v1';
+  var MOODS = ['아주 나쁨', '나쁨', '보통', '좋음', '아주 좋음'];
+  function dayKey(d) { d = d || new Date(); var x = new Date(d.getTime()); if (x.getHours() < FROM) x.setDate(x.getDate() - 1); return IDP.iso(x); }
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
+  var all = load();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) {} }
+  function today() { return all[dayKey()] || {}; }
+  function chips(box, key) {
+    box.innerHTML = '';
+    for (var i = 1; i <= 5; i++) (function (i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = i;
+      b.title = key === 'm' ? MOODS[i - 1] : '에너지 ' + i;
+      if (today()[key] === i) b.className = 'on';
+      b.onclick = function () {
+        var k = dayKey();
+        all[k] = all[k] || {};
+        all[k][key] = all[k][key] === i ? undefined : i;
+        save(); render();
+      };
+      box.appendChild(b);
+    })(i);
+  }
+  function render() {
+    chips(document.getElementById('mood'), 'm');
+    chips(document.getElementById('energy'), 'e');
+    var d = new Date();
+    document.getElementById('date').textContent = IDP.pad(d.getMonth() + 1) + '.' + IDP.pad(d.getDate());
+    var box = document.getElementById('week');
+    box.innerHTML = '';
+    for (var i = 6; i >= 0; i--) {
+      var day = new Date(); day.setDate(day.getDate() - i);
+      var rec = all[dayKey(day)] || {};
+      var cell = document.createElement('div');
+      var bar = document.createElement('div'); bar.className = 'bar';
+      var fill = document.createElement('i'); fill.style.height = ((rec.m || 0) / 5 * 100) + '%';
+      bar.appendChild(fill);
+      var lab = document.createElement('div'); lab.className = 'w'; lab.textContent = IDP.DOW[day.getDay()][0];
+      cell.appendChild(bar); cell.appendChild(lab);
+      box.appendChild(cell);
+    }
+  }
+  IDP.options('mood', [], function () { all = load(); render(); });
+  render();
+  setInterval(render, 60000);
+</script>
+</body>
+</html>

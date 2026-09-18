@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Mandal-art</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .grid { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+  .cell { position: relative; }
+  .cell textarea { font: inherit; font-size: 11px; line-height: 1.4; color: var(--ink); background: var(--tint);
+                   border: 1px solid var(--line); border-radius: calc(var(--r) * .4); width: 100%; aspect-ratio: 1;
+                   padding: 7px; resize: none; text-align: center; display: flex; }
+  .cell textarea:focus { outline: none; border-color: var(--soft); background: #fff; }
+  .cell.mid textarea { background: var(--soft); border-color: var(--soft); font-size: 12px; color: var(--ink); }
+  .foot { margin-top: 12px; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge">MANDAL-ART</div><span class="caps" id="filled"></span></div>
+  <div class="grow"><div class="grid" id="grid"></div></div>
+  <div class="foot">가운데에 목표, 둘레 여덟 칸에 그것을 이루는 일 · 이 기기에 저장돼요</div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // The planner's mandal-art page in one card: one goal in the middle, eight moves around it.
+  var KEY = '';
+  function readOpts() { KEY = 'idarchive.mandal.' + (IDP.q.get('id') || IDP.opt('mandal', 'title', 'main')); }
+  readOpts();
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
+  var cells = load();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(cells)); } catch (e) {} }
+  function render() {
+    var box = document.getElementById('grid');
+    box.innerHTML = '';
+    for (var i = 0; i < 9; i++) (function (i) {
+      var c = document.createElement('div');
+      c.className = 'cell' + (i === 4 ? ' mid' : '');
+      var t = document.createElement('textarea');
+      t.value = cells[i] || '';
+      t.placeholder = i === 4 ? '목표' : '';
+      t.oninput = function () { cells[i] = t.value; save(); count(); };
+      c.appendChild(t);
+      box.appendChild(c);
+    })(i);
+    count();
+  }
+  function count() {
+    var n = cells.filter(function (x) { return (x || '').trim(); }).length;
+    document.getElementById('filled').textContent = n + ' / 9';
+  }
+  IDP.options('mandal', [
+    { k: 'title', label: '보드 이름', ph: 'main' },
+  ], function () { readOpts(); cells = load(); render(); });
+  render();
+</script>
+</body>
+</html>

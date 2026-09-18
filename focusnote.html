@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Focus</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .blk { margin-top: 14px; }
+  .lab { font-size: 10px; letter-spacing: .14em; color: var(--sub); display: flex; justify-content: space-between; }
+  .blk input { font: inherit; font-size: 15px; color: var(--ink); background: none; border: 0; border-bottom: 1px solid var(--line); padding: 8px 2px; width: 100%; border-radius: 0; }
+  .blk input:focus { outline: none; border-bottom-color: var(--soft); }
+  .foot { margin-top: 14px; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge">FOCUS</div><span class="caps" id="range"></span></div>
+  <div class="grow">
+    <div class="blk">
+      <div class="lab"><span>이번 주</span><span id="wk"></span></div>
+      <input id="w" type="text" placeholder="이번 주를 대표하는 한 문장">
+    </div>
+    <div class="blk">
+      <div class="lab"><span>이번 달</span><span id="mo"></span></div>
+      <input id="m" type="text" placeholder="이번 달의 한 가지">
+    </div>
+  </div>
+  <div class="foot">주가 바뀌면 이번 주 칸이 비워지고, 달이 바뀌면 이번 달 칸이 비워져요</div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // Weekly and monthly focus in one card: the two lines people re-read most, without opening the planner.
+  var KEY = 'idarchive.focusnote.v1';
+  function weekKey(d) {
+    d = d || new Date();
+    var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    var shift = IDP.weekStart === 'mon' ? (x.getDay() + 6) % 7 : x.getDay();
+    x.setDate(x.getDate() - shift);
+    return IDP.iso(x);
+  }
+  function monthKey(d) { d = d || new Date(); return d.getFullYear() + '-' + IDP.pad(d.getMonth() + 1); }
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
+  var st = load();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+  var w = document.getElementById('w'), m = document.getElementById('m');
+  function render() {
+    var wk = weekKey(), mo = monthKey();
+    if (st.wk !== wk) { st.wk = wk; st.wText = ''; save(); }
+    if (st.mo !== mo) { st.mo = mo; st.mText = ''; save(); }
+    if (document.activeElement !== w) w.value = st.wText || '';
+    if (document.activeElement !== m) m.value = st.mText || '';
+    var s = IDP.parseDate(wk), e = new Date(s.getTime()); e.setDate(e.getDate() + 6);
+    document.getElementById('wk').textContent = IDP.pad(s.getMonth() + 1) + '.' + IDP.pad(s.getDate()) + ' – ' + IDP.pad(e.getMonth() + 1) + '.' + IDP.pad(e.getDate());
+    document.getElementById('mo').textContent = mo.replace('-', '. ');
+    document.getElementById('range').textContent = new Date().getFullYear();
+  }
+  w.oninput = function () { st.wText = w.value; save(); };
+  m.oninput = function () { st.mText = m.value; save(); };
+  IDP.options('focusnote', [], function () { st = load(); render(); });
+  render();
+  setInterval(render, 60000);
+</script>
+</body>
+</html>

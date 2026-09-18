@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Theme Studio</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  html, body { height: auto; }
+  body { display: block; padding: 0; background: var(--paper); font-weight: 400; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 36px 20px 70px; }
+  header h1 { font-family: 'Playfair Display', serif; font-weight: 400; font-size: 30px; letter-spacing: .08em; margin-top: 14px; }
+  header p { color: var(--sub); margin-top: 8px; font-size: 14px; line-height: 1.6; }
+  .nav { display: flex; gap: 8px; margin-top: 16px; }
+  .nav a { font-size: 12px; letter-spacing: .06em; padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px;
+           color: var(--sub); text-decoration: none; background: #fff; }
+  .nav a.on { background: var(--soft); border-color: var(--soft); color: color-mix(in srgb, var(--deep) 55%, #2a2a2a); }
+  h2 { font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--sub); font-weight: 500; margin: 30px 0 12px; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .sw { width: 46px; height: 46px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); padding: 0; position: relative; }
+  .sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--ink); }
+  .sw:hover { color: transparent; }
+  .swname { text-align: center; font-size: 9px; letter-spacing: .1em; color: var(--sub); margin-top: 6px; }
+  .cell { display: flex; flex-direction: column; align-items: center; }
+  .custom { display: flex; gap: 12px; align-items: center; margin-top: 16px; font-size: 12px; color: var(--sub); flex-wrap: wrap; }
+  input[type=color] { width: 46px; height: 34px; border: 1px solid var(--line); border-radius: 8px; background: #fff; padding: 2px; }
+  .strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .strip iframe { width: 100%; border: 0; border-radius: 12px; background: #fff; }
+  .cover { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #fff; }
+  .cover img { width: 100%; display: block; }
+  .cover .r { padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .cover .r b { font-weight: 500; font-size: 12px; letter-spacing: .06em; color: var(--ink); }
+  .covers { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+  .copy { background: var(--deep); color: #fff; border-color: var(--deep); font-size: 10px; letter-spacing: .06em; padding: 6px 10px; white-space: nowrap; }
+  .how { margin-top: 16px; font-size: 13px; line-height: 1.9; color: var(--ink); background: var(--tint); border-radius: 14px; padding: 16px 18px; }
+  .how b { font-weight: 500; }
+  .how code { background: #fff; border-radius: 6px; padding: 1px 6px; font-size: 12px; }
+  .note { font-size: 12px; color: var(--sub); margin-top: 10px; line-height: 1.7; }
+  .bulk { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="badge" style="display:inline-block">Theme Studio</div>
+    <h1>ONE COLOUR, WHOLE PLANNER</h1>
+    <p>색 하나를 고르면 위젯 · 커버 · 아이콘이 같은 얼굴이 됩니다.<br>
+       위젯은 <b>⚙</b> 한 번으로 전부 바뀌고, 커버는 아래 링크를 복사해 페이지에 붙이면 됩니다.</p>
+    <nav class="nav">
+      <a href="index.html">Dashboard Studio</a>
+      <a href="theme.html" class="on">Theme Studio</a>
+      <a href="gallery.html">전체 위젯 보기</a>
+    </nav>
+  </header>
+
+  <h2>1 · 색 고르기</h2>
+  <div class="swatches" id="swatches"></div>
+  <div class="custom">
+    <label>나만의 색 <input type="color" id="soft" aria-label="포인트 색"></label>
+    <label>진한 색 <input type="color" id="deep" aria-label="진한 색"></label>
+    <button class="chip" id="clearCustom" style="font-size:12px;padding:7px 12px">테마색으로 되돌리기</button>
+    <span id="picked"></span>
+  </div>
+
+  <h2>2 · 위젯은 이렇게 보입니다</h2>
+  <div class="strip" id="strip"></div>
+  <div class="how">
+    위젯 색은 <b>위젯 오른쪽 위 ⚙</b> 에서 바꿉니다. 한 번 고르면 <b>그 기기에서 보는 모든 위젯</b>이 같은 색이 돼요.<br>
+    "나만의 색"을 쓰려면 ⚙ 안의 색상 상자를 눌러 원하는 색을 고르면 됩니다.
+  </div>
+
+  <h2>3 · 페이지 커버 바꾸기</h2>
+  <div class="bulk">
+    <button class="copy" id="copyAll">이 색 커버 링크 전부 복사</button>
+    <button class="chip" id="copyMonths" style="font-size:11px;padding:7px 12px">달 커버 12개만 복사</button>
+  </div>
+  <div class="how">
+    ① 아래에서 페이지의 <b>복사</b> 를 누릅니다 → ② 노션에서 그 페이지를 열고 제목 위 <b>커버 변경</b> → ③ <b>링크</b> 탭에 붙여넣고 제출.<br>
+    한 페이지에 15초면 됩니다. 커버를 쓰지 않으시려면 <b>제거</b> 를 눌러 비워도 됩니다.
+  </div>
+  <div class="covers" id="covers" style="margin-top:14px"></div>
+  <p class="note">아이콘은 노션 기본 라인 아이콘을 쓰고 있어 색과 무관하게 잘 어울립니다. 더 진하게 쓰고 싶으면 페이지 아이콘을 눌러 다른 색을 고르면 돼요.</p>
+</div>
+
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // Theme Studio: the one place a buyer changes the planner's colour — widgets, covers and the sample dashboard.
+  var PAGES = [
+    ['home', 'HOME'], ['start-here', 'START HERE'], ['year', 'YEAR'], ['monthly', 'MONTHLY'], ['weekly', 'WEEKLY'],
+    ['daily', 'DAILY'], ['goal', 'GOALS'], ['habit', 'HABIT'], ['review', 'REVIEW'], ['archive', 'ARCHIVE'],
+    ['widget-library', 'WIDGET LIBRARY']
+  ];
+  var MONTHS = ['01 JANUARY', '02 FEBRUARY', '03 MARCH', '04 APRIL', '05 MAY', '06 JUNE',
+                '07 JULY', '08 AUGUST', '09 SEPTEMBER', '10 OCTOBER', '11 NOVEMBER', '12 DECEMBER'];
+  var PREVIEW = ['clock', 'week', 'progress'];
+  var state = { theme: IDP.CFG.defaults.theme, soft: '', deep: '' };
+
+  function base() { return new URL('covers/', location.href).href; }
+  function coverUrl(file) { return base() + state.theme + '/' + file + '.png'; }
+  function params() {
+    var p = new URLSearchParams({ theme: state.theme, lock: '1', settings: '0' });
+    if (state.soft) p.set('soft', state.soft.slice(1));
+    if (state.deep) p.set('deep', state.deep.slice(1));
+    return p;
+  }
+  function copy(text, btn, label) {
+    function done() { var t = btn.textContent; btn.textContent = '복사됨 ✓'; setTimeout(function () { btn.textContent = label || t; }, 1500); }
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, done); else done();
+  }
+
+  function drawSwatches() {
+    var box = document.getElementById('swatches');
+    box.innerHTML = '';
+    Object.keys(IDP.THEMES).forEach(function (name) {
+      var cell = document.createElement('div'); cell.className = 'cell';
+      var b = document.createElement('button');
+      b.className = 'sw'; b.title = name; b.setAttribute('aria-label', name);
+      b.style.background = 'linear-gradient(135deg,' + IDP.THEMES[name].soft + ' 50%,' + IDP.THEMES[name].deep + ' 50%)';
+      b.setAttribute('aria-pressed', String(state.theme === name && !state.soft));
+      b.onclick = function () { state.theme = name; state.soft = state.deep = ''; draw(); };
+      var n = document.createElement('div'); n.className = 'swname'; n.textContent = name.toUpperCase();
+      cell.appendChild(b); cell.appendChild(n);
+      box.appendChild(cell);
+    });
+  }
+
+  function drawStrip() {
+    var box = document.getElementById('strip');
+    box.innerHTML = '';
+    PREVIEW.forEach(function (id) {
+      var f = document.createElement('iframe');
+      f.src = id + '.html?' + params().toString();
+      f.style.height = (id === 'progress' ? 290 : 210) + 'px';
+      f.title = id;
+      box.appendChild(f);
+    });
+  }
+
+  function coverCard(file, label) {
+    var c = document.createElement('div'); c.className = 'cover';
+    var img = document.createElement('img'); img.loading = 'lazy'; img.alt = label + ' 커버'; img.src = coverUrl(file);
+    var r = document.createElement('div'); r.className = 'r';
+    var b = document.createElement('b'); b.textContent = label;
+    var btn = document.createElement('button'); btn.className = 'copy'; btn.textContent = '복사';
+    btn.onclick = function () { copy(coverUrl(file), btn, '복사'); };
+    r.appendChild(b); r.appendChild(btn);
+    c.appendChild(img); c.appendChild(r);
+    return c;
+  }
+
+  function drawCovers() {
+    var box = document.getElementById('covers');
+    box.innerHTML = '';
+    PAGES.forEach(function (p) { box.appendChild(coverCard(p[0], p[1])); });
+    MONTHS.forEach(function (m, i) { box.appendChild(coverCard('month-' + IDP.pad(i + 1), m)); });
+  }
+
+  function draw() {
+    drawSwatches(); drawStrip(); drawCovers();
+    document.getElementById('soft').value = state.soft || IDP.THEMES[state.theme].soft;
+    document.getElementById('deep').value = state.deep || IDP.THEMES[state.theme].deep;
+    document.getElementById('picked').textContent = state.soft ? '나만의 색 · 커버는 가장 가까운 기본 색(' + state.theme.toUpperCase() + ')을 씁니다' : state.theme.toUpperCase();
+    var p = new URLSearchParams({ theme: state.theme });
+    if (state.soft) p.set('soft', state.soft.slice(1));
+    if (state.deep) p.set('deep', state.deep.slice(1));
+    IDP.applyTheme(p);
+  }
+
+  document.getElementById('soft').oninput = function (e) { state.soft = e.target.value; draw(); };
+  document.getElementById('deep').oninput = function (e) { state.deep = e.target.value; draw(); };
+  document.getElementById('clearCustom').onclick = function () { state.soft = state.deep = ''; draw(); };
+  document.getElementById('copyAll').onclick = function () {
+    var all = PAGES.map(function (p) { return p[1] + '\t' + coverUrl(p[0]); })
+      .concat(MONTHS.map(function (m, i) { return m + '\t' + coverUrl('month-' + IDP.pad(i + 1)); })).join('\n');
+    copy(all, this, '이 색 커버 링크 전부 복사');
+  };
+  document.getElementById('copyMonths').onclick = function () {
+    var all = MONTHS.map(function (m, i) { return m + '\t' + coverUrl('month-' + IDP.pad(i + 1)); }).join('\n');
+    copy(all, this, '달 커버 12개만 복사');
+  };
+  draw();
+</script>
+</body>
+</html>

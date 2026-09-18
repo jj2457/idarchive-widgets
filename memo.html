@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Memo</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  textarea { font: inherit; font-size: 14px; line-height: 1.7; color: var(--ink); background: none; border: 0;
+             width: 100%; height: 100%; min-height: 120px; resize: none; padding: 12px 2px 0; }
+  textarea:focus { outline: none; }
+  .foot { margin-top: 10px; display: flex; justify-content: space-between; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+  .foot button { font-size: 10px; padding: 4px 10px; letter-spacing: .06em; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">MEMO</div><span class="caps" id="count"></span></div>
+  <div class="grow"><textarea id="t" placeholder="지워지지 않는 메모지. 전화번호, 택배 번호, 떠오른 생각."></textarea></div>
+  <div class="foot"><span>이 기기에 저장돼요</span><button type="button" id="clear">비우기</button></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // A sticky note that survives page reloads. Nothing rolls over: what is written stays until it is cleared.
+  var TITLE = 'MEMO', KEY = '';
+  function readOpts() {
+    TITLE = IDP.opt('memo', 'title', 'MEMO');
+    KEY = 'idarchive.memo.' + (IDP.q.get('id') || TITLE);
+  }
+  readOpts();
+  var t = document.getElementById('t');
+  function load() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+  function render() {
+    document.getElementById('badge').textContent = TITLE;
+    document.getElementById('count').textContent = (t.value.trim() ? t.value.trim().length + '자' : '');
+  }
+  t.value = load();
+  t.oninput = function () { try { localStorage.setItem(KEY, t.value); } catch (e) {} render(); };
+  document.getElementById('clear').onclick = function () { t.value = ''; try { localStorage.setItem(KEY, ''); } catch (e) {} render(); t.focus(); };
+  IDP.options('memo', [
+    { k: 'title', label: '제목', ph: 'MEMO' },
+  ], function () { readOpts(); t.value = load(); render(); });
+  render();
+</script>
+</body>
+</html>

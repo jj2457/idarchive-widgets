@@ -3,18 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ID PLANNER · Widget Studio</title>
+<title>ID PLANNER · Dashboard Studio</title>
 <link rel="stylesheet" href="assets/core.css">
 <style>
   html, body { height: auto; }
   body { display: block; padding: 0; background: var(--paper); font-weight: 400; }
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 36px 20px 60px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 36px 20px 70px; }
   header h1 { font-family: 'Playfair Display', serif; font-weight: 400; font-size: 30px; letter-spacing: .08em; margin-top: 14px; }
   header p { color: var(--sub); margin-top: 8px; font-size: 14px; line-height: 1.6; }
-  .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 28px; margin-top: 30px; align-items: start; }
-  @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+  .nav { display: flex; gap: 8px; margin-top: 16px; }
+  .nav a { font-size: 12px; letter-spacing: .06em; padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px;
+           color: var(--sub); text-decoration: none; background: #fff; }
+  .nav a.on { background: var(--soft); border-color: var(--soft); color: color-mix(in srgb, var(--deep) 55%, #2a2a2a); }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 28px; margin-top: 26px; align-items: start; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
   section { margin-bottom: 26px; }
   h2 { font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--sub); font-weight: 500; margin-bottom: 10px; }
+  h3 { font-size: 11px; letter-spacing: .12em; color: var(--deep); font-weight: 500; margin: 14px 0 8px; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip { text-transform: none; letter-spacing: .02em; font-size: 13px; padding: 8px 14px; background: #fff; }
   .chip[aria-pressed="true"] { background: var(--soft); border-color: var(--soft); color: color-mix(in srgb, var(--deep) 55%, #2a2a2a); font-weight: 500; }
@@ -40,19 +45,38 @@
   .copy { background: var(--deep); color: #fff; border-color: var(--deep); white-space: nowrap; font-weight: 500; }
   .how { margin-top: 18px; font-size: 13px; line-height: 1.8; color: var(--ink); background: var(--tint); border-radius: 14px; padding: 14px 18px; }
   .how code { background: #fff; border-radius: 6px; padding: 1px 6px; font-size: 12px; }
+  .presets { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .preset { text-align: left; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; letter-spacing: 0; text-transform: none; }
+  .preset b { display: block; font-size: 13px; font-weight: 500; color: var(--ink); letter-spacing: .06em; }
+  .preset span { display: block; font-size: 11px; color: var(--sub); margin-top: 5px; line-height: 1.5; }
+  .preset[aria-pressed="true"] { border-color: var(--soft); background: var(--tint); }
+  .plan { margin-top: 12px; background: var(--tint); border-radius: 14px; padding: 14px 16px; font-size: 13px; line-height: 1.9; color: var(--ink); }
+  .plan ol { margin: 6px 0 0; padding-left: 18px; }
+  .plan .act { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="badge" style="display:inline-block">Widget Studio</div>
-    <h1>ID PLANNER WIDGETS</h1>
-    <p>위젯과 컬러를 고르고 링크를 복사한 뒤, 노션에서 <b>/embed</b> 로 붙여넣으면 끝. 색을 바꾸고 싶으면 여기서 다시 만들어 링크만 교체하세요.</p>
+    <div class="badge" style="display:inline-block">Dashboard Studio</div>
+    <h1>ID PLANNER DASHBOARD</h1>
+    <p>기본 HOME을 그대로 써도 되고, 원하는 위젯만 골라 나만의 대시보드를 만들어도 됩니다.<br>
+       위젯을 고르고 · 색을 정하고 · 링크를 복사해 노션에 <b>/embed</b> 로 붙이면 끝입니다.</p>
+    <nav class="nav">
+      <a href="index.html" class="on">Dashboard Studio</a>
+      <a href="theme.html">Theme Studio</a>
+      <a href="gallery.html">전체 위젯 보기</a>
+    </nav>
   </header>
 
   <div class="layout">
     <div>
-      <section><h2>1 · Widget</h2><div class="chips" id="widgets"></div></section>
+      <section>
+        <h2>0 · Dashboard Preset</h2>
+        <div class="presets" id="presets"></div>
+        <div class="plan" id="plan" hidden></div>
+      </section>
+      <section><h2>1 · Widget</h2><div id="widgets"></div></section>
       <section>
         <h2>2 · Color</h2>
         <div class="swatches" id="swatches"></div>
@@ -83,7 +107,7 @@
         <div class="how">
           ① <b>Copy Link</b> → ② 노션에서 <code>/embed</code> 입력 → ③ 붙여넣기 → ④ 모서리를 끌어 크기 조절.<br>
           위젯을 빼고 싶으면 블록을 지우면 되고, 더 넣고 싶으면 여기서 또 만들면 됩니다.<br>
-          색은 나중에 위젯의 <b>⚙</b> 버튼에서 바꿔도 됩니다. 한 번 고르면 이 기기의 모든 ID Archive 위젯에 함께 적용돼요.
+          색은 나중에 위젯의 <b>⚙</b> 에서 바꿔도 됩니다. 한 번 고르면 그 기기의 모든 ID Archive 위젯에 함께 적용돼요.
         </div>
       </section>
     </div>
@@ -93,26 +117,52 @@
 <script src="config/themes.js"></script>
 <script src="assets/core.js"></script>
 <script>
+  // Every widget the planner ships, grouped the way a buyer thinks about a dashboard.
   var WIDGETS = [
-    { id: 'clock',    name: '시계 · 오늘 날짜', h: 230, opts: [{ k: 'h24', t: 'check', label: '24시간 표시' }] },
-    { id: 'calendar', name: '미니 캘린더',      h: 330, opts: [{ k: 'weekStart', t: 'start' }, { k: 'month', t: 'text', label: '고정할 달 (비우면 이번 달)', ph: '2027-03' }] },
-    { id: 'dday',     name: 'D-Day',            h: 230, opts: [{ k: 'title', t: 'text', label: '제목', ph: '예) 자격증 시험' }, { k: 'date', t: 'date', label: '목표 날짜' }] },
-    { id: 'week',     name: '이번 주 7일',      h: 200, opts: [{ k: 'weekStart', t: 'start' }] },
-    { id: 'year',     name: '올해 365일 점',     h: 300, opts: [{ k: 'year', t: 'number', label: '연도 (비우면 올해)', ph: '2027' }] },
-    { id: 'progress', name: '진행률 (일·주·월·연)', h: 290, opts: [{ k: 'weekStart', t: 'start' }] },
-    { id: 'timeline', name: '타임로그 바',       h: 200, opts: [{ k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
-    { id: 'focus',    name: '집중 타이머',       h: 320, opts: [{ k: 'focus', t: 'number', label: '집중 (분)', ph: '25' }, { k: 'rest', t: 'number', label: '휴식 (분)', ph: '5' }] },
-    { id: 'quote',    name: '나의 한 문장',      h: 230, opts: [{ k: 'text', t: 'text', label: '문장', ph: 'PLAN · DREAM · DO' }, { k: 'by', t: 'text', label: '출처 (선택)' }] },
-    { id: 'top3',     name: '오늘의 Top 3',      h: 230, opts: [{ k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
-    { id: 'routine',  name: '루틴 체크',         h: 280, opts: [
+    { id: 'clock',    g: '오늘', name: '시계 · 오늘 날짜', h: 230, opts: [{ k: 'h24', t: 'check', label: '24시간 표시' }] },
+    { id: 'week',     g: '오늘', name: '이번 주 7일',      h: 200, opts: [{ k: 'weekStart', t: 'start' }] },
+    { id: 'calendar', g: '오늘', name: '미니 캘린더',      h: 330, opts: [{ k: 'weekStart', t: 'start' }, { k: 'month', t: 'text', label: '고정할 달 (비우면 이번 달)', ph: '2027-03' }] },
+    { id: 'timeline', g: '오늘', name: '타임로그 바',       h: 200, opts: [{ k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
+
+    { id: 'top3',     g: '기록', name: '오늘의 Top 3',      h: 230, opts: [{ k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
+    { id: 'routine',  g: '기록', name: '루틴 체크',         h: 280, opts: [
         { k: 'title', t: 'text', label: '이름', ph: '예) MORNING' },
         { k: 'items', t: 'text', label: '항목 (쉼표로 구분, 최대 8개)', ph: '기상하고 물 한 잔,스트레칭 5분,오늘 할 일 정하기' },
         { k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
-    { id: 'water',    name: '물 마시기',         h: 250, opts: [
+    { id: 'water',    g: '기록', name: '물 마시기',         h: 250, opts: [
         { k: 'goal', t: 'number', label: '하루 목표 (잔)', ph: '8' },
-        { k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] }
+        { k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
+    { id: 'streak',   g: '기록', name: '습관 스트릭',       h: 290, opts: [{ k: 'title', t: 'text', label: '습관 이름', ph: '예) 달리기' }] },
+    { id: 'mood',     g: '기록', name: '기분 · 에너지',     h: 330, opts: [] },
+    { id: 'journal',  g: '기록', name: '한 줄 일기',        h: 290, opts: [] },
+    { id: 'memo',     g: '기록', name: '메모지',           h: 260, opts: [{ k: 'title', t: 'text', label: '제목', ph: 'MEMO' }] },
+
+    { id: 'focus',    g: '시간', name: '집중 타이머',       h: 320, opts: [{ k: 'focus', t: 'number', label: '집중 (분)', ph: '25' }, { k: 'rest', t: 'number', label: '휴식 (분)', ph: '5' }] },
+    { id: 'timer',    g: '시간', name: '타이머 · 스톱워치', h: 300, opts: [{ k: 'minutes', t: 'number', label: '기본 분', ph: '25' }] },
+    { id: 'progress', g: '시간', name: '진행률 (일·주·월·연)', h: 290, opts: [{ k: 'weekStart', t: 'start' }] },
+    { id: 'dday',     g: '시간', name: 'D-Day · 기념일',    h: 230, opts: [{ k: 'title', t: 'text', label: '제목', ph: '예) 자격증 시험' }, { k: 'date', t: 'date', label: '목표 날짜' }] },
+    { id: 'year',     g: '시간', name: '올해 365일 점',     h: 300, opts: [{ k: 'year', t: 'number', label: '연도 (비우면 올해)', ph: '2027' }] },
+
+    { id: 'focusnote', g: '목표', name: '이번 주 · 이번 달 포커스', h: 280, opts: [] },
+    { id: 'mandal',   g: '목표', name: '미니 만다라트',     h: 360, opts: [{ k: 'title', t: 'text', label: '보드 이름', ph: 'main' }] },
+    { id: 'quote',    g: '목표', name: '나의 한 문장',      h: 230, opts: [{ k: 'text', t: 'text', label: '문장', ph: 'PLAN · DREAM · DO' }, { k: 'by', t: 'text', label: '출처 (선택)' }] },
+    { id: 'moodboard', g: '목표', name: '무드보드 (사진)',  h: 300, opts: [
+        { k: 'title', t: 'text', label: '제목', ph: 'MOODBOARD' },
+        { k: 'urls', t: 'text', label: '이미지 주소 (쉼표로 구분)', ph: 'https://…' },
+        { k: 'seconds', t: 'number', label: '넘기는 간격(초)', ph: '8' }] }
   ];
-  var state = { widget: 'clock', theme: IDP.CFG.defaults.theme, mode: 'light', frame: 'card', radius: IDP.CFG.defaults.radius, soft: '', deep: '', device: 'desktop', opt: {} };
+
+  // Ready-made dashboards, for buyers who would rather start from something than from nothing.
+  var PRESETS = [
+    { id: 'minimal', name: 'MINIMAL', desc: '시계 · 이번 주 · 한 문장', list: ['clock', 'week', 'quote'] },
+    { id: 'productivity', name: 'PRODUCTIVITY', desc: 'Top 3 · 타임로그 · 진행률 · 타이머', list: ['top3', 'timeline', 'progress', 'timer'] },
+    { id: 'focus', name: 'FOCUS', desc: '집중 타이머 · 주·월 포커스 · 한 문장', list: ['focus', 'focusnote', 'quote'] },
+    { id: 'wellness', name: 'WELLNESS', desc: '물 · 기분 · 습관 스트릭 · 루틴', list: ['water', 'mood', 'streak', 'routine'] },
+    { id: 'study', name: 'STUDY', desc: 'D-Day · 타이머 · 진행률 · 메모지', list: ['dday', 'timer', 'progress', 'memo'] },
+    { id: 'life', name: 'LIFE', desc: '미니 캘린더 · 한 줄 일기 · 무드보드 · 365일', list: ['calendar', 'journal', 'moodboard', 'year'] }
+  ];
+
+  var state = { widget: 'clock', theme: IDP.CFG.defaults.theme, mode: 'light', frame: 'card', radius: IDP.CFG.defaults.radius, soft: '', deep: '', device: 'desktop', opt: {}, preset: '' };
 
   function chips(el, items, key) {
     el.innerHTML = '';
@@ -125,9 +175,60 @@
     });
   }
 
+  function drawWidgets() {
+    var box = document.getElementById('widgets');
+    box.innerHTML = '';
+    var groups = [];
+    WIDGETS.forEach(function (w) { if (groups.indexOf(w.g) < 0) groups.push(w.g); });
+    groups.forEach(function (g) {
+      var h = document.createElement('h3'); h.textContent = g; box.appendChild(h);
+      var row = document.createElement('div'); row.className = 'chips';
+      WIDGETS.filter(function (w) { return w.g === g; }).forEach(function (w) {
+        var b = document.createElement('button');
+        b.className = 'chip'; b.textContent = w.name;
+        b.setAttribute('aria-pressed', String(state.widget === w.id));
+        b.onclick = function () { state.widget = w.id; state.opt = {}; draw(); };
+        row.appendChild(b);
+      });
+      box.appendChild(row);
+    });
+  }
+
+  function drawPresets() {
+    var box = document.getElementById('presets');
+    box.innerHTML = '';
+    PRESETS.forEach(function (p) {
+      var b = document.createElement('button');
+      b.className = 'preset'; b.setAttribute('aria-pressed', String(state.preset === p.id));
+      b.innerHTML = '<b>' + p.name + '</b><span>' + p.desc + '</span>';
+      b.onclick = function () {
+        state.preset = state.preset === p.id ? '' : p.id;
+        if (state.preset) { state.widget = p.list[0]; state.opt = {}; }
+        draw();
+      };
+      box.appendChild(b);
+    });
+    var plan = document.getElementById('plan');
+    var p = PRESETS.filter(function (x) { return x.id === state.preset; })[0];
+    plan.hidden = !p;
+    if (!p) return;
+    var names = p.list.map(function (id) { return WIDGETS.filter(function (w) { return w.id === id; })[0].name; });
+    plan.innerHTML = '<b>' + p.name + '</b> — 위에서 아래로 이 순서로 넣으면 한 화면이 됩니다.' +
+      '<ol>' + names.map(function (n) { return '<li>' + n + '</li>'; }).join('') + '</ol>' +
+      '<div class="act"><button class="copy" id="copyAll">링크 ' + p.list.length + '개 한 번에 복사</button>' +
+      '<button class="chip" id="firstOne">첫 위젯부터 설정하기</button></div>';
+    document.getElementById('copyAll').onclick = function () {
+      var links = p.list.map(function (id) { return urlFor(id); }).join('\n'), b = this;
+      function done() { b.textContent = 'Copied ✓'; setTimeout(function () { b.textContent = '링크 ' + p.list.length + '개 한 번에 복사'; }, 1600); }
+      if (navigator.clipboard) navigator.clipboard.writeText(links).then(done, done); else done();
+    };
+    document.getElementById('firstOne').onclick = function () { state.widget = p.list[0]; state.opt = {}; draw(); };
+  }
+
   function drawOpts() {
     var w = WIDGETS.filter(function (x) { return x.id === state.widget; })[0], box = document.getElementById('opts');
     box.innerHTML = '';
+    document.getElementById('optSection').hidden = !w.opts.length;
     w.opts.forEach(function (o) {
       if (o.t === 'start') {
         var d = document.createElement('div'); d.className = 'chips';
@@ -155,7 +256,7 @@
     });
   }
 
-  function buildUrl() {
+  function themeParams() {
     var p = new URLSearchParams();
     p.set('theme', state.theme);
     if (state.soft) p.set('soft', state.soft.slice(1));
@@ -163,26 +264,31 @@
     if (state.mode !== 'light') p.set('mode', state.mode);
     if (state.frame !== 'card') p.set('border', state.frame);
     if (+state.radius !== IDP.CFG.defaults.radius) p.set('radius', state.radius);
-    Object.keys(state.opt).forEach(function (k) { if (state.opt[k] && !(k === 'weekStart' && state.opt[k] === 'mon')) p.set(k, state.opt[k]); });
-    return new URL(state.widget + '.html?' + p.toString(), location.href).href;
+    return p;
+  }
+
+  function urlFor(id) {
+    var p = themeParams();
+    if (id === state.widget) Object.keys(state.opt).forEach(function (k) { if (state.opt[k] && !(k === 'weekStart' && state.opt[k] === 'mon')) p.set(k, state.opt[k]); });
+    return new URL(id + '.html?' + p.toString(), location.href).href;
   }
 
   function update() {
-    var w = WIDGETS.filter(function (x) { return x.id === state.widget; })[0], url = buildUrl();
+    var w = WIDGETS.filter(function (x) { return x.id === state.widget; })[0], url = urlFor(state.widget);
     var f = document.getElementById('frameEl');
     f.style.height = w.h + 'px'; f.src = url + (url.indexOf('?') < 0 ? '?' : '&') + 'lock=1&settings=0'; // preview shows exactly the chosen settings
     document.getElementById('url').value = url;
     document.getElementById('stage').className = 'stage' + (state.mode === 'dark' ? ' dark' : '');
     document.getElementById('screen').className = 'screen' + (state.device === 'mobile' ? ' mobile' : '');
-    // the studio itself wears the chosen colour
     var p = new URLSearchParams({ theme: state.theme });
     if (state.soft) p.set('soft', state.soft.slice(1));
     if (state.deep) p.set('deep', state.deep.slice(1));
-    IDP.applyTheme(p);
+    IDP.applyTheme(p);   // the studio itself wears the chosen colour
   }
 
   function draw() {
-    chips(document.getElementById('widgets'), WIDGETS.map(function (w) { return [w.id, w.name]; }), 'widget');
+    drawPresets();
+    drawWidgets();
     chips(document.getElementById('mode'), [['light', '라이트'], ['dark', '다크'], ['auto', '기기 설정 따라가기']], 'mode');
     chips(document.getElementById('frame'), [['card', '카드'], ['line', '윗선만'], ['none', '테두리 없음']], 'frame');
     chips(document.getElementById('device'), [['desktop', '데스크톱'], ['mobile', '휴대폰']], 'device');

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Timer</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .mode { display: flex; gap: 6px; margin-top: 12px; }
+  .mode button { flex: 1; font-size: 10px; letter-spacing: .08em; padding: 7px 0; }
+  .mode button.on { background: var(--soft); border-color: var(--soft); color: var(--ink); }
+  .clock { font-family: var(--serif); font-size: 46px; letter-spacing: .02em; color: var(--ink); text-align: center; margin: 18px 0 6px; }
+  .quick { display: flex; gap: 6px; justify-content: center; }
+  .quick button { font-size: 10px; letter-spacing: .06em; padding: 6px 10px; }
+  .act { margin-top: 16px; display: flex; gap: 8px; }
+  .act button { flex: 1; padding: 9px 0; font-size: 11px; letter-spacing: .08em; }
+  .foot { margin-top: 12px; font-size: 11px; color: var(--sub); letter-spacing: .04em; text-align: center; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge">TIMER</div><span class="caps" id="state"></span></div>
+  <div class="grow">
+    <div class="mode">
+      <button type="button" id="mTimer" class="on">타이머</button>
+      <button type="button" id="mWatch">스톱워치</button>
+    </div>
+    <div class="clock" id="clock">00:00</div>
+    <div class="quick" id="quick"></div>
+  </div>
+  <div class="act">
+    <button type="button" id="go">시작</button>
+    <button type="button" id="reset">초기화</button>
+  </div>
+  <div class="foot" id="foot">창을 닫으면 멈춥니다</div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // Two tools people actually use next to a plan: a countdown for a fixed block, a stopwatch for "how long did this take".
+  var mode = 'timer', running = false, left = 0, elapsed = 0, tick = null;
+  var DEFAULT = Math.max(1, +IDP.opt('timer', 'minutes', 25) || 25);
+  function fmt(s) {
+    s = Math.max(0, Math.round(s));
+    var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+    return (h ? IDP.pad(h) + ':' : '') + IDP.pad(m) + ':' + IDP.pad(x);
+  }
+  function render() {
+    document.getElementById('clock').textContent = fmt(mode === 'timer' ? left : elapsed);
+    document.getElementById('go').textContent = running ? '일시정지' : '시작';
+    document.getElementById('state').textContent = running ? 'RUNNING' : (mode === 'timer' ? DEFAULT + '분' : 'READY');
+    document.getElementById('mTimer').className = mode === 'timer' ? 'on' : '';
+    document.getElementById('mWatch').className = mode === 'watch' ? 'on' : '';
+    document.getElementById('quick').style.display = mode === 'timer' ? 'flex' : 'none';
+  }
+  function stop() { running = false; if (tick) { clearInterval(tick); tick = null; } render(); }
+  function start() {
+    if (mode === 'timer' && left <= 0) left = DEFAULT * 60;
+    running = true;
+    var last = Date.now();
+    tick = setInterval(function () {
+      var now = Date.now(), d = (now - last) / 1000; last = now;
+      if (mode === 'timer') {
+        left -= d;
+        if (left <= 0) { left = 0; stop(); document.getElementById('foot').textContent = '시간이 다 됐어요'; }
+      } else { elapsed += d; }
+      render();
+    }, 250);
+    render();
+  }
+  document.getElementById('go').onclick = function () { running ? stop() : start(); };
+  document.getElementById('reset').onclick = function () { stop(); left = DEFAULT * 60; elapsed = 0; document.getElementById('foot').textContent = '창을 닫으면 멈춥니다'; render(); };
+  document.getElementById('mTimer').onclick = function () { stop(); mode = 'timer'; left = DEFAULT * 60; render(); };
+  document.getElementById('mWatch').onclick = function () { stop(); mode = 'watch'; elapsed = 0; render(); };
+  var quick = document.getElementById('quick');
+  [5, 10, 25, 45].forEach(function (m) {
+    var b = document.createElement('button'); b.type = 'button'; b.textContent = m + '분';
+    b.onclick = function () { stop(); DEFAULT = m; left = m * 60; render(); };
+    quick.appendChild(b);
+  });
+  IDP.options('timer', [
+    { k: 'minutes', t: 'number', label: '기본 분', ph: '25' },
+  ], function () { DEFAULT = Math.max(1, +IDP.opt('timer', 'minutes', 25) || 25); stop(); left = DEFAULT * 60; render(); });
+  left = DEFAULT * 60;
+  render();
+</script>
+</body>
+</html>
