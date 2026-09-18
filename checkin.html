@@ -41,7 +41,7 @@
 <script>
   // One ritual instead of three widgets: mood, energy and a line, closed with a single button that builds a streak.
   var FROM = Math.min(23, Math.max(0, +IDP.opt('checkin', 'from', 5) || 5));
-  var KEY = 'idarchive.checkin.v1';
+  var KEY = 'idarchive.checkin.' + (IDP.q.get('id') || 'v1');
   function dayKey(d) { d = d || new Date(); var x = new Date(d.getTime()); if (x.getHours() < FROM) x.setDate(x.getDate() - 1); return IDP.iso(x); }
   function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
   var all = load();

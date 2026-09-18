@@ -32,7 +32,7 @@
 <script src="assets/core.js"></script>
 <script>
   // Weekly and monthly focus in one card: the two lines people re-read most, without opening the planner.
-  var KEY = 'idarchive.focusnote.v1';
+  var KEY = 'idarchive.focusnote.' + (IDP.q.get('id') || 'v1');
   function weekKey(d) {
     d = d || new Date();
     var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());

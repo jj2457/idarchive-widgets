@@ -36,7 +36,7 @@
   // Weekly and monthly review share one design and one file: mode=week (default) or mode=month.
   // The planner's REVIEW page keeps the full history; this card is what makes the review actually happen.
   var MODE = (IDP.opt('review', 'mode', 'week') === 'month') ? 'month' : 'week';
-  var KEY = 'idarchive.review.v1';
+  var KEY = 'idarchive.review.' + (IDP.q.get('id') || 'v1');
   function weekKey(d) {
     d = d || new Date();
     var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());

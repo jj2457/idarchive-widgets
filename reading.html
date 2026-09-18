@@ -48,7 +48,7 @@
 <script>
   // The book in hand, plus the year's count. The full reading list lives in the planner's ARCHIVE table;
   // this is the "where am I right now" view that makes people open the book again.
-  var TITLE = '책 제목', TOTAL = 300, GOAL = 24, KEY = 'idarchive.reading.v1';
+  var TITLE = '책 제목', TOTAL = 300, GOAL = 24, KEY = 'idarchive.reading.' + (IDP.q.get('id') || 'v1');
   function readOpts() {
     TITLE = IDP.opt('reading', 'title', '책 제목');
     TOTAL = Math.max(1, +IDP.opt('reading', 'total', 300) || 300);
