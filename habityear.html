@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Year Tracker</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  /* the day count is Korean, so the caps tracking used for Latin labels would space it out oddly */
+  #count { letter-spacing: .06em; }
+  .name { margin-top: 10px; font-family: var(--serif); }
+  .name input { font-family: 'Playfair Display', serif; font-size: 17px; letter-spacing: .02em; color: var(--ink);
+                background: none; border: 0; width: 100%; padding: 0; }
+  .name input:focus { outline: none; }
+  .grid { margin-top: 12px; display: grid; grid-template-columns: 18px 1fr; gap: 3px 6px; align-items: center; }
+  .mon { font-size: 8px; letter-spacing: .06em; color: var(--sub); text-align: right; }
+  .days { display: grid; grid-template-columns: repeat(31, 1fr); gap: 2px; }
+  .c { aspect-ratio: 1; border-radius: 2px; background: var(--tint); border: 1px solid transparent; cursor: pointer; padding: 0; }
+  .c.off { background: none; cursor: default; }
+  .c.on { background: var(--soft); }
+  .c.today { border-color: var(--deep); }
+  .foot { margin-top: 12px; display: flex; justify-content: space-between; align-items: flex-end; gap: 10px;
+          font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+  .foot .note { text-align: right; font-size: 10px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">YEAR TRACKER</div><span class="caps" id="count"></span></div>
+  <div class="grow">
+    <div class="name"><input type="text" id="title" placeholder="습관 이름"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+  <div class="foot">
+    <span id="streak"></span>
+    <span class="note">이 기기에 저장돼요<br>한 해 전체 기록은 플래너의 HABIT 표에도 쌓입니다</span>
+  </div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // The paper planner's TRACKER page (docs/ORIGINAL_PLANNER_STRUCTURE.md): twelve rows of days, one square a day,
+  // filled in by hand. This is that page for a dashboard — one habit, one year, on this device.
+  // The planner's own HABIT table stays the long-term record; this is the "don't break the chain" picture.
+  var KEY = '', YEAR = 2027, LABEL = '';
+  function readOpts() {
+    LABEL = IDP.opt('habityear', 'label', 'YEAR TRACKER');
+    YEAR = parseInt(IDP.opt('habityear', 'year', IDP.now().getFullYear()), 10) || IDP.now().getFullYear();
+    KEY = 'idarchive.habityear.' + (IDP.q.get('id') || IDP.opt('habityear', 'title', 'main'));
+  }
+  readOpts();
+
+  // seed: "1:2,3,4|2:1,5" — month:days. Only used while this device has nothing written yet.
+  function seedDays() {
+    var out = {};
+    IDP.seed().forEach(function (part) {
+      var at = part.indexOf(':');
+      if (at < 0) return;
+      var m = parseInt(part.slice(0, at), 10);
+      part.slice(at + 1).split(',').forEach(function (d) {
+        var n = parseInt(d, 10);
+        if (m >= 1 && m <= 12 && n >= 1 && n <= 31) out[YEAR + '-' + IDP.pad(m) + '-' + IDP.pad(n)] = 1;
+      });
+    });
+    return out;
+  }
+  function load() {
+    try {
+      var v = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (v) return v;
+    } catch (e) { /* storage blocked */ }
+    var s = seedDays();
+    var name = IDP.q.get('name');
+    return { name: name || '', days: s };
+  }
+  var st = load();
+  if (!st.days) st.days = {};
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+
+  function daysIn(m) { return new Date(YEAR, m, 0).getDate(); }
+  function total() { return Object.keys(st.days).length; }
+  // counted back from the last day ticked, the same rule the planner's HABIT table uses
+  function runs() {
+    var keys = Object.keys(st.days).sort();
+    if (!keys.length) return { now: 0, best: 0 };
+    var best = 0, run = 0, prev = null, tail = 0;
+    keys.forEach(function (k) {
+      var d = IDP.parseDate(k);
+      run = (prev && (d - prev) === 864e5) ? run + 1 : 1;
+      if (run > best) best = run;
+      prev = d; tail = run;
+    });
+    var today = IDP.now();
+    today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    var gap = Math.round((today - prev) / 864e5);
+    return { now: gap > 1 ? 0 : tail, best: best };
+  }
+
+  function paint() {
+    document.getElementById('count').textContent = total() ? total() + '일' : '';
+    var r = runs();
+    document.getElementById('streak').textContent = r.now ? ('연속 ' + r.now + '일 · 최고 ' + r.best + '일') : (r.best ? '최고 ' + r.best + '일' : '');
+  }
+
+  function render() {
+    document.getElementById('badge').textContent = LABEL;
+    var t = document.getElementById('title');
+    if (document.activeElement !== t) t.value = st.name || '';
+    var grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    var todayKey = IDP.iso(IDP.now());
+    for (var m = 1; m <= 12; m++) (function (m) {
+      var lab = document.createElement('div');
+      lab.className = 'mon'; lab.textContent = m;
+      var row = document.createElement('div');
+      row.className = 'days';
+      var n = daysIn(m);
+      for (var d = 1; d <= 31; d++) (function (d) {
+        var key = YEAR + '-' + IDP.pad(m) + '-' + IDP.pad(d);
+        var cell = document.createElement('button');
+        cell.type = 'button';
+        if (d > n) { cell.className = 'c off'; cell.disabled = true; cell.setAttribute('aria-hidden', 'true'); }
+        else {
+          cell.className = 'c' + (st.days[key] ? ' on' : '') + (key === todayKey ? ' today' : '');
+          cell.title = key;
+          cell.setAttribute('aria-label', m + '월 ' + d + '일');
+          cell.setAttribute('aria-pressed', st.days[key] ? 'true' : 'false');
+          cell.onclick = function () {
+            if (st.days[key]) delete st.days[key]; else st.days[key] = 1;
+            cell.className = 'c' + (st.days[key] ? ' on' : '') + (key === todayKey ? ' today' : '');
+            cell.setAttribute('aria-pressed', st.days[key] ? 'true' : 'false');
+            save(); paint();
+          };
+        }
+        row.appendChild(cell);
+      })(d);
+      grid.appendChild(lab); grid.appendChild(row);
+    })(m);
+    paint();
+  }
+  document.getElementById('title').oninput = function () { st.name = this.value; save(); };
+
+  IDP.options('habityear', [
+    { k: 'label', label: '제목', ph: 'YEAR TRACKER' },
+    { k: 'year', label: '연도', ph: '2027' },
+    { k: 'title', label: '이 위젯의 이름 (여러 개 쓸 때)', ph: 'main' }
+  ], function () { readOpts(); st = load(); if (!st.days) st.days = {}; render(); });
+  render();
+</script>
+</body>
+</html>

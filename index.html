@@ -178,9 +178,15 @@
         { k: 'urls', t: 'text', label: '사진 주소 (쉼표로 구분)', ph: 'https://…' },
         { k: 'cells', t: 'number', label: '칸 수 (4–9)', ph: '6' }] },
     { id: 'roadmap',  g: 'ID ARCHIVE', name: 'LIFE ROADMAP',   h: 340, opts: [
-        { k: 'title', t: 'text', label: '제목', ph: 'ROADMAP' },
-        { k: 'stops', t: 'text', label: '구간 (쉼표로 구분, 최대 8개)', ph: '올해,3년 뒤,5년 뒤,10년 뒤' },
-        { k: 'now', t: 'number', label: '지금 있는 칸 (0부터)', ph: '0' }] },
+        { k: 'label', t: 'text', label: '제목', ph: 'LIFE ROADMAP' },
+        { k: 'title', t: 'text', label: '이 위젯의 이름 (여러 개 쓸 때)', ph: 'main' }] },
+    { id: 'goalchain', g: 'ID ARCHIVE', name: 'GOAL CHAIN (10년 → 오늘)', h: 390, opts: [
+        { k: 'label', t: 'text', label: '제목', ph: 'GOAL CHAIN' },
+        { k: 'title', t: 'text', label: '이 위젯의 이름 (여러 개 쓸 때)', ph: 'main' }] },
+    { id: 'habityear', g: 'ID ARCHIVE', name: 'YEAR TRACKER (습관 1년)', h: 360, opts: [
+        { k: 'label', t: 'text', label: '제목', ph: 'YEAR TRACKER' },
+        { k: 'year', t: 'number', label: '연도 (비우면 올해)', ph: '2027' },
+        { k: 'title', t: 'text', label: '이 위젯의 이름 (여러 개 쓸 때)', ph: 'main' }] },
     { id: 'bucket',   g: 'ID ARCHIVE', name: 'BUCKET LIST',    h: 300, opts: [
         { k: 'title', t: 'text', label: '제목', ph: 'BUCKET LIST' },
         { k: 'cells', t: 'number', label: '칸 수 (2–8)', ph: '4' }] },
@@ -198,7 +204,8 @@
     { id: 'wellness', name: 'WELLNESS', desc: '데일리 체크인 · 물 · 습관 스트릭 · 루틴', list: ['checkin', 'water', 'streak', 'routine'] },
     { id: 'study', name: 'STUDY', desc: 'D-Day · 타이머 · 독서 진행률 · 메모지', list: ['dday', 'timer', 'reading', 'memo'] },
     { id: 'life', name: 'LIFE', desc: '미니 캘린더 · 한 줄 일기 · 무드보드 · 365일', list: ['calendar', 'journal', 'moodboard', 'year'] },
-    { id: 'idarchive', name: 'ID ARCHIVE', desc: '비전 보드 · 5-STEP GOAL · 로드맵 · 버킷 리스트', list: ['vision', 'goal5', 'roadmap', 'bucket'] }
+    { id: 'idarchive', name: 'ID ARCHIVE', desc: '비전 보드 · 5-STEP GOAL · 목표 사슬 · 버킷 리스트', list: ['vision', 'goal5', 'goalchain', 'bucket'] },
+    { id: 'habit', name: 'HABIT', desc: '연간 트래커 · 습관 스트릭 · 루틴 체크 · 물 마시기', list: ['habityear', 'streak', 'routine', 'water'] }
   ];
 
   var state = { widget: 'clock', theme: IDP.CFG.defaults.theme, mode: 'light', frame: 'card', radius: IDP.CFG.defaults.radius, soft: '', deep: '', device: 'desktop', opt: {}, preset: '' };

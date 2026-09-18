@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Goal Chain</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .rail { margin-top: 14px; position: relative; padding-left: 15px; }
+  .rail::before { content: ''; position: absolute; left: 3px; top: 10px; bottom: 10px; width: 1px; background: var(--line); }
+  .step { position: relative; padding: 0 0 10px 11px; }
+  .step::before { content: ''; position: absolute; left: -9px; top: 9px; width: 9px; height: 9px; border-radius: 50%;
+                  background: var(--paper); border: 1.5px solid var(--line); }
+  .step.on::before { background: var(--soft); border-color: var(--soft); }
+  .step .k { font-size: 8px; letter-spacing: .14em; color: var(--sub); }
+  .step input { font: inherit; font-size: 13px; color: var(--ink); background: none; border: 0;
+                border-bottom: 1px solid transparent; padding: 2px 2px 5px; width: 100%; border-radius: 0; }
+  .step input:focus { outline: none; border-bottom-color: var(--soft); }
+  .step.now .k { color: color-mix(in srgb, var(--deep) 60%, #2a2a2a); }
+  .step.now input { font-size: 14px; }
+  .foot { margin-top: 10px; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">GOAL CHAIN</div><span class="caps" id="count"></span></div>
+  <div class="grow"><div class="rail" id="rail"></div></div>
+  <div class="foot">위에서 정한 것이 아래로 내려옵니다 · 이 기기에 저장돼요</div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // The chain the planner is built on (docs/GOAL_SYSTEM.md): one goal written once, carried down
+  // 10년 → 5년 → 1년 → 이번 달 → 이번 주 → 오늘. In Notion these are linked rows; on a dashboard this
+  // widget is the same ladder on one card, so the long goal stays in sight while today is being written.
+  var STEPS = [
+    ['y10', 'LONG · 10년', '10년 뒤 어떤 모습이고 싶은가'],
+    ['y5', 'MID · 5년', '그러려면 5년 안에'],
+    ['y1', 'SHORT · 올해', '올해 어디까지'],
+    ['mon', 'THIS MONTH · 이번 달', '이번 달에 끝낼 것'],
+    ['week', 'THIS WEEK · 이번 주', '이번 주에 할 것'],
+    ['day', 'TODAY · 오늘', '오늘 한 가지']
+  ];
+  var KEY = '';
+  function readOpts() { KEY = 'idarchive.goalchain.' + (IDP.q.get('id') || IDP.opt('goalchain', 'title', 'main')); }
+  readOpts();
+  function load() {
+    try {
+      var v = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (v) return v;
+    } catch (e) { /* storage blocked */ }
+    var d = IDP.seed(), t = {};
+    STEPS.forEach(function (s, i) { if (d[i]) t[s[0]] = d[i]; });
+    return t;
+  }
+  var st = load();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+  function filled(k) { return !!(st[k] || '').trim(); }
+
+  function render() {
+    document.getElementById('badge').textContent = IDP.opt('goalchain', 'label', 'GOAL CHAIN');
+    var rail = document.getElementById('rail');
+    rail.innerHTML = '';
+    STEPS.forEach(function (s, i) {
+      var row = document.createElement('div');
+      row.className = 'step' + (filled(s[0]) ? ' on' : '') + (i === STEPS.length - 1 ? ' now' : '');
+      var k = document.createElement('div'); k.className = 'k'; k.textContent = s[1];
+      var inp = document.createElement('input');
+      inp.type = 'text'; inp.placeholder = s[2]; inp.value = st[s[0]] || '';
+      inp.setAttribute('aria-label', s[1]);
+      inp.oninput = function () { st[s[0]] = inp.value; save(); paint(); };
+      row.appendChild(k); row.appendChild(inp);
+      rail.appendChild(row);
+    });
+    paint();
+  }
+  // typing must not rebuild the rows (it would steal focus); only the dots and the count move
+  function paint() {
+    var n = STEPS.filter(function (s) { return filled(s[0]); }).length;
+    document.getElementById('count').textContent = n + ' / ' + STEPS.length;
+    var rows = document.querySelectorAll('.step');
+    STEPS.forEach(function (s, i) {
+      if (rows[i]) rows[i].className = 'step' + (filled(s[0]) ? ' on' : '') + (i === STEPS.length - 1 ? ' now' : '');
+    });
+  }
+
+  IDP.options('goalchain', [
+    { k: 'label', label: '제목', ph: 'GOAL CHAIN' },
+    { k: 'title', label: '이 위젯의 이름 (여러 개 쓸 때)', ph: 'main' }
+  ], function () { readOpts(); st = load(); render(); });
+  render();
+</script>
+</body>
+</html>
