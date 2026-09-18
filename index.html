@@ -173,6 +173,10 @@
         { k: 'seconds', t: 'number', label: '넘기는 간격(초)', ph: '8' }] },
 
     { id: 'focus',    g: '시간', name: '집중 타이머',       h: 320, opts: [{ k: 'focus', t: 'number', label: '집중 (분)', ph: '25' }, { k: 'rest', t: 'number', label: '휴식 (분)', ph: '5' }] },
+    { id: 'focuslog', g: '시간', name: '집중 기록 (습관별 누적)', h: 470, opts: [
+        { k: 'label', t: 'text', label: '제목', ph: 'FOCUS LOG' },
+        { k: 'items', t: 'text', label: '습관 · 분야 (쉼표로 구분, 최대 8개)', ph: '공부,독서,운동,업무,콘텐츠' },
+        { k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
     { id: 'timer',    g: '시간', name: '타이머 · 스톱워치', h: 300, opts: [{ k: 'minutes', t: 'number', label: '기본 분', ph: '25' }] },
     { id: 'progress', g: '시간', name: '진행률 (일·주·월·연)', h: 290, opts: [{ k: 'weekStart', t: 'start' }] },
     { id: 'dday',     g: '시간', name: 'D-Day · 기념일',    h: 230, opts: [{ k: 'title', t: 'text', label: '제목', ph: '예) 자격증 시험' }, { k: 'date', t: 'date', label: '목표 날짜' }] },
@@ -212,7 +216,7 @@
   var PRESETS = [
     { id: 'minimal', name: 'MINIMAL', desc: '시계 · 이번 주 · 한 문장', list: ['clock', 'week', 'quote'] },
     { id: 'productivity', name: 'PRODUCTIVITY', desc: 'Top 3 · 타임로그 · 목표 진행률 · 주간 리뷰', list: ['top3', 'timeline', 'goalprogress', 'review'] },
-    { id: 'focus', name: 'FOCUS', desc: '집중 타이머 · 주·월 포커스 · 한 문장', list: ['focus', 'focusnote', 'quote'] },
+    { id: 'focus', name: 'FOCUS', desc: '집중 타이머 · 주·월 포커스 · 한 문장', list: ['focuslog', 'focus', 'focusnote', 'quote'] },
     { id: 'wellness', name: 'WELLNESS', desc: '데일리 체크인 · 물 · 습관 스트릭 · 루틴', list: ['checkin', 'water', 'streak', 'routine'] },
     { id: 'study', name: 'STUDY', desc: 'D-Day · 타이머 · 독서 진행률 · 메모지', list: ['dday', 'timer', 'reading', 'memo'] },
     { id: 'life', name: 'LIFE', desc: '미니 캘린더 · 한 줄 일기 · 무드보드 · 365일', list: ['calendar', 'journal', 'moodboard', 'year'] },
