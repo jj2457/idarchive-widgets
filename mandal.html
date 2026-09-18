@@ -50,15 +50,15 @@
     for (var i = 0; i < 9; i++) (function (i) {
       var c = document.createElement('div');
       c.className = 'cell' + (i === 4 ? ' mid' : '');
-      var box = document.createElement('div'); box.className = 'box';
+      var cellBox = document.createElement('div'); cellBox.className = 'box';
       var t = document.createElement('div');
       t.contentEditable = 'true';
       t.setAttribute('role', 'textbox');
       t.setAttribute('data-ph', i === 4 ? '목표' : '');
       t.textContent = cells[i] || '';
       t.oninput = function () { cells[i] = t.textContent; save(); count(); };
-      box.appendChild(t);
-      c.appendChild(box);
+      cellBox.appendChild(t);
+      c.appendChild(cellBox);
       box.appendChild(c);
     })(i);
     count();
