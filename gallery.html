@@ -7,9 +7,10 @@
 <style>
   body { margin: 0; padding: 16px; background: #fff; font-family: sans-serif; }
   body.dark { background: #191919; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
-  iframe { width: 100%; height: 250px; border: 0; }
-  iframe.tall { height: 330px; }
+  /* One cell size for every widget: a catalogue reads as a catalogue only when the cards line up.
+     300px is the narrowest width at which the longest card labels still sit on one line. */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  iframe { width: 100%; height: 340px; border: 0; }
 </style>
 </head>
 <body>
@@ -39,7 +40,6 @@
    'focus', 'timer', 'progress', 'dday', 'year', 'focusnote', 'goalprogress', 'reading', 'review', 'mandal', 'quote', 'moodboard', 'goal5', 'vision', 'roadmap', 'bucket'].forEach(function (w) {
     var f = document.createElement('iframe');
     f.src = w + '.html' + q + (extra[w] || ''); f.title = w;
-    if (['calendar','focus','progress','year','routine','mood','mandal','streak','journal','timer','moodboard','focusnote','checkin','goalprogress','reading','review','goal5','vision','roadmap','bucket'].indexOf(w) >= 0) f.className = 'tall';
     document.getElementById('grid').appendChild(f);
   });
 </script>
