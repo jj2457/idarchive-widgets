@@ -10,9 +10,9 @@
   /* One cell size for every widget: a catalogue reads as a catalogue only when the cards line up.
      300px is the narrowest width at which the longest card labels still sit on one line. */
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
-  /* 410 clears the tallest card (the month calendar, 386px at this width) with room for
-     the longer example lines, so nothing overlaps its own footer. */
-  iframe { width: 100%; height: 410px; border: 0; }
+  /* 440 clears the tallest card at this width (the month calendar at 386px, the weekly
+     review and vision board once their example lines wrap) with room to spare. */
+  iframe { width: 100%; height: 440px; border: 0; }
 </style>
 </head>
 <body>

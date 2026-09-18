@@ -58,7 +58,7 @@ body {
 .caps { font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--sub); font-weight: 400; }
 .serif { font-family: 'Playfair Display', serif; font-weight: 400; letter-spacing: .04em; }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.grow { flex: 1; min-height: 0; }
+.grow { flex: 1; min-height: 0; overflow: hidden; }
 .center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 button {
   font: inherit; color: var(--ink); cursor: pointer;
