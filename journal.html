@@ -32,7 +32,19 @@
   var FROM = Math.min(23, Math.max(0, +IDP.opt('journal', 'from', 5) || 5));
   var KEY = 'idarchive.journal.' + (IDP.q.get('id') || 'v1');
   function dayKey(d) { d = d || IDP.now(); var x = new Date(d.getTime()); if (x.getHours() < FROM) x.setDate(x.getDate() - 1); return IDP.iso(x); }
-  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
+  function load() {
+    try {
+      var v = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (v) return v;
+    } catch (e) { /* storage blocked */ }
+    // the first line is today, the rest fill the days just behind it
+    var d = IDP.seed(), t = {};
+    d.forEach(function (line, i) {
+      var day = IDP.now(); day.setDate(day.getDate() - i);
+      if (line) t[dayKey(day)] = line;
+    });
+    return t;
+  }
   var all = load();
   function save() { try { localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) {} }
   var inp = document.getElementById('inp');

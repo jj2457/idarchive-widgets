@@ -41,7 +41,14 @@
     return IDP.iso(x);
   }
   function monthKey(d) { d = d || IDP.now(); return d.getFullYear() + '-' + IDP.pad(d.getMonth() + 1); }
-  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
+  function load() {
+    try {
+      var v = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (v) return v;
+    } catch (e) { /* storage blocked */ }
+    var d = IDP.seed();
+    return { wk: weekKey(), mo: monthKey(), wText: d[0] || '', mText: d[1] || '' };
+  }
   var st = load();
   function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
   var w = document.getElementById('w'), m = document.getElementById('m');

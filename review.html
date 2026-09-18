@@ -46,7 +46,15 @@
   }
   function monthKey(d) { d = d || IDP.now(); return 'M' + d.getFullYear() + '-' + IDP.pad(d.getMonth() + 1); }
   function periodKey() { return MODE === 'month' ? monthKey() : weekKey(); }
-  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
+  function load() {
+    try {
+      var v = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (v) return v;
+    } catch (e) { /* storage blocked */ }
+    var d = IDP.seed(), t = {};
+    if (d.length) t[periodKey()] = { good: d[0] || '', bad: d[1] || '', next: d[2] || '', score: +IDP.q.get('score') || undefined };
+    return t;
+  }
   var all = load();
   function save() { try { localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) {} }
   function cur() { return all[periodKey()] || {}; }
