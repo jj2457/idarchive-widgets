@@ -30,7 +30,7 @@
   // One dot per day of the year: filled = passed, ring = public holiday, dark = today, framed = 1st of a month.
   // year=YYYY shows another year (e.g. year=2027 while it is still 2026).
   function render() {
-    var now = new Date(), y = +IDP.q.get('year') || now.getFullYear();
+    var now = IDP.now(), y = +IDP.q.get('year') || now.getFullYear();
     var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     var d = new Date(y, 0, 1), html = '', total = 0, passed = 0;
     while (d.getFullYear() === y) {

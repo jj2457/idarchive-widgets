@@ -60,7 +60,7 @@
 <script>
   // start=mon|sun — the two week-start editions of the planner
   var mon = IDP.weekStart === 'mon'; // weekStart=mon|sun (legacy: start)
-  var now = new Date(), y = now.getFullYear(), m = now.getMonth();
+  var now = IDP.now(), y = now.getFullYear(), m = now.getMonth();
   // month=YYYY-MM opens on a fixed month (a month page pins its own month); otherwise it opens on today's month
   var STYLE = (IDP.opt('calendar', 'style', 'grid') || 'grid');
   if (STYLE === 'editorial' || STYLE === 'minimal') document.body.classList.add(STYLE);

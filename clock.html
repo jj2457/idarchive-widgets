@@ -29,7 +29,7 @@
 <script>
   var h24 = IDP.q.get('h24') === '1';
   function tick() {
-    var d = new Date(), h = d.getHours();
+    var d = IDP.now(), h = d.getHours();
     var hh = h24 ? IDP.pad(h) : (h % 12 || 12);
     document.getElementById('time').innerHTML = hh + ':' + IDP.pad(d.getMinutes()) + (h24 ? '' : '<small>' + (h < 12 ? 'AM' : 'PM') + '</small>');
     var w = d.getDay();

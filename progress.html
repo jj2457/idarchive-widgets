@@ -24,7 +24,7 @@
   // how far through the day / week / month / year we are — the "time left" view of the planner
   var mon = IDP.weekStart === 'mon'; // weekStart=mon|sun (legacy: start)
   function render() {
-    var n = new Date(), y = n.getFullYear(), m = n.getMonth();
+    var n = IDP.now(), y = n.getFullYear(), m = n.getMonth();
     var day0 = new Date(y, m, n.getDate());
     var wk0 = new Date(day0); wk0.setDate(day0.getDate() - ((n.getDay() - (mon ? 1 : 0) + 7) % 7));
     var spans = [

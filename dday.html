@@ -25,7 +25,7 @@
 <script>
   // date=YYYY-MM-DD, title=라벨 — both also settable in ⚙ so nobody has to edit a link.
   // Without a date the widget counts down to the end of the year.
-  var now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  var now = IDP.now(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   function render() {
     var date = IDP.opt('dday', 'date', ''), title = IDP.opt('dday', 'title', '');
     var target = IDP.parseDate(date) || new Date(today.getFullYear(), 11, 31);

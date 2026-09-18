@@ -32,7 +32,7 @@
   // The planner's Daily TIME LOG runs 5 AM → 4 AM, so the widget's day starts at `from` (default 5) too.
   var FROM = IDP.q.get('from') === null ? 5 : (+IDP.q.get('from') || 0);
   function render() {
-    var n = new Date(), pos = ((n.getHours() - FROM + 24) % 24) + n.getMinutes() / 60;
+    var n = IDP.now(), pos = ((n.getHours() - FROM + 24) % 24) + n.getMinutes() / 60;
     var hs = '', ts = '';
     for (var i = 0; i < 24; i++) {
       var hr = (FROM + i) % 24;

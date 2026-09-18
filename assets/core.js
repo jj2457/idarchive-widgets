@@ -170,7 +170,17 @@
     return !v ? [] : String(v).split(',').map(Number).filter(function (n) { return n === n; });
   }
 
+
+  // "Now" for every widget that shows today. A `now` parameter freezes it, which is what the
+  // shop photos need — a 2027 planner should not be advertised with today's date on it.
+  // Without the parameter this is just the live clock, so nothing changes for a reader.
+  function now() {
+    var v = q.get('now');
+    if (v) { var d = new Date(String(v).replace(' ', 'T')); if (!isNaN(d.getTime())) return d; }
+    return new Date();
+  }
+
   window.IDP = { q: q, CFG: CFG, THEMES: THEMES, applyTheme: applyTheme, weekStart: weekStart === 'sun' ? 'sun' : 'mon',
     DOW: DOW, MONTHS: MONTHS, pad: pad, iso: iso, plannerDate: plannerDate, parseDate: parseDate,
-    options: options, opt: opt, seed: seed, seedDone: seedDone };
+    options: options, opt: opt, seed: seed, seedDone: seedDone, now: now };
 })();

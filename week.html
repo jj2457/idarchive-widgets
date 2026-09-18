@@ -34,7 +34,7 @@
 <script>
   // The seven days of the current week with holidays, commemorative days and today highlighted.
   function render() {
-    var now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var now = IDP.now(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     var lead = (today.getDay() - (IDP.weekStart === 'mon' ? 1 : 0) + 7) % 7;
     var start = new Date(today); start.setDate(today.getDate() - lead);
     var html = '', end;
