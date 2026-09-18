@@ -6,7 +6,8 @@
 <title>ID PLANNER · Goal Chain</title>
 <link rel="stylesheet" href="assets/core.css">
 <style>
-  .rail { margin-top: 14px; position: relative; padding-left: 15px; }
+  /* the ladder reads better as a column than as a full-page-wide row of long underlines */
+  .rail { margin-top: 14px; position: relative; padding-left: 15px; max-width: 560px; }
   .rail::before { content: ''; position: absolute; left: 3px; top: 10px; bottom: 10px; width: 1px; background: var(--line); }
   .step { position: relative; padding: 0 0 10px 11px; }
   .step::before { content: ''; position: absolute; left: -9px; top: 9px; width: 9px; height: 9px; border-radius: 50%;
