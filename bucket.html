@@ -40,7 +40,14 @@
     KEY = 'idarchive.bucket.' + (IDP.q.get('id') || TITLE);
   }
   readOpts();
-  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
+  function load() {
+    try {
+      var v = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (v) return v;
+    } catch (e) { /* storage blocked */ }
+    var t = {}; IDP.seed().forEach(function (x, i) { t[i] = x; });
+    return { text: t, done: IDP.seedDone() };
+  }
   var st = load();
   function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
   function render() {

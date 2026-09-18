@@ -52,7 +52,15 @@
     KEY = 'idarchive.goal5.' + (IDP.q.get('id') || TITLE);
   }
   readOpts();
-  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
+  function load() {
+    try {
+      var v = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (v) return v;
+    } catch (e) { /* storage blocked */ }
+    var d = IDP.seed(), t = { done: IDP.seedDone() };
+    ['why', 'plan', 'action', 'review'].forEach(function (k, i) { if (d[i]) t[k] = d[i]; });
+    return t;
+  }
   var st = load();
   function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
   function stepDone(i) { return (st.done || []).indexOf(i) >= 0; }

@@ -157,7 +157,20 @@
     return v != null && v !== '' ? v : fallback;
   }
 
+
+  // Starter content. A widget shows `d` (pipe separated) and `done` (comma separated indexes) from the URL
+  // only while nothing has been written on this device yet — the moment the reader types, their own text wins.
+  // It lets a shared dashboard link arrive with example rows instead of blank ones.
+  function seed() {
+    var d = q.get('d');
+    return (d == null || d === '') ? [] : String(d).split('|');
+  }
+  function seedDone() {
+    var v = q.get('done');
+    return !v ? [] : String(v).split(',').map(Number).filter(function (n) { return n === n; });
+  }
+
   window.IDP = { q: q, CFG: CFG, THEMES: THEMES, applyTheme: applyTheme, weekStart: weekStart === 'sun' ? 'sun' : 'mon',
     DOW: DOW, MONTHS: MONTHS, pad: pad, iso: iso, plannerDate: plannerDate, parseDate: parseDate,
-    options: options, opt: opt };
+    options: options, opt: opt, seed: seed, seedDone: seedDone };
 })();

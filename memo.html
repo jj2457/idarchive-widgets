@@ -30,7 +30,13 @@
   }
   readOpts();
   var t = document.getElementById('t');
-  function load() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+  function load() {
+    try {
+      var v = localStorage.getItem(KEY);
+      if (v !== null) return v;
+    } catch (e) { /* storage blocked */ }
+    return IDP.q.get('d') || '';
+  }
   function render() {
     document.getElementById('badge').textContent = TITLE;
     document.getElementById('count').textContent = (t.value.trim() ? t.value.trim().length + '자' : '');

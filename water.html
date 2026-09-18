@@ -47,7 +47,7 @@
       var s = JSON.parse(localStorage.getItem(KEY) || 'null');
       if (s && s.day === dayKey()) return s.n || 0;
     } catch (e) { /* storage blocked: this view keeps its own state only */ }
-    return 0;
+    return Math.max(0, +IDP.q.get('d') || 0);
   }
   var n = load();
   function save() { try { localStorage.setItem(KEY, JSON.stringify({ day: dayKey(), n: n })); } catch (e) {} }

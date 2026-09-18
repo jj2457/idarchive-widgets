@@ -31,7 +31,13 @@
   var KEY = '';
   function readOpts() { KEY = 'idarchive.mandal.' + (IDP.q.get('id') || IDP.opt('mandal', 'title', 'main')); }
   readOpts();
-  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
+  function load() {
+    try {
+      var v = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (v) return v;
+    } catch (e) { /* storage blocked */ }
+    return IDP.seed().slice(0, 9);
+  }
   var cells = load();
   function save() { try { localStorage.setItem(KEY, JSON.stringify(cells)); } catch (e) {} }
   function render() {
