@@ -46,7 +46,19 @@
     return IDP.iso(x);
   }
   function load() {
-    try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; }
+    try {
+      var v = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (v) return v;
+    } catch (e) { /* storage blocked */ }
+    // `days=6` fills the last six days, so a catalogue or a shared dashboard link does not
+    // open on an empty chain. The moment the reader taps, their own record takes over.
+    var n = Math.max(0, Math.min(400, parseInt(IDP.q.get('days'), 10) || 0)), out = [];
+    for (var i = 0; i < n; i++) {
+      var d = IDP.now();
+      d.setDate(d.getDate() - i);
+      out.push(dayKey(d));
+    }
+    return out;
   }
   var days = load();
   function save() { try { localStorage.setItem(KEY, JSON.stringify(days.slice(-400))); } catch (e) {} }
