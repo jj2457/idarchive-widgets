@@ -55,7 +55,16 @@
       if (v) return v;
     } catch (e) { /* storage blocked */ }
     var d = IDP.seed(), t = {};
-    BANDS.forEach(function (b, i) { if (d[i]) t[b.k + '.event'] = d[i]; });
+    // ages and the two plans come as their own parameters so `d` keeps meaning "the three events"
+    var ages = (IDP.q.get('ages') || '').split(','),
+        a = (IDP.q.get('a') || '').split('|'),
+        b2 = (IDP.q.get('b') || '').split('|');
+    BANDS.forEach(function (b, i) {
+      if (d[i]) t[b.k + '.event'] = d[i];
+      if (ages[i]) t[b.k + '.age'] = ages[i].trim();
+      if (a[i]) t[b.k + '.plana'] = a[i];
+      if (b2[i]) t[b.k + '.planb'] = b2[i];
+    });
     return t;
   }
   var st = load();

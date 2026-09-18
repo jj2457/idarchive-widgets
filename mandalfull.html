@@ -45,10 +45,20 @@
       var v = JSON.parse(localStorage.getItem(KEY) || 'null');
       if (v) return v;
     } catch (e) { /* storage blocked */ }
-    // seed: goal | area0..area8 (index 4 skipped) | then actions, block by block
+    // seed: goal | area0..area8 (index 4 skipped) | then the outer blocks' actions, block by block,
+    // eight per block, again skipping each block's own centre (that cell echoes the area)
     var d = IDP.seed(), t = { goal: d[0] || '', areas: {}, actions: {} };
     var at = 1;
     for (var i = 0; i < 9; i++) { if (i === 4) continue; if (d[at]) t.areas[i] = d[at]; at++; }
+    for (var b = 0; b < 9; b++) {
+      if (b === 4) continue;
+      for (var c = 0; c < 9; c++) {
+        if (c === 4) continue;
+        if (at >= d.length) return t;
+        if (d[at]) { t.actions[b] = t.actions[b] || {}; t.actions[b][c] = d[at]; }
+        at++;
+      }
+    }
     return t;
   }
   var st = load();
