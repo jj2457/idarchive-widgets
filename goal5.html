@@ -6,105 +6,146 @@
 <title>ID PLANNER · 5-STEP GOAL</title>
 <link rel="stylesheet" href="assets/core.css">
 <style>
-  .goal { font-family: var(--serif); font-size: 20px; letter-spacing: .01em; color: var(--ink); margin-top: 14px; line-height: 1.4; }
-  .rail { margin-top: 16px; display: flex; align-items: center; gap: 6px; }
-  .node { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line); background: #fff;
-          font-size: 9px; letter-spacing: .04em; color: var(--sub); display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; }
+  .goal { font-family: var(--serif); font-size: 19px; letter-spacing: .01em; color: var(--ink); margin-top: 12px; line-height: 1.4; }
+  .goal input { font: inherit; color: inherit; background: none; border: 0; width: 100%; padding: 0; }
+  .goal input:focus { outline: none; }
+  .rail { margin-top: 14px; display: flex; align-items: center; gap: 5px; }
+  .node { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--paper);
+          font-size: 9px; color: var(--sub); display: flex; align-items: center; justify-content: center; }
   .node.on { background: var(--soft); border-color: var(--soft); color: color-mix(in srgb, var(--deep) 60%, #2a2a2a); }
-  .node.cur { box-shadow: 0 0 0 2px var(--deep); }
   .link { flex: 1; height: 1px; background: var(--line); }
   .link.on { background: var(--soft); }
-  .steps { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
-  .s { display: grid; grid-template-columns: 54px 1fr; gap: 10px; align-items: start; }
-  .s .k { font-size: 9px; letter-spacing: .14em; color: var(--sub); padding-top: 9px; }
+  .steps { margin-top: 14px; display: flex; flex-direction: column; gap: 9px; }
+  .s { display: grid; grid-template-columns: 64px 1fr; gap: 10px; align-items: start; }
+  .s .k { font-size: 9px; letter-spacing: .12em; color: var(--sub); padding-top: 8px; }
   .s input { font: inherit; font-size: 13px; color: var(--ink); background: none; border: 0; border-bottom: 1px solid var(--line);
-             padding: 7px 2px; width: 100%; border-radius: 0; }
+             padding: 6px 2px; width: 100%; border-radius: 0; }
   .s input:focus { outline: none; border-bottom-color: var(--soft); }
-  .s.done input { color: var(--sub); }
-  .foot { margin-top: 14px; display: flex; justify-content: space-between; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; padding-top: 3px; }
+  .chips button { font-size: 10px; letter-spacing: .04em; padding: 4px 9px; border-radius: 999px; background: none; }
+  .chips button.on { background: var(--soft); border-color: var(--soft); }
+  .last { display: grid; grid-template-columns: 1fr 74px; gap: 8px; }
+  .foot { margin-top: 12px; display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
 </style>
 </head>
 <body>
 <div class="card">
   <div class="row"><div class="badge">5-STEP GOAL</div><span class="caps" id="pct"></span></div>
   <div class="grow">
-    <div class="goal" id="goalText">올해 이루고 싶은 것</div>
+    <div class="goal"><input type="text" id="title" placeholder="이루고 싶은 것"></div>
     <div class="rail" id="rail"></div>
     <div class="steps" id="steps"></div>
   </div>
-  <div class="foot"><span>단계를 누르면 지나온 자리로 표시돼요</span><span id="due"></span></div>
+  <div class="foot"><span id="hint">한 칸씩 채우면 목표가 매일로 내려옵니다</span><span id="due"></span></div>
 </div>
 <script src="config/themes.js"></script>
 <script src="assets/core.js"></script>
 <script>
-  // The ID Archive way of writing a goal: Goal → Why → Plan → Action → Review.
-  // The paper planner asks these five questions on one page; this is the same page, pinned to a dashboard.
-  var KEYS = [
-    ['why', 'WHY', '왜 이 목표인가'],
-    ['plan', 'PLAN', '어떻게 이룰 것인가'],
-    ['action', 'ACTION', '이번 주에 할 한 가지'],
-    ['review', 'REVIEW', '돌아보며 남길 한 줄']
+  // The planner's own 5-STEPS GOAL page, measured from the 2027 sale PDF (docs/ORIGINAL_PLANNER_STRUCTURE.md):
+  // the five columns are the goal's horizon, its category, this year's goal, how it will be done,
+  // and the daily habit with a deadline. It is not a Why/Plan/Action/Review sheet — that was invented.
+  var TERMS = ['1년 목표', '5년 목표', '10년 목표'];
+  var AREAS = ['커리어', '돈', '건강', '관계', '성장', '일상'];
+  // key, label, placeholder — the order is the page's column order, left to right
+  var STEPS = [
+    ['term', '기간', ''],
+    ['area', '분야', ''],
+    ['year', '올해 목표', '올해 안에 어디까지'],
+    ['how', '실행 방법', '어떻게 할 것인가'],
+    ['habit', '매일 할 습관', '매일 무엇을 하면 가까워지나']
   ];
-  var TITLE = '올해 이루고 싶은 것', DUE = '', KEY = '';
-  function readOpts() {
-    TITLE = IDP.opt('goal5', 'title', '올해 이루고 싶은 것');
-    DUE = IDP.opt('goal5', 'date', '');
-    KEY = 'idarchive.goal5.' + (IDP.q.get('id') || TITLE);
-  }
+  var KEY = '';
+  function readOpts() { KEY = 'idarchive.goal5.' + (IDP.q.get('id') || IDP.opt('goal5', 'title', 'main')); }
   readOpts();
   function load() {
     try {
       var v = JSON.parse(localStorage.getItem(KEY) || 'null');
       if (v) return v;
     } catch (e) { /* storage blocked */ }
-    var d = IDP.seed(), t = { done: IDP.seedDone() };
-    ['why', 'plan', 'action', 'review'].forEach(function (k, i) { if (d[i]) t[k] = d[i]; });
+    var d = IDP.seed(), t = {};
+    ['title'].concat(STEPS.map(function (s) { return s[0]; })).forEach(function (k, i) { if (d[i]) t[k] = d[i]; });
+    if (IDP.q.get('due')) t.due = IDP.q.get('due');
     return t;
   }
   var st = load();
   function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
-  function stepDone(i) { return (st.done || []).indexOf(i) >= 0; }
+  function filled(k) { return !!(st[k] || '').trim(); }
+
+  function chipRow(key, values) {
+    var box = document.createElement('div');
+    box.className = 'chips';
+    values.forEach(function (v) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = v;
+      if (st[key] === v) b.className = 'on';
+      b.onclick = function () { st[key] = st[key] === v ? '' : v; save(); render(); };
+      box.appendChild(b);
+    });
+    return box;
+  }
+
   function render() {
-    document.getElementById('goalText').textContent = TITLE;
-    var done = (st.done || []).length;
-    document.getElementById('pct').textContent = Math.round(done / 5 * 100) + '%';
+    var t = document.getElementById('title');
+    if (document.activeElement !== t) t.value = st.title || '';
+    var done = STEPS.filter(function (s) { return filled(s[0]); }).length;
+    document.getElementById('pct').textContent = Math.round(done / STEPS.length * 100) + '%';
+
     var rail = document.getElementById('rail');
     rail.innerHTML = '';
-    for (var i = 0; i < 5; i++) (function (i) {
-      if (i) { var l = document.createElement('div'); l.className = 'link' + (stepDone(i - 1) ? ' on' : ''); rail.appendChild(l); }
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'node' + (stepDone(i) ? ' on' : '') + (done === i ? ' cur' : '');
-      b.textContent = i === 0 ? 'G' : KEYS[i - 1][1][0];
-      b.title = i === 0 ? 'GOAL' : KEYS[i - 1][1];
-      b.onclick = function () {
-        st.done = st.done || [];
-        var at = st.done.indexOf(i);
-        if (at >= 0) st.done.splice(at, 1); else st.done.push(i);
-        save(); render();
-      };
-      rail.appendChild(b);
-    })(i);
+    STEPS.forEach(function (s, i) {
+      if (i) { var l = document.createElement('div'); l.className = 'link' + (filled(STEPS[i - 1][0]) ? ' on' : ''); rail.appendChild(l); }
+      var n = document.createElement('div');
+      n.className = 'node' + (filled(s[0]) ? ' on' : '');
+      n.textContent = i + 1; n.title = s[1];
+      rail.appendChild(n);
+    });
+
     var box = document.getElementById('steps');
     box.innerHTML = '';
-    KEYS.forEach(function (k, i) {
-      var row = document.createElement('div'); row.className = 's' + (stepDone(i + 1) ? ' done' : '');
-      var kk = document.createElement('div'); kk.className = 'k'; kk.textContent = k[1];
-      var inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = k[2]; inp.value = st[k[0]] || '';
-      inp.oninput = function () { st[k[0]] = inp.value; save(); };
-      row.appendChild(kk); row.appendChild(inp);
+    STEPS.forEach(function (s, i) {
+      var row = document.createElement('div'); row.className = 's';
+      var k = document.createElement('div'); k.className = 'k'; k.textContent = s[1];
+      row.appendChild(k);
+      if (s[0] === 'term') { row.appendChild(chipRow('term', TERMS)); }
+      else if (s[0] === 'area') { row.appendChild(chipRow('area', AREAS)); }
+      else if (s[0] === 'habit') {
+        var wrap = document.createElement('div'); wrap.className = 'last';
+        var inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = s[2]; inp.value = st.habit || '';
+        inp.oninput = function () { st.habit = inp.value; save(); paint(); };
+        var day = document.createElement('input'); day.type = 'date'; day.value = st.due || '';
+        day.setAttribute('aria-label', '마감일');
+        day.onchange = function () { st.due = day.value; save(); render(); };
+        wrap.appendChild(inp); wrap.appendChild(day);
+        row.appendChild(wrap);
+      } else {
+        var i2 = document.createElement('input'); i2.type = 'text'; i2.placeholder = s[2]; i2.value = st[s[0]] || '';
+        i2.oninput = function () { st[s[0]] = i2.value; save(); paint(); };
+        row.appendChild(i2);
+      }
       box.appendChild(row);
     });
-    var t = IDP.parseDate(DUE);
-    if (t) {
+
+    var d = IDP.parseDate(st.due || '');
+    if (d) {
       var today = IDP.now(); today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      var diff = Math.round((t - today) / 864e5);
+      var diff = Math.round((d - today) / 864e5);
       document.getElementById('due').textContent = diff === 0 ? 'D-DAY' : diff > 0 ? 'D-' + diff : 'D+' + (-diff);
     } else { document.getElementById('due').textContent = ''; }
   }
+  // typing must not rebuild the rows (it would steal focus); only the rail and the count move
+  function paint() {
+    var done = STEPS.filter(function (s) { return filled(s[0]); }).length;
+    document.getElementById('pct').textContent = Math.round(done / STEPS.length * 100) + '%';
+    var nodes = document.querySelectorAll('.rail .node'), links = document.querySelectorAll('.rail .link');
+    STEPS.forEach(function (s, i) {
+      if (nodes[i]) nodes[i].className = 'node' + (filled(s[0]) ? ' on' : '');
+      if (i && links[i - 1]) links[i - 1].className = 'link' + (filled(STEPS[i - 1][0]) ? ' on' : '');
+    });
+  }
+  document.getElementById('title').oninput = function () { st.title = this.value; save(); };
+
   IDP.options('goal5', [
-    { k: 'title', label: '목표', ph: '예) 10km 50분 안에 완주' },
-    { k: 'date', t: 'date', label: '마감일 (선택)' },
+    { k: 'title', label: '이 위젯의 이름 (여러 개 쓸 때)', ph: 'main' },
   ], function () { readOpts(); st = load(); render(); });
   render();
 </script>

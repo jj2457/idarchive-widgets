@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Mandal-art FULL</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { margin-top: 12px; display: flex; justify-content: center; }
+  /* 9x9, drawn as nine 3x3 blocks so the block gaps read as they do on paper */
+  .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; width: 100%; max-width: 760px; }
+  .block { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+  .cell { position: relative; aspect-ratio: 1; border: 1px solid var(--line); border-radius: 3px;
+          background: var(--paper); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .cell > div { width: 100%; padding: 2px; text-align: center; line-height: 1.25;
+                font-size: clamp(7px, 1.15vw, 12px); color: var(--ink); word-break: keep-all; }
+  .cell > div:focus { outline: none; }
+  .cell > div:empty::before { content: attr(data-ph); color: var(--sub); opacity: .65; }
+  .cell.area { background: var(--tint); }
+  .cell.core { background: var(--soft); }
+  /* the mirrored centre of an outer block is the same text as the centre block's cell — read it, edit it there */
+  .cell.echo { background: var(--tint); }
+  .cell.echo > div { color: var(--sub); }
+  .foot { margin-top: 12px; display: flex; justify-content: space-between; gap: 10px; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">MANDAL-ART</div><span class="caps" id="count"></span></div>
+  <div class="grow"><div class="wrap"><div class="board" id="board"></div></div></div>
+  <div class="foot"><span>가운데 목표 · 둘레 여덟 영역 · 영역마다 실행 여덟 가지</span><span>이 기기에 저장돼요</span></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // The planner's MANDAL-ART page is the full 81-cell board (measured: nine 3x3 blocks, the middle block
+  // and each block's middle cell tinted). The middle block holds the goal and its eight areas; each outer
+  // block expands the area that sits in the SAME position of the middle block — so an area is typed once
+  // and the outer block's centre echoes it.
+  var KEY = '';
+  function readOpts() { KEY = 'idarchive.mandalfull.' + (IDP.q.get('id') || IDP.opt('mandalfull', 'title', 'main')); }
+  readOpts();
+  function load() {
+    try {
+      var v = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (v) return v;
+    } catch (e) { /* storage blocked */ }
+    // seed: goal | area0..area8 (index 4 skipped) | then actions, block by block
+    var d = IDP.seed(), t = { goal: d[0] || '', areas: {}, actions: {} };
+    var at = 1;
+    for (var i = 0; i < 9; i++) { if (i === 4) continue; if (d[at]) t.areas[i] = d[at]; at++; }
+    return t;
+  }
+  var st = load();
+  if (!st.areas) st.areas = {};
+  if (!st.actions) st.actions = {};
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+
+  function cell(cls, text, ph, onInput, readonly) {
+    var c = document.createElement('div');
+    c.className = 'cell' + (cls ? ' ' + cls : '');
+    var d = document.createElement('div');
+    d.textContent = text || '';
+    d.setAttribute('data-ph', ph || '');
+    if (!readonly) {
+      d.contentEditable = 'true';
+      d.setAttribute('role', 'textbox');
+      d.oninput = function () { onInput(d.textContent); };
+      d.onblur = function () { count(); };
+    }
+    c.appendChild(d);
+    return c;
+  }
+
+  function render() {
+    document.getElementById('badge').textContent = IDP.opt('mandalfull', 'label', 'MANDAL-ART');
+    var board = document.getElementById('board');
+    board.innerHTML = '';
+    for (var b = 0; b < 9; b++) (function (b) {
+      var blk = document.createElement('div');
+      blk.className = 'block';
+      for (var c = 0; c < 9; c++) (function (c) {
+        if (b === 4) {
+          if (c === 4) {
+            blk.appendChild(cell('core', st.goal, '핵심 목표', function (v) { st.goal = v; save(); }));
+          } else {
+            blk.appendChild(cell('area', st.areas[c] || '', '영역', function (v) { st.areas[c] = v; save(); echo(c); }));
+          }
+        } else if (c === 4) {
+          blk.appendChild(cell('echo', st.areas[b] || '', '', null, true));
+        } else {
+          st.actions[b] = st.actions[b] || {};
+          blk.appendChild(cell('', st.actions[b][c] || '', '', function (v) { st.actions[b][c] = v; save(); }));
+        }
+      })(c);
+      board.appendChild(blk);
+    })(b);
+    count();
+  }
+  // an area typed in the middle block shows up in its own block's centre without a re-render
+  function echo(i) {
+    var blocks = document.querySelectorAll('.board .block');
+    if (!blocks[i]) return;
+    var mid = blocks[i].children[4];
+    if (mid && mid.classList.contains('echo')) mid.firstChild.textContent = st.areas[i] || '';
+  }
+  function count() {
+    var n = 0;
+    if ((st.goal || '').trim()) n++;
+    for (var i = 0; i < 9; i++) if (i !== 4 && (st.areas[i] || '').trim()) n++;
+    for (var b = 0; b < 9; b++) if (b !== 4) for (var c = 0; c < 9; c++) if (c !== 4 && ((st.actions[b] || {})[c] || '').trim()) n++;
+    document.getElementById('count').textContent = n + ' / 73';
+  }
+
+  IDP.options('mandalfull', [
+    { k: 'label', label: '제목', ph: 'MANDAL-ART' },
+    { k: 'title', label: '보드 이름 (여러 개 쓸 때)', ph: 'main' },
+  ], function () { readOpts(); st = load(); if (!st.areas) st.areas = {}; if (!st.actions) st.actions = {}; render(); });
+  render();
+</script>
+</body>
+</html>

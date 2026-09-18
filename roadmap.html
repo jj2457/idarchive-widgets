@@ -6,77 +6,114 @@
 <title>ID PLANNER · Life Roadmap</title>
 <link rel="stylesheet" href="assets/core.css">
 <style>
-  .rail { margin-top: 16px; position: relative; padding-left: 16px; }
-  .rail::before { content: ''; position: absolute; left: 4px; top: 6px; bottom: 6px; width: 1px; background: var(--line); }
-  .stop { position: relative; padding: 0 0 14px 14px; }
-  .stop::before { content: ''; position: absolute; left: -7px; top: 5px; width: 9px; height: 9px; border-radius: 50%;
-                  background: #fff; border: 1.5px solid var(--line); }
-  .stop.on::before { background: var(--soft); border-color: var(--soft); }
-  .stop.now::before { box-shadow: 0 0 0 3px var(--tint); border-color: var(--deep); }
-  .stop .k { font-size: 9px; letter-spacing: .16em; color: var(--sub); }
-  .stop input { font: inherit; font-size: 13px; color: var(--ink); background: none; border: 0; border-bottom: 1px solid transparent;
-                padding: 3px 2px 5px; width: 100%; border-radius: 0; }
-  .stop input:focus { outline: none; border-bottom-color: var(--soft); }
-  .stop.on input { color: var(--sub); }
-  .stop button.tick { position: absolute; right: 0; top: 2px; width: 16px; height: 16px; border-radius: 5px;
-                      border: 1.5px solid var(--line); background: none; padding: 0; cursor: pointer; }
-  .stop.on button.tick { background: var(--soft); border-color: var(--soft); }
-  .foot { margin-top: 8px; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+  .rail { margin-top: 14px; position: relative; padding-left: 14px; }
+  .rail::before { content: ''; position: absolute; left: 3px; top: 8px; bottom: 8px; width: 1px; background: var(--line); }
+  .band { position: relative; padding: 0 0 14px 12px; }
+  .band::before { content: ''; position: absolute; left: -8px; top: 4px; width: 9px; height: 9px; border-radius: 50%;
+                  background: var(--paper); border: 1.5px solid var(--line); }
+  .band.on::before { background: var(--soft); border-color: var(--soft); }
+  .head { display: flex; align-items: baseline; gap: 8px; }
+  .head .t { font-size: 9px; letter-spacing: .14em; color: var(--sub); }
+  .head .age { font-size: 9px; letter-spacing: .06em; color: var(--sub); }
+  .head .age input { font: inherit; width: 30px; margin-left: 3px; background: none; border: 0; border-bottom: 1px solid transparent;
+                     color: var(--sub); text-align: right; padding: 0 1px; }
+  .head .age input:focus { outline: none; border-bottom-color: var(--soft); }
+  .event input { font: inherit; font-size: 13px; color: var(--ink); background: none; border: 0;
+                 border-bottom: 1px solid transparent; padding: 3px 2px 5px; width: 100%; border-radius: 0; }
+  .event input:focus { outline: none; border-bottom-color: var(--soft); }
+  .plans { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 3px; }
+  .plans label { display: block; font-size: 8px; letter-spacing: .12em; color: var(--sub); }
+  .plans input { font: inherit; font-size: 11px; color: var(--sub); background: none; border: 0;
+                 border-bottom: 1px solid var(--line); padding: 2px 2px 4px; width: 100%; border-radius: 0; }
+  .plans input:focus { outline: none; border-bottom-color: var(--soft); color: var(--ink); }
+  .foot { margin-top: 10px; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="row"><div class="badge" id="badge">ROADMAP</div><span class="caps" id="count"></span></div>
+  <div class="row"><div class="badge" id="badge">LIFE ROADMAP</div><span class="caps" id="count"></span></div>
   <div class="grow"><div class="rail" id="rail"></div></div>
-  <div class="foot">칸을 눌러 지나온 자리를 표시하세요 · 이 기기에 저장돼요</div>
+  <div class="foot" id="foot">이 기기에 저장돼요</div>
 </div>
 <script src="config/themes.js"></script>
 <script src="assets/core.js"></script>
 <script>
-  // The planner's LIFE ROADMAP, shrunk to a rail: a few stops, in order, with one line each.
-  // Default stops are the planner's own horizons (this year → 3 years → 5 years → 10 years).
-  var STOPS = [], TITLE = 'ROADMAP', KEY = '', NOW = 0;
-  function readOpts() {
-    TITLE = IDP.opt('roadmap', 'title', 'ROADMAP');
-    NOW = Math.max(0, +IDP.opt('roadmap', 'now', 0) || 0);
-    STOPS = String(IDP.opt('roadmap', 'stops', '올해,3년 뒤,5년 뒤,10년 뒤')).split(',')
-      .map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 8);
-    KEY = 'idarchive.roadmap.' + (IDP.q.get('id') || TITLE);
-  }
+  // The planner's ROAD MAP page (docs/ORIGINAL_PLANNER_STRUCTURE.md): three horizons — 1, 5 and 10 years —
+  // and each one asks the same five things. AGE and PERIOD sit on the header line, EVENT is the headline,
+  // PLAN-A and PLAN-B are the two ways of getting there. The horizons are the planner's own, not 3/5/10.
+  var BANDS = [
+    { k: 'y1', t: 'SHORT-TERM · 1년', ph: '올해 안에 이루고 싶은 것' },
+    { k: 'y5', t: 'MID-TERM · 5년', ph: '5년 뒤 어떤 모습이고 싶은가' },
+    { k: 'y10', t: 'LONG-TERM · 10년', ph: '10년 뒤 어떤 모습이고 싶은가' }
+  ];
+  var KEY = '';
+  function readOpts() { KEY = 'idarchive.roadmap.' + (IDP.q.get('id') || IDP.opt('roadmap', 'title', 'main')); }
   readOpts();
   function load() {
     try {
       var v = JSON.parse(localStorage.getItem(KEY) || 'null');
       if (v) return v;
     } catch (e) { /* storage blocked */ }
-    var t = {}; IDP.seed().forEach(function (x, i) { t[i] = x; });
-    return { text: t, done: IDP.seedDone() };
+    var d = IDP.seed(), t = {};
+    BANDS.forEach(function (b, i) { if (d[i]) t[b.k + '.event'] = d[i]; });
+    return t;
   }
   var st = load();
   function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+  function get(k) { return st[k] || ''; }
+
+  function field(key, cls, ph, onPaint) {
+    var i = document.createElement('input');
+    i.type = 'text'; i.placeholder = ph || ''; i.value = get(key);
+    i.oninput = function () { st[key] = i.value; save(); if (onPaint) onPaint(); };
+    return i;
+  }
+
   function render() {
-    document.getElementById('badge').textContent = TITLE;
-    var done = (st.done || []).length;
-    document.getElementById('count').textContent = done + ' / ' + STOPS.length;
+    document.getElementById('badge').textContent = IDP.opt('roadmap', 'label', 'LIFE ROADMAP');
     var rail = document.getElementById('rail');
     rail.innerHTML = '';
-    STOPS.forEach(function (name, i) {
-      var on = (st.done || []).indexOf(i) >= 0;
+    BANDS.forEach(function (b) {
       var row = document.createElement('div');
-      row.className = 'stop' + (on ? ' on' : '') + (i === NOW ? ' now' : '');
-      var k = document.createElement('div'); k.className = 'k'; k.textContent = name;
-      var inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = '한 줄로'; inp.value = (st.text || {})[i] || '';
-      inp.oninput = function () { st.text = st.text || {}; st.text[i] = inp.value; save(); };
-      var t = document.createElement('button'); t.className = 'tick'; t.type = 'button'; t.setAttribute('aria-label', name + ' 표시');
-      t.onclick = function () { st.done = st.done || []; var at = st.done.indexOf(i); if (at >= 0) st.done.splice(at, 1); else st.done.push(i); save(); render(); };
-      row.appendChild(k); row.appendChild(inp); row.appendChild(t);
+      row.className = 'band' + (get(b.k + '.event').trim() ? ' on' : '');
+
+      var head = document.createElement('div'); head.className = 'head';
+      var t = document.createElement('span'); t.className = 't'; t.textContent = b.t;
+      var age = document.createElement('span'); age.className = 'age';
+      // "나이 __" reads cleanly when empty; a trailing 세 next to a placeholder does not
+      age.appendChild(document.createTextNode('나이'));
+      var ai = field(b.k + '.age', '', '—'); ai.setAttribute('aria-label', b.t + ' 나이');
+      age.appendChild(ai);
+      head.appendChild(t); head.appendChild(age);
+
+      var ev = document.createElement('div'); ev.className = 'event';
+      ev.appendChild(field(b.k + '.event', '', b.ph, count));
+
+      var plans = document.createElement('div'); plans.className = 'plans';
+      [['a', 'PLAN A'], ['b', 'PLAN B']].forEach(function (p) {
+        var cell = document.createElement('div');
+        var lab = document.createElement('label'); lab.textContent = p[1];
+        cell.appendChild(lab); cell.appendChild(field(b.k + '.plan' + p[0], '', ''));
+        plans.appendChild(cell);
+      });
+
+      row.appendChild(head); row.appendChild(ev); row.appendChild(plans);
       rail.appendChild(row);
     });
+    count();
   }
+  function count() {
+    var n = BANDS.filter(function (b) { return get(b.k + '.event').trim(); }).length;
+    document.getElementById('count').textContent = n + ' / ' + BANDS.length;
+    BANDS.forEach(function (b, i) {
+      var el = document.querySelectorAll('.band')[i];
+      if (el) el.className = 'band' + (get(b.k + '.event').trim() ? ' on' : '');
+    });
+  }
+
   IDP.options('roadmap', [
-    { k: 'title', label: '제목', ph: 'ROADMAP' },
-    { k: 'stops', label: '구간 (쉼표로 구분, 최대 8개)', ph: '올해,3년 뒤,5년 뒤,10년 뒤' },
-    { k: 'now', t: 'number', label: '지금 있는 칸 (0부터)', ph: '0' },
+    { k: 'label', label: '제목', ph: 'LIFE ROADMAP' },
+    { k: 'title', label: '이 위젯의 이름 (여러 개 쓸 때)', ph: 'main' },
   ], function () { readOpts(); st = load(); render(); });
   render();
 </script>

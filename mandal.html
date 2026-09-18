@@ -10,11 +10,15 @@
   .grid { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;
           max-width: 340px; margin-left: auto; margin-right: auto; }
   .cell { position: relative; }
-  .cell textarea { font: inherit; font-size: 11px; line-height: 1.4; color: var(--ink); background: var(--tint);
-                   border: 1px solid var(--line); border-radius: calc(var(--r) * .4); width: 100%; aspect-ratio: 1;
-                   padding: 7px; resize: none; text-align: center; display: flex; }
-  .cell textarea:focus { outline: none; border-color: var(--soft); background: #fff; }
-  .cell.mid textarea { background: var(--soft); border-color: var(--soft); font-size: 12px; color: var(--ink); }
+  /* the text sits in the middle of its cell both ways, as it is printed on the page */
+  .cell .box { aspect-ratio: 1; background: var(--tint); border: 1px solid var(--line);
+               border-radius: calc(var(--r) * .4); display: flex; align-items: center; justify-content: center;
+               padding: 5px; overflow: hidden; }
+  .cell .box > div { width: 100%; text-align: center; font-size: 11px; line-height: 1.35; color: var(--ink); word-break: keep-all; }
+  .cell .box > div:focus { outline: none; }
+  .cell .box > div:empty::before { content: attr(data-ph); color: var(--sub); opacity: .7; }
+  .cell .box:focus-within { border-color: var(--soft); background: var(--paper); }
+  .cell.mid .box { background: var(--soft); border-color: var(--soft); }
   .foot { margin-top: 12px; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
 </style>
 </head>
@@ -46,11 +50,15 @@
     for (var i = 0; i < 9; i++) (function (i) {
       var c = document.createElement('div');
       c.className = 'cell' + (i === 4 ? ' mid' : '');
-      var t = document.createElement('textarea');
-      t.value = cells[i] || '';
-      t.placeholder = i === 4 ? '목표' : '';
-      t.oninput = function () { cells[i] = t.value; save(); count(); };
-      c.appendChild(t);
+      var box = document.createElement('div'); box.className = 'box';
+      var t = document.createElement('div');
+      t.contentEditable = 'true';
+      t.setAttribute('role', 'textbox');
+      t.setAttribute('data-ph', i === 4 ? '목표' : '');
+      t.textContent = cells[i] || '';
+      t.oninput = function () { cells[i] = t.textContent; save(); count(); };
+      box.appendChild(t);
+      c.appendChild(box);
       box.appendChild(c);
     })(i);
     count();
