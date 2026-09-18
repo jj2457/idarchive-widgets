@@ -19,11 +19,11 @@
   var q = location.search || '?theme=lavender';
   if (/mode=dark/.test(q)) document.body.className = 'dark';
   var extra = { dday: '&title=2027 새해&date=2027-01-01', quote: '&text=꿈을 계획으로, 계획을 하루로&by=ID PLANNER' };
-  ['clock', 'week', 'calendar', 'timeline', 'top3', 'routine', 'water', 'streak', 'mood', 'journal', 'memo',
-   'focus', 'timer', 'progress', 'dday', 'year', 'focusnote', 'mandal', 'quote', 'moodboard'].forEach(function (w) {
+  ['clock', 'week', 'calendar', 'timeline', 'top3', 'routine', 'water', 'checkin', 'streak', 'mood', 'journal', 'memo',
+   'focus', 'timer', 'progress', 'dday', 'year', 'focusnote', 'goalprogress', 'reading', 'review', 'mandal', 'quote', 'moodboard'].forEach(function (w) {
     var f = document.createElement('iframe');
     f.src = w + '.html' + q + (extra[w] || ''); f.title = w;
-    if (['calendar','focus','progress','year','routine','mood','mandal','streak','journal','timer','moodboard','focusnote'].indexOf(w) >= 0) f.className = 'tall';
+    if (['calendar','focus','progress','year','routine','mood','mandal','streak','journal','timer','moodboard','focusnote','checkin','goalprogress','reading','review'].indexOf(w) >= 0) f.className = 'tall';
     document.getElementById('grid').appendChild(f);
   });
 </script>

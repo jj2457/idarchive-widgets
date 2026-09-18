@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Reading</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .title { font-size: 16px; letter-spacing: .02em; color: var(--ink); margin-top: 14px; }
+  .bar { height: 8px; border-radius: 99px; background: var(--tint); border: 1px solid var(--line); overflow: hidden; margin-top: 12px; }
+  .bar i { display: block; height: 100%; background: var(--soft); transition: width .25s; }
+  .meta { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; letter-spacing: .06em; color: var(--sub); }
+  .meta b { color: var(--deep); font-weight: 500; }
+  .page { margin-top: 14px; display: flex; align-items: center; gap: 8px; }
+  .page input { font: inherit; font-size: 15px; color: var(--ink); background: none; border: 0; border-bottom: 1px solid var(--line);
+                padding: 6px 2px; width: 70px; border-radius: 0; text-align: center; }
+  .page input:focus { outline: none; border-bottom-color: var(--soft); }
+  .page span { font-size: 12px; color: var(--sub); letter-spacing: .04em; }
+  .page button { font-size: 10px; letter-spacing: .06em; padding: 6px 10px; margin-left: auto; }
+  .year { margin-top: 16px; }
+  .dots { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .dots i { width: 9px; height: 12px; border-radius: 2px; background: var(--tint); border: 1px solid var(--line); display: block; }
+  .dots i.on { background: var(--soft); border-color: var(--soft); }
+  .foot { margin-top: 12px; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge">READING</div><span class="caps" id="pctTop"></span></div>
+  <div class="grow">
+    <div class="title" id="title">책 제목</div>
+    <div class="bar"><i id="fill"></i></div>
+    <div class="meta"><b id="pct">0%</b><span id="pages"></span></div>
+    <div class="page">
+      <input id="cur" type="number" min="0" inputmode="numeric" aria-label="현재 쪽">
+      <span>/ <b id="total"></b> 쪽</span>
+      <button type="button" id="finish">다 읽었어요</button>
+    </div>
+    <div class="year">
+      <div class="meta" style="margin:0"><span>올해 읽은 책</span><b id="yearCount"></b></div>
+      <div class="dots" id="dots"></div>
+    </div>
+  </div>
+  <div class="foot">읽은 쪽만 적으면 됩니다 · 다 읽으면 올해 권수에 한 칸이 찹니다</div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // The book in hand, plus the year's count. The full reading list lives in the planner's ARCHIVE table;
+  // this is the "where am I right now" view that makes people open the book again.
+  var TITLE = '책 제목', TOTAL = 300, GOAL = 24, KEY = 'idarchive.reading.v1';
+  function readOpts() {
+    TITLE = IDP.opt('reading', 'title', '책 제목');
+    TOTAL = Math.max(1, +IDP.opt('reading', 'total', 300) || 300);
+    GOAL = Math.max(1, +IDP.opt('reading', 'goal', 24) || 24);
+  }
+  readOpts();
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
+  var st = load();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+  var cur = document.getElementById('cur');
+  cur.oninput = function () { st.page = Math.max(0, Math.min(TOTAL, +cur.value || 0)); save(); render(true); };
+  document.getElementById('finish').onclick = function () {
+    st.done = (st.done || 0) + 1; st.page = 0; save(); render();
+  };
+  function render(skipInput) {
+    var page = Math.max(0, Math.min(TOTAL, +st.page || 0));
+    var pct = Math.round(page / TOTAL * 100);
+    document.getElementById('title').textContent = TITLE;
+    document.getElementById('fill').style.width = pct + '%';
+    document.getElementById('pct').textContent = pct + '%';
+    document.getElementById('pctTop').textContent = pct + '%';
+    document.getElementById('pages').textContent = page + ' / ' + TOTAL + ' 쪽';
+    document.getElementById('total').textContent = TOTAL;
+    if (!skipInput) cur.value = page || '';
+    var done = st.done || 0;
+    document.getElementById('yearCount').textContent = done + ' / ' + GOAL + '권';
+    var dots = document.getElementById('dots');
+    dots.innerHTML = '';
+    for (var i = 0; i < GOAL; i++) { var d = document.createElement('i'); if (i < done) d.className = 'on'; dots.appendChild(d); }
+  }
+  IDP.options('reading', [
+    { k: 'title', label: '책 제목', ph: '예) 미드나잇 라이브러리' },
+    { k: 'total', t: 'number', label: '전체 쪽수', ph: '300' },
+    { k: 'goal', t: 'number', label: '올해 목표 권수', ph: '24' },
+  ], function () { readOpts(); render(); });
+  render();
+</script>
+</body>
+</html>

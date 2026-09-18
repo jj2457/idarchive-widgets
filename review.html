@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Review</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .lab { font-size: 10px; letter-spacing: .14em; color: var(--sub); margin: 13px 0 6px; }
+  .scale { display: flex; gap: 6px; }
+  .scale button { flex: 1; padding: 8px 0; font-size: 11px; letter-spacing: .06em; border-radius: calc(var(--r) * .5); }
+  .scale button.on { background: var(--soft); border-color: var(--soft); color: var(--ink); }
+  .f input { font: inherit; font-size: 13px; color: var(--ink); background: none; border: 0; border-bottom: 1px solid var(--line); padding: 7px 2px; width: 100%; border-radius: 0; }
+  .f input:focus { outline: none; border-bottom-color: var(--soft); }
+  .foot { margin-top: 12px; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">WEEKLY REVIEW</div><span class="caps" id="range"></span></div>
+  <div class="grow">
+    <div class="lab">만족도</div>
+    <div class="scale" id="score"></div>
+    <div class="lab">잘한 점</div>
+    <div class="f"><input id="good" type="text" placeholder="계속 이어갈 것 하나"></div>
+    <div class="lab">개선할 점</div>
+    <div class="f"><input id="bad" type="text" placeholder="다르게 해볼 것 하나"></div>
+    <div class="lab" id="nextLab">다음 주 포커스</div>
+    <div class="f"><input id="next" type="text" placeholder="한 문장으로"></div>
+  </div>
+  <div class="foot" id="foot"></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // Weekly and monthly review share one design and one file: mode=week (default) or mode=month.
+  // The planner's REVIEW page keeps the full history; this card is what makes the review actually happen.
+  var MODE = (IDP.opt('review', 'mode', 'week') === 'month') ? 'month' : 'week';
+  var KEY = 'idarchive.review.v1';
+  function weekKey(d) {
+    d = d || new Date();
+    var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    var shift = IDP.weekStart === 'mon' ? (x.getDay() + 6) % 7 : x.getDay();
+    x.setDate(x.getDate() - shift);
+    return 'W' + IDP.iso(x);
+  }
+  function monthKey(d) { d = d || new Date(); return 'M' + d.getFullYear() + '-' + IDP.pad(d.getMonth() + 1); }
+  function periodKey() { return MODE === 'month' ? monthKey() : weekKey(); }
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
+  var all = load();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) {} }
+  function cur() { return all[periodKey()] || {}; }
+  function set(patch) { var k = periodKey(); all[k] = Object.assign({}, all[k], patch); save(); render(); }
+  var good = document.getElementById('good'), bad = document.getElementById('bad'), next = document.getElementById('next');
+  good.oninput = function () { var k = periodKey(); all[k] = Object.assign({}, all[k], { good: good.value }); save(); };
+  bad.oninput = function () { var k = periodKey(); all[k] = Object.assign({}, all[k], { bad: bad.value }); save(); };
+  next.oninput = function () { var k = periodKey(); all[k] = Object.assign({}, all[k], { next: next.value }); save(); };
+  function render() {
+    document.getElementById('badge').textContent = MODE === 'month' ? 'MONTHLY REVIEW' : 'WEEKLY REVIEW';
+    document.getElementById('nextLab').textContent = MODE === 'month' ? '다음 달 포커스' : '다음 주 포커스';
+    document.getElementById('foot').textContent = MODE === 'month'
+      ? '달이 바뀌면 새 칸이 열립니다 · 이 기기에 저장돼요'
+      : '주가 바뀌면 새 칸이 열립니다 · 이 기기에 저장돼요';
+    var box = document.getElementById('score');
+    box.innerHTML = '';
+    for (var i = 1; i <= 5; i++) (function (i) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = i;
+      if (cur().score === i) b.className = 'on';
+      b.onclick = function () { set({ score: cur().score === i ? undefined : i }); };
+      box.appendChild(b);
+    })(i);
+    if (document.activeElement !== good) good.value = cur().good || '';
+    if (document.activeElement !== bad) bad.value = cur().bad || '';
+    if (document.activeElement !== next) next.value = cur().next || '';
+    if (MODE === 'month') {
+      document.getElementById('range').textContent = periodKey().slice(1).replace('-', '. ');
+    } else {
+      var s = IDP.parseDate(periodKey().slice(1)), e = new Date(s.getTime()); e.setDate(e.getDate() + 6);
+      document.getElementById('range').textContent = IDP.pad(s.getMonth() + 1) + '.' + IDP.pad(s.getDate()) + ' – ' + IDP.pad(e.getMonth() + 1) + '.' + IDP.pad(e.getDate());
+    }
+  }
+  IDP.options('review', [
+    { k: 'mode', label: '주간 / 월간 (week · month)', ph: 'week' },
+  ], function () { MODE = (IDP.opt('review', 'mode', 'week') === 'month') ? 'month' : 'week'; all = load(); render(); });
+  render();
+  setInterval(function () { if (!/INPUT/.test(document.activeElement.tagName)) render(); }, 60000);
+</script>
+</body>
+</html>

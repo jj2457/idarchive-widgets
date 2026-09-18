@@ -16,7 +16,15 @@
            color: var(--sub); text-decoration: none; background: #fff; }
   .nav a.on { background: var(--soft); border-color: var(--soft); color: color-mix(in srgb, var(--deep) 55%, #2a2a2a); }
   .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 28px; margin-top: 26px; align-items: start; }
-  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+  @media (max-width: 860px) {
+    /* phone: the widget and its link come first, settings below — nobody should scroll past six sections to copy a link */
+    .layout { grid-template-columns: 1fr; }
+    .preview { order: -1; position: static; }
+    .url { position: sticky; bottom: 0; background: var(--paper); padding: 10px 0 12px; z-index: 5; }
+    .wrap { padding: 24px 16px 60px; }
+    header h1 { font-size: 24px; }
+    .presets { grid-template-columns: repeat(2, 1fr); }
+  }
   section { margin-bottom: 26px; }
   h2 { font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--sub); font-weight: 500; margin-bottom: 10px; }
   h3 { font-size: 11px; letter-spacing: .12em; color: var(--deep); font-weight: 500; margin: 14px 0 8px; }
@@ -124,6 +132,7 @@
     { id: 'calendar', g: '오늘', name: '미니 캘린더',      h: 330, opts: [{ k: 'weekStart', t: 'start' }, { k: 'month', t: 'text', label: '고정할 달 (비우면 이번 달)', ph: '2027-03' }] },
     { id: 'timeline', g: '오늘', name: '타임로그 바',       h: 200, opts: [{ k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
 
+    { id: 'checkin',  g: '기록', name: '데일리 체크인',     h: 360, opts: [] },
     { id: 'top3',     g: '기록', name: '오늘의 Top 3',      h: 230, opts: [{ k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
     { id: 'routine',  g: '기록', name: '루틴 체크',         h: 280, opts: [
         { k: 'title', t: 'text', label: '이름', ph: '예) MORNING' },
@@ -143,6 +152,17 @@
     { id: 'dday',     g: '시간', name: 'D-Day · 기념일',    h: 230, opts: [{ k: 'title', t: 'text', label: '제목', ph: '예) 자격증 시험' }, { k: 'date', t: 'date', label: '목표 날짜' }] },
     { id: 'year',     g: '시간', name: '올해 365일 점',     h: 300, opts: [{ k: 'year', t: 'number', label: '연도 (비우면 올해)', ph: '2027' }] },
 
+    { id: 'goalprogress', g: '목표', name: '목표 · 프로젝트 진행률', h: 330, opts: [
+        { k: 'title', t: 'text', label: '목표 이름', ph: '예) 10km 50분 안에' },
+        { k: 'label', t: 'text', label: '배지 (GOAL / PROJECT)', ph: 'GOAL' },
+        { k: 'steps', t: 'text', label: '마일스톤 (쉼표로 구분, 최대 6개)', ph: '10주 프로그램,대회 접수,테이퍼링' },
+        { k: 'date', t: 'date', label: '마감일 (선택)' }] },
+    { id: 'reading',  g: '목표', name: '독서 진행률',       h: 340, opts: [
+        { k: 'title', t: 'text', label: '책 제목', ph: '예) 미드나잇 라이브러리' },
+        { k: 'total', t: 'number', label: '전체 쪽수', ph: '300' },
+        { k: 'goal', t: 'number', label: '올해 목표 권수', ph: '24' }] },
+    { id: 'review',   g: '목표', name: '주간 · 월간 리뷰',  h: 380, opts: [
+        { k: 'mode', t: 'text', label: '주간은 week, 월간은 month', ph: 'week' }] },
     { id: 'focusnote', g: '목표', name: '이번 주 · 이번 달 포커스', h: 280, opts: [] },
     { id: 'mandal',   g: '목표', name: '미니 만다라트',     h: 360, opts: [{ k: 'title', t: 'text', label: '보드 이름', ph: 'main' }] },
     { id: 'quote',    g: '목표', name: '나의 한 문장',      h: 230, opts: [{ k: 'text', t: 'text', label: '문장', ph: 'PLAN · DREAM · DO' }, { k: 'by', t: 'text', label: '출처 (선택)' }] },
@@ -155,10 +175,10 @@
   // Ready-made dashboards, for buyers who would rather start from something than from nothing.
   var PRESETS = [
     { id: 'minimal', name: 'MINIMAL', desc: '시계 · 이번 주 · 한 문장', list: ['clock', 'week', 'quote'] },
-    { id: 'productivity', name: 'PRODUCTIVITY', desc: 'Top 3 · 타임로그 · 진행률 · 타이머', list: ['top3', 'timeline', 'progress', 'timer'] },
+    { id: 'productivity', name: 'PRODUCTIVITY', desc: 'Top 3 · 타임로그 · 목표 진행률 · 주간 리뷰', list: ['top3', 'timeline', 'goalprogress', 'review'] },
     { id: 'focus', name: 'FOCUS', desc: '집중 타이머 · 주·월 포커스 · 한 문장', list: ['focus', 'focusnote', 'quote'] },
-    { id: 'wellness', name: 'WELLNESS', desc: '물 · 기분 · 습관 스트릭 · 루틴', list: ['water', 'mood', 'streak', 'routine'] },
-    { id: 'study', name: 'STUDY', desc: 'D-Day · 타이머 · 진행률 · 메모지', list: ['dday', 'timer', 'progress', 'memo'] },
+    { id: 'wellness', name: 'WELLNESS', desc: '데일리 체크인 · 물 · 습관 스트릭 · 루틴', list: ['checkin', 'water', 'streak', 'routine'] },
+    { id: 'study', name: 'STUDY', desc: 'D-Day · 타이머 · 독서 진행률 · 메모지', list: ['dday', 'timer', 'reading', 'memo'] },
     { id: 'life', name: 'LIFE', desc: '미니 캘린더 · 한 줄 일기 · 무드보드 · 365일', list: ['calendar', 'journal', 'moodboard', 'year'] }
   ];
 

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Goal Progress</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .title { font-size: 17px; letter-spacing: .02em; color: var(--ink); margin-top: 14px; }
+  .barwrap { margin-top: 12px; }
+  .bar { height: 8px; border-radius: 99px; background: var(--tint); border: 1px solid var(--line); overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--soft); transition: width .25s; }
+  .meta { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; letter-spacing: .06em; color: var(--sub); }
+  .meta b { color: var(--deep); font-weight: 500; }
+  .steps { margin-top: 14px; display: flex; flex-direction: column; gap: 7px; }
+  .st { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--ink); }
+  .st .tick { width: 17px; height: 17px; border-radius: 6px; border: 1.5px solid var(--line); flex: none; background: none; padding: 0; position: relative; cursor: pointer; }
+  .st.on .tick { background: var(--soft); border-color: var(--soft); }
+  .st.on .tick::after { content: ''; position: absolute; left: 5px; top: 2px; width: 4px; height: 8px; border: solid color-mix(in srgb, var(--deep) 60%, #2a2a2a); border-width: 0 1.6px 1.6px 0; transform: rotate(45deg); }
+  .st.on span { color: var(--sub); text-decoration: line-through; }
+  .foot { margin-top: 12px; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">GOAL</div><span class="caps" id="dday"></span></div>
+  <div class="grow">
+    <div class="title" id="title">목표 이름</div>
+    <div class="barwrap">
+      <div class="bar"><i id="fill"></i></div>
+      <div class="meta"><b id="pct">0%</b><span id="count"></span></div>
+    </div>
+    <div class="steps" id="steps"></div>
+  </div>
+  <div class="foot">마일스톤 체크가 곧 진행률이에요 · 이 기기에 저장돼요</div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // A goal or project seen from the dashboard: milestones ticked here drive the bar and the countdown.
+  // The planner's GOALS table stays the place where goals live; this is the pinned view of one of them.
+  var TITLE = '목표 이름', STEPS = [], DUE = '', KEY = '', LABEL = 'GOAL';
+  function readOpts() {
+    TITLE = IDP.opt('goalprogress', 'title', '목표 이름');
+    LABEL = IDP.opt('goalprogress', 'label', 'GOAL');
+    DUE = IDP.opt('goalprogress', 'date', '');
+    STEPS = String(IDP.opt('goalprogress', 'steps', '1단계,2단계,3단계,4단계')).split(',')
+      .map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 6);
+    KEY = 'idarchive.goalprogress.' + (IDP.q.get('id') || TITLE);
+  }
+  readOpts();
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
+  var done = load();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(done)); } catch (e) {} }
+  function render() {
+    document.getElementById('badge').textContent = LABEL;
+    document.getElementById('title').textContent = TITLE;
+    var pct = STEPS.length ? Math.round(done.filter(function (i) { return i < STEPS.length; }).length / STEPS.length * 100) : 0;
+    document.getElementById('fill').style.width = pct + '%';
+    document.getElementById('pct').textContent = pct + '%';
+    document.getElementById('count').textContent = done.length + ' / ' + STEPS.length;
+    var t = IDP.parseDate(DUE);
+    if (t) {
+      var today = new Date(); today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      var diff = Math.round((t - today) / 864e5);
+      document.getElementById('dday').textContent = diff === 0 ? 'D-DAY' : diff > 0 ? 'D-' + diff : 'D+' + (-diff);
+    } else { document.getElementById('dday').textContent = ''; }
+    var box = document.getElementById('steps');
+    box.innerHTML = '';
+    STEPS.forEach(function (name, i) {
+      var row = document.createElement('div'); row.className = 'st' + (done.indexOf(i) >= 0 ? ' on' : '');
+      var t = document.createElement('button'); t.className = 'tick'; t.type = 'button'; t.setAttribute('aria-label', name);
+      var s = document.createElement('span'); s.textContent = name;
+      t.onclick = function () { var at = done.indexOf(i); if (at >= 0) done.splice(at, 1); else done.push(i); save(); render(); };
+      row.appendChild(t); row.appendChild(s); box.appendChild(row);
+    });
+  }
+  IDP.options('goalprogress', [
+    { k: 'title', label: '목표 이름', ph: '예) 10km 50분 안에' },
+    { k: 'label', label: '배지 (GOAL / PROJECT)', ph: 'GOAL' },
+    { k: 'steps', label: '마일스톤 (쉼표로 구분, 최대 6개)', ph: '10주 프로그램,대회 접수,테이퍼링' },
+    { k: 'date', t: 'date', label: '마감일 (선택)' },
+  ], function () { readOpts(); done = load(); render(); });
+  render();
+</script>
+</body>
+</html>
