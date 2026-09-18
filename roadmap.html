@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Life Roadmap</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .rail { margin-top: 16px; position: relative; padding-left: 16px; }
+  .rail::before { content: ''; position: absolute; left: 4px; top: 6px; bottom: 6px; width: 1px; background: var(--line); }
+  .stop { position: relative; padding: 0 0 14px 14px; }
+  .stop::before { content: ''; position: absolute; left: -7px; top: 5px; width: 9px; height: 9px; border-radius: 50%;
+                  background: #fff; border: 1.5px solid var(--line); }
+  .stop.on::before { background: var(--soft); border-color: var(--soft); }
+  .stop.now::before { box-shadow: 0 0 0 3px var(--tint); border-color: var(--deep); }
+  .stop .k { font-size: 9px; letter-spacing: .16em; color: var(--sub); }
+  .stop input { font: inherit; font-size: 13px; color: var(--ink); background: none; border: 0; border-bottom: 1px solid transparent;
+                padding: 3px 2px 5px; width: 100%; border-radius: 0; }
+  .stop input:focus { outline: none; border-bottom-color: var(--soft); }
+  .stop.on input { color: var(--sub); }
+  .stop button.tick { position: absolute; right: 0; top: 2px; width: 16px; height: 16px; border-radius: 5px;
+                      border: 1.5px solid var(--line); background: none; padding: 0; cursor: pointer; }
+  .stop.on button.tick { background: var(--soft); border-color: var(--soft); }
+  .foot { margin-top: 8px; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">ROADMAP</div><span class="caps" id="count"></span></div>
+  <div class="grow"><div class="rail" id="rail"></div></div>
+  <div class="foot">칸을 눌러 지나온 자리를 표시하세요 · 이 기기에 저장돼요</div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // The planner's LIFE ROADMAP, shrunk to a rail: a few stops, in order, with one line each.
+  // Default stops are the planner's own horizons (this year → 3 years → 5 years → 10 years).
+  var STOPS = [], TITLE = 'ROADMAP', KEY = '', NOW = 0;
+  function readOpts() {
+    TITLE = IDP.opt('roadmap', 'title', 'ROADMAP');
+    NOW = Math.max(0, +IDP.opt('roadmap', 'now', 0) || 0);
+    STOPS = String(IDP.opt('roadmap', 'stops', '올해,3년 뒤,5년 뒤,10년 뒤')).split(',')
+      .map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 8);
+    KEY = 'idarchive.roadmap.' + (IDP.q.get('id') || TITLE);
+  }
+  readOpts();
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
+  var st = load();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+  function render() {
+    document.getElementById('badge').textContent = TITLE;
+    var done = (st.done || []).length;
+    document.getElementById('count').textContent = done + ' / ' + STOPS.length;
+    var rail = document.getElementById('rail');
+    rail.innerHTML = '';
+    STOPS.forEach(function (name, i) {
+      var on = (st.done || []).indexOf(i) >= 0;
+      var row = document.createElement('div');
+      row.className = 'stop' + (on ? ' on' : '') + (i === NOW ? ' now' : '');
+      var k = document.createElement('div'); k.className = 'k'; k.textContent = name;
+      var inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = '한 줄로'; inp.value = (st.text || {})[i] || '';
+      inp.oninput = function () { st.text = st.text || {}; st.text[i] = inp.value; save(); };
+      var t = document.createElement('button'); t.className = 'tick'; t.type = 'button'; t.setAttribute('aria-label', name + ' 표시');
+      t.onclick = function () { st.done = st.done || []; var at = st.done.indexOf(i); if (at >= 0) st.done.splice(at, 1); else st.done.push(i); save(); render(); };
+      row.appendChild(k); row.appendChild(inp); row.appendChild(t);
+      rail.appendChild(row);
+    });
+  }
+  IDP.options('roadmap', [
+    { k: 'title', label: '제목', ph: 'ROADMAP' },
+    { k: 'stops', label: '구간 (쉼표로 구분, 최대 8개)', ph: '올해,3년 뒤,5년 뒤,10년 뒤' },
+    { k: 'now', t: 'number', label: '지금 있는 칸 (0부터)', ph: '0' },
+  ], function () { readOpts(); st = load(); render(); });
+  render();
+</script>
+</body>
+</html>

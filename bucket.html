@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Bucket List</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .cards { margin-top: 14px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .c { position: relative; border: 1px solid var(--line); border-radius: calc(var(--r) * .5); background: #fff;
+       padding: 12px 12px 30px; min-height: 76px; }
+  .c textarea { font: inherit; font-size: 13px; line-height: 1.5; color: var(--ink); background: none; border: 0;
+                width: 100%; resize: none; height: 44px; padding: 0; }
+  .c textarea:focus { outline: none; }
+  .c .no { position: absolute; left: 12px; bottom: 9px; font-size: 9px; letter-spacing: .14em; color: var(--sub); }
+  .c .tick { position: absolute; right: 9px; bottom: 7px; width: 17px; height: 17px; border-radius: 50%;
+             border: 1.5px solid var(--line); background: none; padding: 0; cursor: pointer; }
+  .c.on { background: var(--tint); border-color: var(--soft); }
+  .c.on textarea { color: var(--sub); text-decoration: line-through; }
+  .c.on .tick { background: var(--soft); border-color: var(--soft); }
+  .foot { margin-top: 12px; display: flex; justify-content: space-between; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">BUCKET LIST</div><span class="caps" id="count"></span></div>
+  <div class="grow"><div class="cards" id="cards"></div></div>
+  <div class="foot"><span>올해 꼭 해보고 싶은 것</span><span id="year"></span></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // Not a checklist — cards, so that a wish looks like a wish. The planner's BUCKET LIST keeps the full list;
+  // this holds the few that should stay in sight this year.
+  var N = 4, TITLE = 'BUCKET LIST', KEY = '';
+  function readOpts() {
+    TITLE = IDP.opt('bucket', 'title', 'BUCKET LIST');
+    N = Math.max(2, Math.min(8, +IDP.opt('bucket', 'cells', 4) || 4));
+    KEY = 'idarchive.bucket.' + (IDP.q.get('id') || TITLE);
+  }
+  readOpts();
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
+  var st = load();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+  function render() {
+    document.getElementById('badge').textContent = TITLE;
+    document.getElementById('year').textContent = new Date().getFullYear();
+    var done = (st.done || []).filter(function (i) { return i < N; }).length;
+    document.getElementById('count').textContent = done + ' / ' + N;
+    var box = document.getElementById('cards');
+    box.innerHTML = '';
+    for (var i = 0; i < N; i++) (function (i) {
+      var on = (st.done || []).indexOf(i) >= 0;
+      var c = document.createElement('div'); c.className = 'c' + (on ? ' on' : '');
+      var t = document.createElement('textarea'); t.value = (st.text || {})[i] || ''; t.placeholder = i ? '' : '예) 하프마라톤 완주';
+      t.oninput = function () { st.text = st.text || {}; st.text[i] = t.value; save(); };
+      var no = document.createElement('span'); no.className = 'no'; no.textContent = IDP.pad(i + 1);
+      var tk = document.createElement('button'); tk.className = 'tick'; tk.type = 'button'; tk.setAttribute('aria-label', (i + 1) + '번 이룸');
+      tk.onclick = function () { st.done = st.done || []; var at = st.done.indexOf(i); if (at >= 0) st.done.splice(at, 1); else st.done.push(i); save(); render(); };
+      c.appendChild(t); c.appendChild(no); c.appendChild(tk);
+      box.appendChild(c);
+    })(i);
+  }
+  IDP.options('bucket', [
+    { k: 'title', label: '제목', ph: 'BUCKET LIST' },
+    { k: 'cells', t: 'number', label: '칸 수 (2–8)', ph: '4' },
+  ], function () { readOpts(); st = load(); render(); });
+  render();
+</script>
+</body>
+</html>

@@ -129,7 +129,7 @@
   var WIDGETS = [
     { id: 'clock',    g: '오늘', name: '시계 · 오늘 날짜', h: 230, opts: [{ k: 'h24', t: 'check', label: '24시간 표시' }] },
     { id: 'week',     g: '오늘', name: '이번 주 7일',      h: 200, opts: [{ k: 'weekStart', t: 'start' }] },
-    { id: 'calendar', g: '오늘', name: '미니 캘린더',      h: 330, opts: [{ k: 'weekStart', t: 'start' }, { k: 'month', t: 'text', label: '고정할 달 (비우면 이번 달)', ph: '2027-03' }] },
+    { id: 'calendar', g: '오늘', name: '미니 캘린더',      h: 330, opts: [{ k: 'weekStart', t: 'start' }, { k: 'month', t: 'text', label: '고정할 달 (비우면 이번 달)', ph: '2027-03' }, { k: 'style', t: 'text', label: '디자인 (grid · editorial · minimal)', ph: 'editorial' }] },
     { id: 'timeline', g: '오늘', name: '타임로그 바',       h: 200, opts: [{ k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
 
     { id: 'checkin',  g: '기록', name: '데일리 체크인',     h: 360, opts: [] },
@@ -164,8 +164,23 @@
     { id: 'review',   g: '목표', name: '주간 · 월간 리뷰',  h: 380, opts: [
         { k: 'mode', t: 'text', label: '주간은 week, 월간은 month', ph: 'week' }] },
     { id: 'focusnote', g: '목표', name: '이번 주 · 이번 달 포커스', h: 280, opts: [] },
-    { id: 'mandal',   g: '목표', name: '미니 만다라트',     h: 360, opts: [{ k: 'title', t: 'text', label: '보드 이름', ph: 'main' }] },
+    { id: 'mandal',   g: 'ID ARCHIVE', name: '미니 만다라트',     h: 360, opts: [{ k: 'title', t: 'text', label: '보드 이름', ph: 'main' }] },
     { id: 'quote',    g: '목표', name: '나의 한 문장',      h: 230, opts: [{ k: 'text', t: 'text', label: '문장', ph: 'PLAN · DREAM · DO' }, { k: 'by', t: 'text', label: '출처 (선택)' }] },
+    { id: 'goal5',    g: 'ID ARCHIVE', name: '5-STEP GOAL',    h: 380, opts: [
+        { k: 'title', t: 'text', label: '목표', ph: '예) 10km 50분 안에 완주' },
+        { k: 'date', t: 'date', label: '마감일 (선택)' }] },
+    { id: 'vision',   g: 'ID ARCHIVE', name: 'VISION BOARD',   h: 420, opts: [
+        { k: 'line', t: 'text', label: '한 문장', ph: '올해 나는 이런 모습으로 지내고 싶다' },
+        { k: 'words', t: 'text', label: '키워드 (쉼표로 구분)', ph: '건강,기록,여행,배움,관계,쉼' },
+        { k: 'urls', t: 'text', label: '사진 주소 (쉼표로 구분)', ph: 'https://…' },
+        { k: 'cells', t: 'number', label: '칸 수 (4–9)', ph: '6' }] },
+    { id: 'roadmap',  g: 'ID ARCHIVE', name: 'LIFE ROADMAP',   h: 340, opts: [
+        { k: 'title', t: 'text', label: '제목', ph: 'ROADMAP' },
+        { k: 'stops', t: 'text', label: '구간 (쉼표로 구분, 최대 8개)', ph: '올해,3년 뒤,5년 뒤,10년 뒤' },
+        { k: 'now', t: 'number', label: '지금 있는 칸 (0부터)', ph: '0' }] },
+    { id: 'bucket',   g: 'ID ARCHIVE', name: 'BUCKET LIST',    h: 300, opts: [
+        { k: 'title', t: 'text', label: '제목', ph: 'BUCKET LIST' },
+        { k: 'cells', t: 'number', label: '칸 수 (2–8)', ph: '4' }] },
     { id: 'moodboard', g: '목표', name: '무드보드 (사진)',  h: 300, opts: [
         { k: 'title', t: 'text', label: '제목', ph: 'MOODBOARD' },
         { k: 'urls', t: 'text', label: '이미지 주소 (쉼표로 구분)', ph: 'https://…' },
@@ -179,7 +194,8 @@
     { id: 'focus', name: 'FOCUS', desc: '집중 타이머 · 주·월 포커스 · 한 문장', list: ['focus', 'focusnote', 'quote'] },
     { id: 'wellness', name: 'WELLNESS', desc: '데일리 체크인 · 물 · 습관 스트릭 · 루틴', list: ['checkin', 'water', 'streak', 'routine'] },
     { id: 'study', name: 'STUDY', desc: 'D-Day · 타이머 · 독서 진행률 · 메모지', list: ['dday', 'timer', 'reading', 'memo'] },
-    { id: 'life', name: 'LIFE', desc: '미니 캘린더 · 한 줄 일기 · 무드보드 · 365일', list: ['calendar', 'journal', 'moodboard', 'year'] }
+    { id: 'life', name: 'LIFE', desc: '미니 캘린더 · 한 줄 일기 · 무드보드 · 365일', list: ['calendar', 'journal', 'moodboard', 'year'] },
+    { id: 'idarchive', name: 'ID ARCHIVE', desc: '비전 보드 · 5-STEP GOAL · 로드맵 · 버킷 리스트', list: ['vision', 'goal5', 'roadmap', 'bucket'] }
   ];
 
   var state = { widget: 'clock', theme: IDP.CFG.defaults.theme, mode: 'light', frame: 'card', radius: IDP.CFG.defaults.radius, soft: '', deep: '', device: 'desktop', opt: {}, preset: '' };

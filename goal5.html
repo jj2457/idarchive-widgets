@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · 5-STEP GOAL</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .goal { font-family: var(--serif); font-size: 20px; letter-spacing: .01em; color: var(--ink); margin-top: 14px; line-height: 1.4; }
+  .rail { margin-top: 16px; display: flex; align-items: center; gap: 6px; }
+  .node { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line); background: #fff;
+          font-size: 9px; letter-spacing: .04em; color: var(--sub); display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; }
+  .node.on { background: var(--soft); border-color: var(--soft); color: color-mix(in srgb, var(--deep) 60%, #2a2a2a); }
+  .node.cur { box-shadow: 0 0 0 2px var(--deep); }
+  .link { flex: 1; height: 1px; background: var(--line); }
+  .link.on { background: var(--soft); }
+  .steps { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .s { display: grid; grid-template-columns: 54px 1fr; gap: 10px; align-items: start; }
+  .s .k { font-size: 9px; letter-spacing: .14em; color: var(--sub); padding-top: 9px; }
+  .s input { font: inherit; font-size: 13px; color: var(--ink); background: none; border: 0; border-bottom: 1px solid var(--line);
+             padding: 7px 2px; width: 100%; border-radius: 0; }
+  .s input:focus { outline: none; border-bottom-color: var(--soft); }
+  .s.done input { color: var(--sub); }
+  .foot { margin-top: 14px; display: flex; justify-content: space-between; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge">5-STEP GOAL</div><span class="caps" id="pct"></span></div>
+  <div class="grow">
+    <div class="goal" id="goalText">올해 이루고 싶은 것</div>
+    <div class="rail" id="rail"></div>
+    <div class="steps" id="steps"></div>
+  </div>
+  <div class="foot"><span>단계를 누르면 지나온 자리로 표시돼요</span><span id="due"></span></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // The ID Archive way of writing a goal: Goal → Why → Plan → Action → Review.
+  // The paper planner asks these five questions on one page; this is the same page, pinned to a dashboard.
+  var KEYS = [
+    ['why', 'WHY', '왜 이 목표인가'],
+    ['plan', 'PLAN', '어떻게 이룰 것인가'],
+    ['action', 'ACTION', '이번 주에 할 한 가지'],
+    ['review', 'REVIEW', '돌아보며 남길 한 줄']
+  ];
+  var TITLE = '올해 이루고 싶은 것', DUE = '', KEY = '';
+  function readOpts() {
+    TITLE = IDP.opt('goal5', 'title', '올해 이루고 싶은 것');
+    DUE = IDP.opt('goal5', 'date', '');
+    KEY = 'idarchive.goal5.' + (IDP.q.get('id') || TITLE);
+  }
+  readOpts();
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
+  var st = load();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+  function stepDone(i) { return (st.done || []).indexOf(i) >= 0; }
+  function render() {
+    document.getElementById('goalText').textContent = TITLE;
+    var done = (st.done || []).length;
+    document.getElementById('pct').textContent = Math.round(done / 5 * 100) + '%';
+    var rail = document.getElementById('rail');
+    rail.innerHTML = '';
+    for (var i = 0; i < 5; i++) (function (i) {
+      if (i) { var l = document.createElement('div'); l.className = 'link' + (stepDone(i - 1) ? ' on' : ''); rail.appendChild(l); }
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'node' + (stepDone(i) ? ' on' : '') + (done === i ? ' cur' : '');
+      b.textContent = i === 0 ? 'G' : KEYS[i - 1][1][0];
+      b.title = i === 0 ? 'GOAL' : KEYS[i - 1][1];
+      b.onclick = function () {
+        st.done = st.done || [];
+        var at = st.done.indexOf(i);
+        if (at >= 0) st.done.splice(at, 1); else st.done.push(i);
+        save(); render();
+      };
+      rail.appendChild(b);
+    })(i);
+    var box = document.getElementById('steps');
+    box.innerHTML = '';
+    KEYS.forEach(function (k, i) {
+      var row = document.createElement('div'); row.className = 's' + (stepDone(i + 1) ? ' done' : '');
+      var kk = document.createElement('div'); kk.className = 'k'; kk.textContent = k[1];
+      var inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = k[2]; inp.value = st[k[0]] || '';
+      inp.oninput = function () { st[k[0]] = inp.value; save(); };
+      row.appendChild(kk); row.appendChild(inp);
+      box.appendChild(row);
+    });
+    var t = IDP.parseDate(DUE);
+    if (t) {
+      var today = new Date(); today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      var diff = Math.round((t - today) / 864e5);
+      document.getElementById('due').textContent = diff === 0 ? 'D-DAY' : diff > 0 ? 'D-' + diff : 'D+' + (-diff);
+    } else { document.getElementById('due').textContent = ''; }
+  }
+  IDP.options('goal5', [
+    { k: 'title', label: '목표', ph: '예) 10km 50분 안에 완주' },
+    { k: 'date', t: 'date', label: '마감일 (선택)' },
+  ], function () { readOpts(); st = load(); render(); });
+  render();
+</script>
+</body>
+</html>

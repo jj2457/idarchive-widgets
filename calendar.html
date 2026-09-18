@@ -18,6 +18,27 @@
   .sun, .hol { color: var(--red); } .sat { color: var(--blue); }
   .today i { background: var(--deep); color: #fff; }
   .foot { margin-top: 8px; font-size: 10px; color: var(--red); min-height: 13px; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* style=editorial — the planner's own monthly page: a big serif month, hairline rows, holidays named under the grid */
+  body.editorial .title { font-size: 26px; letter-spacing: .14em; }
+  body.editorial .title span { display: block; margin: 4px 0 0; font-size: 11px; letter-spacing: .22em; }
+  body.editorial table { margin-top: 16px; }
+  body.editorial th { font-size: 8.5px; letter-spacing: .18em; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  body.editorial td { border-top: 0; font-size: 13px; height: 34px; padding: 5px 0; font-family: var(--serif); }
+  body.editorial td i { width: 26px; line-height: 26px; }
+  body.editorial .wk { display: none; }
+  body.editorial .foot { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 6px; white-space: normal; color: var(--sub); }
+  body.editorial .foot span { border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; font-size: 9.5px; letter-spacing: .06em; }
+  body.editorial .foot span b { font-weight: 400; color: var(--red); margin-right: 5px; }
+
+  /* style=minimal — no rules at all; a holiday is a dot under the number */
+  body.minimal td { border-top: 0; height: 30px; }
+  body.minimal th { padding-bottom: 8px; }
+  body.minimal .wk { display: none; }
+  body.minimal td.hol i::after { content: ''; position: absolute; left: 50%; bottom: 1px; transform: translateX(-50%);
+                                 width: 3px; height: 3px; border-radius: 50%; background: var(--red); }
+  body.minimal td i { position: relative; }
+  body.minimal .foot { color: var(--sub); }
 </style>
 </head>
 <body>
@@ -41,10 +62,14 @@
   var mon = IDP.weekStart === 'mon'; // weekStart=mon|sun (legacy: start)
   var now = new Date(), y = now.getFullYear(), m = now.getMonth();
   // month=YYYY-MM opens on a fixed month (a month page pins its own month); otherwise it opens on today's month
+  var STYLE = (IDP.opt('calendar', 'style', 'grid') || 'grid');
+  if (STYLE === 'editorial' || STYLE === 'minimal') document.body.classList.add(STYLE);
   var fixed = (IDP.q.get('month') || '').match(/^(\d{4})-(\d{1,2})$/);
   if (fixed) { y = +fixed[1]; m = +fixed[2] - 1; }
   function render() {
-    document.getElementById('title').innerHTML = IDP.pad(m + 1) + ' ' + IDP.MONTHS[m] + '<span>' + y + '</span>';
+    document.getElementById('title').innerHTML = STYLE === 'editorial'
+      ? IDP.MONTHS[m] + '<span>' + y + ' · ' + IDP.pad(m + 1) + '</span>'
+      : IDP.pad(m + 1) + ' ' + IDP.MONTHS[m] + '<span>' + y + '</span>';
     var order = mon ? [1, 2, 3, 4, 5, 6, 0] : [0, 1, 2, 3, 4, 5, 6];
     var html = '<tr><th class="wk"></th>' + order.map(function (w) {
       return '<th class="' + (w === 0 ? 'sun' : w === 6 ? 'sat' : '') + '">' + IDP.DOW[w][0] + '</th>';
@@ -64,7 +89,17 @@
       html += '</tr>';
     }
     document.getElementById('grid').innerHTML = html;
-    document.getElementById('foot').textContent = names.join(' · ');
+    var foot = document.getElementById('foot');
+    if (STYLE === 'editorial') {
+      foot.innerHTML = '';
+      names.forEach(function (n) {
+        var parts = n.split(' '), chip = document.createElement('span');
+        chip.innerHTML = '<b>' + IDP.pad(+parts[0]) + '</b>' + parts.slice(1).join(' ');
+        foot.appendChild(chip);
+      });
+    } else {
+      foot.textContent = names.join(' · ');
+    }
   }
   document.getElementById('prev').onclick = function () { if (--m < 0) { m = 11; y--; } render(); };
   document.getElementById('next').onclick = function () { if (++m > 11) { m = 0; y++; } render(); };
