@@ -126,52 +126,18 @@
 <script src="assets/core.js"></script>
 <script>
   // Every widget the planner ships, grouped the way a buyer thinks about a dashboard.
+  // ID ARCHIVE leads: those are the ones no other template has.
   var WIDGETS = [
-    { id: 'clock',    g: '오늘', name: '시계 · 오늘 날짜', h: 230, opts: [{ k: 'h24', t: 'check', label: '24시간 표시' }] },
-    { id: 'week',     g: '오늘', name: '이번 주 7일',      h: 200, opts: [{ k: 'weekStart', t: 'start' }] },
-    { id: 'calendar', g: '오늘', name: '미니 캘린더',      h: 330, opts: [{ k: 'weekStart', t: 'start' }, { k: 'month', t: 'text', label: '고정할 달 (비우면 이번 달)', ph: '2027-03' }, { k: 'style', t: 'text', label: '디자인 (grid · editorial · minimal)', ph: 'editorial' }] },
-    { id: 'timeline', g: '오늘', name: '타임로그 바',       h: 200, opts: [{ k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
-
-    { id: 'checkin',  g: '기록', name: '데일리 체크인',     h: 360, opts: [] },
-    { id: 'top3',     g: '기록', name: '오늘의 Top 3',      h: 230, opts: [{ k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
-    { id: 'routine',  g: '기록', name: '루틴 체크',         h: 280, opts: [
-        { k: 'title', t: 'text', label: '이름', ph: '예) MORNING' },
-        { k: 'items', t: 'text', label: '항목 (쉼표로 구분, 최대 8개)', ph: '기상하고 물 한 잔,스트레칭 5분,오늘 할 일 정하기' },
-        { k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
-    { id: 'water',    g: '기록', name: '물 마시기',         h: 250, opts: [
-        { k: 'goal', t: 'number', label: '하루 목표 (잔)', ph: '8' },
-        { k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
-    { id: 'streak',   g: '기록', name: '습관 스트릭',       h: 290, opts: [{ k: 'title', t: 'text', label: '습관 이름', ph: '예) 달리기' }] },
-    { id: 'mood',     g: '기록', name: '기분 · 에너지',     h: 330, opts: [] },
-    { id: 'journal',  g: '기록', name: '한 줄 일기',        h: 290, opts: [] },
-    { id: 'memo',     g: '기록', name: '메모지',           h: 260, opts: [{ k: 'title', t: 'text', label: '제목', ph: 'MEMO' }] },
-
-    { id: 'focus',    g: '시간', name: '집중 타이머',       h: 320, opts: [{ k: 'focus', t: 'number', label: '집중 (분)', ph: '25' }, { k: 'rest', t: 'number', label: '휴식 (분)', ph: '5' }] },
-    { id: 'timer',    g: '시간', name: '타이머 · 스톱워치', h: 300, opts: [{ k: 'minutes', t: 'number', label: '기본 분', ph: '25' }] },
-    { id: 'progress', g: '시간', name: '진행률 (일·주·월·연)', h: 290, opts: [{ k: 'weekStart', t: 'start' }] },
-    { id: 'dday',     g: '시간', name: 'D-Day · 기념일',    h: 230, opts: [{ k: 'title', t: 'text', label: '제목', ph: '예) 자격증 시험' }, { k: 'date', t: 'date', label: '목표 날짜' }] },
-    { id: 'year',     g: '시간', name: '올해 365일 점',     h: 300, opts: [{ k: 'year', t: 'number', label: '연도 (비우면 올해)', ph: '2027' }] },
-
-    { id: 'goalprogress', g: '목표', name: '목표 · 프로젝트 진행률', h: 330, opts: [
-        { k: 'title', t: 'text', label: '목표 이름', ph: '예) 10km 50분 안에' },
-        { k: 'label', t: 'text', label: '배지 (GOAL / PROJECT)', ph: 'GOAL' },
-        { k: 'steps', t: 'text', label: '마일스톤 (쉼표로 구분, 최대 6개)', ph: '10주 프로그램,대회 접수,테이퍼링' },
+    { id: 'goal5',    g: 'ID ARCHIVE', name: '5-STEP GOAL',    h: 380, opts: [
+        { k: 'title', t: 'text', label: '목표', ph: '예) 10km 50분 안에 완주' },
         { k: 'date', t: 'date', label: '마감일 (선택)' }] },
-    { id: 'reading',  g: '목표', name: '독서 진행률',       h: 340, opts: [
-        { k: 'title', t: 'text', label: '책 제목', ph: '예) 미드나잇 라이브러리' },
-        { k: 'total', t: 'number', label: '전체 쪽수', ph: '300' },
-        { k: 'goal', t: 'number', label: '올해 목표 권수', ph: '24' }] },
-    { id: 'review',   g: '목표', name: '주간 · 월간 리뷰',  h: 380, opts: [
-        { k: 'mode', t: 'text', label: '주간은 week, 월간은 month', ph: 'week' }] },
-    { id: 'focusnote', g: '목표', name: '이번 주 · 이번 달 포커스', h: 280, opts: [] },
+    { id: 'goalchain', g: 'ID ARCHIVE', name: 'GOAL CHAIN (10년 → 오늘)', h: 390, opts: [
+        { k: 'label', t: 'text', label: '제목', ph: 'GOAL CHAIN' },
+        { k: 'title', t: 'text', label: '이 위젯의 이름 (여러 개 쓸 때)', ph: 'main' }] },
     { id: 'mandal',   g: 'ID ARCHIVE', name: '미니 만다라트 (3×3)', h: 360, opts: [{ k: 'title', t: 'text', label: '보드 이름', ph: 'main' }] },
     { id: 'mandalfull', g: 'ID ARCHIVE', name: '만다라트 전체 (9×9)', h: 720, opts: [
         { k: 'label', t: 'text', label: '제목', ph: 'MANDAL-ART' },
         { k: 'title', t: 'text', label: '보드 이름', ph: 'main' }] },
-    { id: 'quote',    g: '목표', name: '나의 한 문장',      h: 230, opts: [{ k: 'text', t: 'text', label: '문장', ph: 'PLAN · DREAM · DO' }, { k: 'by', t: 'text', label: '출처 (선택)' }] },
-    { id: 'goal5',    g: 'ID ARCHIVE', name: '5-STEP GOAL',    h: 380, opts: [
-        { k: 'title', t: 'text', label: '목표', ph: '예) 10km 50분 안에 완주' },
-        { k: 'date', t: 'date', label: '마감일 (선택)' }] },
     { id: 'vision',   g: 'ID ARCHIVE', name: 'VISION BOARD',   h: 420, opts: [
         { k: 'line', t: 'text', label: '한 문장', ph: '올해 나는 이런 모습으로 지내고 싶다' },
         { k: 'words', t: 'text', label: '키워드 (쉼표로 구분)', ph: '건강,기록,여행,배움,관계,쉼' },
@@ -180,20 +146,66 @@
     { id: 'roadmap',  g: 'ID ARCHIVE', name: 'LIFE ROADMAP',   h: 340, opts: [
         { k: 'label', t: 'text', label: '제목', ph: 'LIFE ROADMAP' },
         { k: 'title', t: 'text', label: '이 위젯의 이름 (여러 개 쓸 때)', ph: 'main' }] },
-    { id: 'goalchain', g: 'ID ARCHIVE', name: 'GOAL CHAIN (10년 → 오늘)', h: 390, opts: [
-        { k: 'label', t: 'text', label: '제목', ph: 'GOAL CHAIN' },
-        { k: 'title', t: 'text', label: '이 위젯의 이름 (여러 개 쓸 때)', ph: 'main' }] },
+    { id: 'bucket',   g: 'ID ARCHIVE', name: 'BUCKET LIST',    h: 300, opts: [
+        { k: 'title', t: 'text', label: '제목', ph: 'BUCKET LIST' },
+        { k: 'cells', t: 'number', label: '칸 수 (2–8)', ph: '4' }] },
     { id: 'habityear', g: 'ID ARCHIVE', name: 'YEAR TRACKER (습관 1년)', h: 360, opts: [
         { k: 'label', t: 'text', label: '제목', ph: 'YEAR TRACKER' },
         { k: 'year', t: 'number', label: '연도 (비우면 올해)', ph: '2027' },
         { k: 'title', t: 'text', label: '이 위젯의 이름 (여러 개 쓸 때)', ph: 'main' }] },
-    { id: 'bucket',   g: 'ID ARCHIVE', name: 'BUCKET LIST',    h: 300, opts: [
-        { k: 'title', t: 'text', label: '제목', ph: 'BUCKET LIST' },
-        { k: 'cells', t: 'number', label: '칸 수 (2–8)', ph: '4' }] },
+
+    { id: 'clock',    g: '오늘', name: '시계 · 오늘 날짜', h: 230, opts: [{ k: 'h24', t: 'check', label: '24시간 표시' }] },
+    { id: 'week',     g: '오늘', name: '이번 주 7일',      h: 200, opts: [{ k: 'weekStart', t: 'start' }] },
+    { id: 'calendar', g: '오늘', name: '미니 캘린더',      h: 330, opts: [{ k: 'weekStart', t: 'start' }, { k: 'month', t: 'text', label: '고정할 달 (비우면 이번 달)', ph: '2027-03' }, { k: 'style', t: 'text', label: '디자인 (grid · editorial · minimal)', ph: 'editorial' }] },
+    { id: 'timeline', g: '오늘', name: '타임로그 바',       h: 200, opts: [{ k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
+    { id: 'top3',     g: '오늘', name: '오늘의 Top 3',      h: 230, opts: [{ k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
+
+    { id: 'goalprogress', g: '목표', name: '목표 · 프로젝트 진행률', h: 330, opts: [
+        { k: 'title', t: 'text', label: '목표 이름', ph: '예) 10km 50분 안에' },
+        { k: 'label', t: 'text', label: '배지 (GOAL / PROJECT)', ph: 'GOAL' },
+        { k: 'steps', t: 'text', label: '마일스톤 (쉼표로 구분, 최대 6개)', ph: '10주 프로그램,대회 접수,테이퍼링' },
+        { k: 'date', t: 'date', label: '마감일 (선택)' }] },
+    { id: 'focusnote', g: '목표', name: '이번 주 · 이번 달 포커스', h: 280, opts: [] },
+    { id: 'quote',    g: '목표', name: '나의 한 문장',      h: 230, opts: [{ k: 'text', t: 'text', label: '문장', ph: 'PLAN · DREAM · DO' }, { k: 'by', t: 'text', label: '출처 (선택)' }] },
     { id: 'moodboard', g: '목표', name: '무드보드 (사진)',  h: 300, opts: [
         { k: 'title', t: 'text', label: '제목', ph: 'MOODBOARD' },
         { k: 'urls', t: 'text', label: '이미지 주소 (쉼표로 구분)', ph: 'https://…' },
-        { k: 'seconds', t: 'number', label: '넘기는 간격(초)', ph: '8' }] }
+        { k: 'seconds', t: 'number', label: '넘기는 간격(초)', ph: '8' }] },
+
+    { id: 'focus',    g: '시간', name: '집중 타이머',       h: 320, opts: [{ k: 'focus', t: 'number', label: '집중 (분)', ph: '25' }, { k: 'rest', t: 'number', label: '휴식 (분)', ph: '5' }] },
+    { id: 'timer',    g: '시간', name: '타이머 · 스톱워치', h: 300, opts: [{ k: 'minutes', t: 'number', label: '기본 분', ph: '25' }] },
+    { id: 'progress', g: '시간', name: '진행률 (일·주·월·연)', h: 290, opts: [{ k: 'weekStart', t: 'start' }] },
+    { id: 'dday',     g: '시간', name: 'D-Day · 기념일',    h: 230, opts: [{ k: 'title', t: 'text', label: '제목', ph: '예) 자격증 시험' }, { k: 'date', t: 'date', label: '목표 날짜' }] },
+    { id: 'year',     g: '시간', name: '올해 365일 점',     h: 300, opts: [{ k: 'year', t: 'number', label: '연도 (비우면 올해)', ph: '2027' }] },
+
+    { id: 'worklog',  g: '업무', name: '주간 업무일지',      h: 430, opts: [
+        { k: 'label', t: 'text', label: '제목', ph: 'WEEKLY WORK LOG' },
+        { k: 'title', t: 'text', label: '이 위젯의 이름 (여러 개 쓸 때)', ph: 'main' }] },
+    { id: 'memo',     g: '업무', name: '메모지',           h: 260, opts: [{ k: 'title', t: 'text', label: '제목', ph: 'MEMO' }] },
+
+    { id: 'career',   g: '커리어', name: 'CAREER SUMMARY',    h: 330, opts: [
+        { k: 'label', t: 'text', label: '제목', ph: 'CAREER SUMMARY' },
+        { k: 'since', t: 'text', label: '시작한 해 (선택)', ph: '2021' },
+        { k: 'title', t: 'text', label: '이 위젯의 이름 (여러 개 쓸 때)', ph: 'main' }] },
+
+    { id: 'journal',  g: '기록', name: '한 줄 일기',        h: 290, opts: [] },
+    { id: 'review',   g: '기록', name: '주간 · 월간 리뷰',  h: 380, opts: [
+        { k: 'mode', t: 'text', label: '주간은 week, 월간은 month', ph: 'week' }] },
+    { id: 'reading',  g: '기록', name: '독서 진행률',       h: 340, opts: [
+        { k: 'title', t: 'text', label: '책 제목', ph: '예) 미드나잇 라이브러리' },
+        { k: 'total', t: 'number', label: '전체 쪽수', ph: '300' },
+        { k: 'goal', t: 'number', label: '올해 목표 권수', ph: '24' }] },
+
+    { id: 'checkin',  g: '건강', name: '데일리 체크인',     h: 360, opts: [] },
+    { id: 'routine',  g: '건강', name: '루틴 체크',         h: 280, opts: [
+        { k: 'title', t: 'text', label: '이름', ph: '예) MORNING' },
+        { k: 'items', t: 'text', label: '항목 (쉼표로 구분, 최대 8개)', ph: '기상하고 물 한 잔,스트레칭 5분,오늘 할 일 정하기' },
+        { k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
+    { id: 'water',    g: '건강', name: '물 마시기',         h: 250, opts: [
+        { k: 'goal', t: 'number', label: '하루 목표 (잔)', ph: '8' },
+        { k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
+    { id: 'streak',   g: '건강', name: '습관 스트릭',       h: 290, opts: [{ k: 'title', t: 'text', label: '습관 이름', ph: '예) 달리기' }] },
+    { id: 'mood',     g: '건강', name: '기분 · 에너지',     h: 330, opts: [] }
   ];
 
   // Ready-made dashboards, for buyers who would rather start from something than from nothing.
@@ -205,7 +217,8 @@
     { id: 'study', name: 'STUDY', desc: 'D-Day · 타이머 · 독서 진행률 · 메모지', list: ['dday', 'timer', 'reading', 'memo'] },
     { id: 'life', name: 'LIFE', desc: '미니 캘린더 · 한 줄 일기 · 무드보드 · 365일', list: ['calendar', 'journal', 'moodboard', 'year'] },
     { id: 'idarchive', name: 'ID ARCHIVE', desc: '비전 보드 · 5-STEP GOAL · 목표 사슬 · 버킷 리스트', list: ['vision', 'goal5', 'goalchain', 'bucket'] },
-    { id: 'habit', name: 'HABIT', desc: '연간 트래커 · 습관 스트릭 · 루틴 체크 · 물 마시기', list: ['habityear', 'streak', 'routine', 'water'] }
+    { id: 'habit', name: 'HABIT', desc: '연간 트래커 · 습관 스트릭 · 루틴 체크 · 물 마시기', list: ['habityear', 'streak', 'routine', 'water'] },
+    { id: 'work', name: 'WORK', desc: '주간 업무일지 · Top 3 · 집중 타이머 · 메모지', list: ['worklog', 'top3', 'focus', 'memo'] }
   ];
 
   var state = { widget: 'clock', theme: IDP.CFG.defaults.theme, mode: 'light', frame: 'card', radius: IDP.CFG.defaults.radius, soft: '', deep: '', device: 'desktop', opt: {}, preset: '' };

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Career Summary</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 560px; }
+  .line { margin-top: 12px; }
+  .line input { font-family: 'Playfair Display', serif; font-size: 16px; letter-spacing: .01em; color: var(--ink);
+                background: none; border: 0; width: 100%; padding: 0 0 5px; border-bottom: 1px solid var(--line); }
+  .line input:focus { outline: none; border-bottom-color: var(--soft); }
+  .stats { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stat { background: var(--tint); border-radius: 10px; padding: 10px 12px; text-align: center; }
+  .stat .k { font-size: 8px; letter-spacing: .14em; color: var(--sub); }
+  .stat .v { margin-top: 3px; font-size: 22px; color: var(--ink); line-height: 1.2; }
+  .stat .v input { font: inherit; color: inherit; background: none; border: 0; width: 100%; text-align: center; padding: 0; }
+  .stat .v input:focus { outline: none; }
+  .stat .u { font-size: 9px; letter-spacing: .1em; color: var(--sub); }
+  .skills { margin-top: 14px; }
+  .skills .k { font-size: 8px; letter-spacing: .14em; color: var(--sub); margin-bottom: 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip { font-size: 11px; letter-spacing: .02em; color: color-mix(in srgb, var(--deep) 60%, #2a2a2a);
+          background: var(--soft); border-radius: 999px; padding: 4px 11px; }
+  .skills input { margin-top: 7px; width: 100%; font: inherit; font-size: 11.5px; color: var(--ink); background: none;
+                  border: 0; border-bottom: 1px solid var(--line); padding: 3px 2px; }
+  .skills input:focus { outline: none; border-bottom-color: var(--soft); }
+  /* once the chips are drawn the raw text would just repeat them, so the field steps out of the way */
+  .skills input[hidden] { display: none; }
+  .skills .edit { margin-top: 6px; padding: 0; background: none; border: 0; font-size: 9px; letter-spacing: .14em;
+                  color: var(--sub); text-transform: uppercase; }
+  .foot { margin-top: 12px; display: flex; justify-content: space-between; gap: 10px; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">CAREER SUMMARY</div><span class="caps" id="since"></span></div>
+  <div class="grow"><div class="wrap">
+    <div class="line"><input type="text" id="who" placeholder="한 줄 소개"></div>
+    <div class="stats">
+      <div class="stat"><div class="k">경력</div><div class="v"><input type="text" id="years" inputmode="decimal" placeholder="0"></div><div class="u">YEARS</div></div>
+      <div class="stat"><div class="k">프로젝트</div><div class="v"><input type="text" id="projects" inputmode="numeric" placeholder="0"></div><div class="u">PROJECTS</div></div>
+      <div class="stat"><div class="k">자격증</div><div class="v"><input type="text" id="certs" inputmode="numeric" placeholder="0"></div><div class="u">CERTIFICATES</div></div>
+    </div>
+    <div class="skills">
+      <div class="k">핵심 SKILL</div>
+      <div class="chips" id="chips"></div>
+      <input type="text" id="skills" placeholder="쉼표로 구분해서 적어 주세요">
+      <button type="button" class="edit" id="editSkills" hidden>수정</button>
+    </div>
+  </div></div>
+  <div class="foot"><span>자세한 내용은 CAREER 페이지에 쌓입니다</span><span>이 기기에 저장돼요</span></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // A small card for the top of a dashboard: what a stranger would ask first.
+  // The CAREER page's table is the real record — this only shows four numbers.
+  var KEY = '';
+  function readOpts() { KEY = 'idarchive.career.' + (IDP.q.get('id') || IDP.opt('career', 'title', 'main')); }
+  readOpts();
+  function load() {
+    try {
+      var v = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (v) return v;
+    } catch (e) { /* storage blocked */ }
+    var d = IDP.seed();
+    return { who: d[0] || '', years: d[1] || '', projects: d[2] || '', certs: d[3] || '', skills: d[4] || '' };
+  }
+  var st = load();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+
+  function chips() {
+    var box = document.getElementById('chips');
+    box.innerHTML = '';
+    var list = (st.skills || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 8);
+    list.forEach(function (s) {
+      var el = document.createElement('span');
+      el.className = 'chip'; el.textContent = s;
+      box.appendChild(el);
+    });
+    var input = document.getElementById('skills'), edit = document.getElementById('editSkills');
+    var quiet = list.length && document.activeElement !== input;
+    input.hidden = quiet;
+    edit.hidden = !quiet;
+  }
+  function render() {
+    document.getElementById('badge').textContent = IDP.opt('career', 'label', 'CAREER SUMMARY');
+    ['who', 'years', 'projects', 'certs', 'skills'].forEach(function (k) {
+      var el = document.getElementById(k);
+      if (document.activeElement !== el) el.value = st[k] || '';
+    });
+    var since = IDP.opt('career', 'since', '');
+    document.getElementById('since').textContent = since ? ('SINCE ' + since) : '';
+    chips();
+  }
+  ['who', 'years', 'projects', 'certs', 'skills'].forEach(function (k) {
+    document.getElementById(k).oninput = function () { st[k] = this.value; save(); if (k === 'skills') chips(); };
+  });
+  document.getElementById('editSkills').onclick = function () {
+    var input = document.getElementById('skills');
+    input.hidden = false; this.hidden = true; input.focus();
+  };
+  document.getElementById('skills').onblur = chips;
+
+  IDP.options('career', [
+    { k: 'label', label: '제목', ph: 'CAREER SUMMARY' },
+    { k: 'since', label: '시작한 해 (선택)', ph: '2021' },
+    { k: 'title', label: '이 위젯의 이름 (여러 개 쓸 때)', ph: 'main' }
+  ], function () { readOpts(); st = load(); render(); });
+  render();
+</script>
+</body>
+</html>
