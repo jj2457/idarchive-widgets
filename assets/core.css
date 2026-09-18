@@ -1,0 +1,88 @@
+/* ID PLANNER widgets — shared look. Colours come from the 2027 digital planner PDFs. */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=Roboto:wght@300;400;500&family=Noto+Sans+KR:wght@300;400;500&display=swap');
+
+:root {
+  --soft: #d9d5f5;      /* title-badge tone */
+  --deep: #b3a2c2;      /* cover tone */
+  --tint: #f2eff9;      /* lightest wash */
+  --paper: #fcfcf9;
+  --ink: #4a4a4a;
+  --sub: #9a9a96;
+  --line: #d9d9d4;
+  --red: #e0605f;
+  --blue: #6b7fd6;
+  --bg: transparent;
+  --radius: 18px;
+}
+:root[data-mode="dark"] {
+  --paper: #202020;
+  --ink: #e6e6e3;
+  --sub: #8d8d88;
+  --line: #3a3a38;
+  --tint: color-mix(in srgb, var(--deep) 22%, #202020);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg); }
+body {
+  font-family: 'Roboto', 'Noto Sans KR', sans-serif;
+  font-weight: 300;
+  color: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  padding: 6px;
+  -webkit-font-smoothing: antialiased;
+}
+.card {
+  width: 100%; height: 100%;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+:root[data-frame="none"] .card { border: 0; background: transparent; padding: 8px; }
+:root[data-frame="line"] .card { border: 0; border-top: 1px solid var(--line); border-radius: 0; background: transparent; }
+
+/* the planner's oval title badge */
+.badge {
+  align-self: flex-start;
+  background: var(--soft);
+  color: color-mix(in srgb, var(--deep) 55%, #2a2a2a); /* white-on-pastel, as printed, is unreadable at widget size */
+  border-radius: 999px;
+  padding: 5px 16px 4px;
+  font-size: 11px; font-weight: 500;
+  letter-spacing: .22em; text-transform: uppercase;
+  white-space: nowrap;
+}
+.caps { font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--sub); font-weight: 400; }
+.serif { font-family: 'Playfair Display', serif; font-weight: 400; letter-spacing: .04em; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.grow { flex: 1; min-height: 0; }
+.center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+button {
+  font: inherit; color: var(--ink); cursor: pointer;
+  background: var(--tint); border: 1px solid var(--line);
+  border-radius: 999px; padding: 6px 16px;
+  font-size: 10px; letter-spacing: .2em; text-transform: uppercase; font-weight: 400;
+}
+button:hover { background: var(--soft); }
+
+/* ⚙ theme panel — hidden until the widget is hovered or tapped */
+.idp-gear { position: fixed; top: 10px; right: 10px; width: 26px; height: 26px; padding: 0; border-radius: 50%;
+  font-size: 13px; letter-spacing: 0; line-height: 24px; opacity: 0; transition: opacity .2s; z-index: 5; background: var(--paper); }
+body:hover .idp-gear, .idp-gear:focus-visible, .idp-panel:not([hidden]) ~ .idp-gear { opacity: .85; }
+@media (hover: none) { .idp-gear { opacity: .5; } }
+.idp-panel { position: fixed; top: 42px; right: 10px; left: 10px; max-width: 260px; margin-left: auto; z-index: 6;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.08);
+  font-size: 11px; color: var(--ink); max-height: calc(100% - 52px); overflow: auto; }
+.idp-panel[hidden] { display: none; }
+.idp-panel-title { font-size: 9px; letter-spacing: .24em; color: var(--sub); margin-bottom: 8px; }
+.idp-swatches { display: grid; grid-template-columns: repeat(9, 1fr); gap: 5px; margin-bottom: 10px; }
+.idp-swatches button { aspect-ratio: 1; padding: 0; border-radius: 50%; border: 1px solid var(--line); }
+.idp-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11px; letter-spacing: 0; text-transform: none; }
+.idp-row button { flex: 1; padding: 5px 0; font-size: 10px; letter-spacing: .05em; text-transform: none; }
+.idp-row input[type=range] { flex: 1; }
+.idp-row input[type=color] { width: 34px; height: 22px; border: 1px solid var(--line); border-radius: 6px; padding: 0; background: none; }
+.idp-note { margin-top: 10px; font-size: 10px; color: var(--sub); }
+button:focus-visible { outline: 2px solid var(--deep); outline-offset: 2px; }

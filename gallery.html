@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Widget Gallery</title>
+<style>
+  body { margin: 0; padding: 16px; background: #fff; font-family: sans-serif; }
+  body.dark { background: #191919; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+  iframe { width: 100%; height: 250px; border: 0; }
+  iframe.tall { height: 330px; }
+</style>
+</head>
+<body>
+<div class="grid" id="grid"></div>
+<script>
+  // gallery.html?theme=pink&mode=dark — every widget in one colour, for checking a theme at a glance
+  var q = location.search || '?theme=lavender';
+  if (/mode=dark/.test(q)) document.body.className = 'dark';
+  var extra = { dday: '&title=2027 새해&date=2027-01-01', quote: '&text=꿈을 계획으로, 계획을 하루로&by=ID PLANNER' };
+  ['clock', 'week', 'calendar', 'year', 'dday', 'progress', 'timeline', 'focus', 'quote', 'top3', 'routine', 'water'].forEach(function (w) {
+    var f = document.createElement('iframe');
+    f.src = w + '.html' + q + (extra[w] || ''); f.title = w;
+    if (w === 'calendar' || w === 'focus' || w === 'progress' || w === 'year' || w === 'routine') f.className = 'tall';
+    document.getElementById('grid').appendChild(f);
+  });
+</script>
+</body>
+</html>

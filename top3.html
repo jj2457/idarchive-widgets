@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Top 3</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .rows { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .r { display: flex; align-items: center; gap: 10px; }
+  .n { font-size: 11px; letter-spacing: .12em; color: var(--sub); width: 14px; flex: none; }
+  .r input { font: inherit; font-size: 14px; color: var(--ink); background: none; border: 0; border-bottom: 1px solid var(--line); padding: 6px 2px; width: 100%; border-radius: 0; }
+  .r input:focus { outline: none; border-bottom-color: var(--soft); }
+  .r.on input { color: var(--sub); text-decoration: line-through; }
+  .tick { width: 18px; height: 18px; border-radius: 6px; border: 1.5px solid var(--line); flex: none; background: none; padding: 0; position: relative; cursor: pointer; }
+  .r.on .tick { background: var(--soft); border-color: var(--soft); }
+  .r.on .tick::after { content: ''; position: absolute; left: 5.5px; top: 2px; width: 4px; height: 9px; border: solid color-mix(in srgb, var(--deep) 60%, #2a2a2a); border-width: 0 1.6px 1.6px 0; transform: rotate(45deg); }
+  .foot { margin-top: 14px; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge">Top 3</div><span class="caps" id="date"></span></div>
+  <div class="grow"><div class="rows" id="rows"></div></div>
+  <div class="foot">이 기기에 저장돼요 · 매일 새벽 <span id="fromTxt"></span>시에 비워집니다</div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // The three that decide the day. Kept on this device only; the Notion-connected version is Phase 2.
+  var FROM = Math.min(23, Math.max(0, +IDP.q.get('from') || 5));
+  var KEY = 'idarchive.top3.v1';
+  function dayKey() {
+    var d = new Date();
+    if (d.getHours() < FROM) d.setDate(d.getDate() - 1);
+    return IDP.iso(d);
+  }
+  function fresh() { return { day: dayKey(), text: ['', '', ''], done: [] }; }
+  function load() {
+    try {
+      var s = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (s && s.day === dayKey()) return s;
+    } catch (e) { /* storage blocked: this view keeps its own state only */ }
+    return fresh();
+  }
+  var st = load();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+  function render() {
+    var box = document.getElementById('rows');
+    box.innerHTML = '';
+    for (var i = 0; i < 3; i++) (function (i) {
+      var r = document.createElement('div');
+      r.className = 'r' + (st.done.indexOf(i) >= 0 ? ' on' : '');
+      var n = document.createElement('span'); n.className = 'n'; n.textContent = '0' + (i + 1);
+      var t = document.createElement('button'); t.className = 'tick'; t.type = 'button';
+      t.setAttribute('aria-label', (i + 1) + '번 완료');
+      var inp = document.createElement('input'); inp.type = 'text'; inp.value = st.text[i] || '';
+      inp.placeholder = i === 0 ? '오늘 꼭 할 일' : '';
+      inp.oninput = function () { st.text[i] = inp.value; save(); };
+      t.onclick = function () {
+        var at = st.done.indexOf(i);
+        if (at >= 0) st.done.splice(at, 1); else st.done.push(i);
+        save(); render();
+      };
+      r.appendChild(n); r.appendChild(t); r.appendChild(inp);
+      box.appendChild(r);
+    })(i);
+    var d = new Date();
+    document.getElementById('date').textContent = IDP.pad(d.getMonth() + 1) + '.' + IDP.pad(d.getDate());
+    document.getElementById('fromTxt').textContent = FROM;
+  }
+  render();
+  // roll over to a blank list when the planner day changes, without wiping what is being typed now
+  setInterval(function () {
+    if (st.day !== dayKey() && document.activeElement.tagName !== 'INPUT') { st = fresh(); save(); render(); }
+  }, 60000);
+</script>
+</body>
+</html>

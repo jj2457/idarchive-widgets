@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · D-Day</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .num { font-size: clamp(36px, 16vw, 76px); line-height: 1; color: var(--deep); }
+  .label { margin-top: 12px; font-size: 14px; font-weight: 400; letter-spacing: .04em; }
+  .when { margin-top: 6px; font-size: 12px; color: var(--sub); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="badge">D-Day</div>
+  <div class="grow center">
+    <div class="num serif" id="num"></div>
+    <div class="label" id="label"></div>
+    <div class="when serif" id="when"></div>
+  </div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // date=YYYY-MM-DD, title=라벨 — both also settable in ⚙ so nobody has to edit a link.
+  // Without a date the widget counts down to the end of the year.
+  var now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  function render() {
+    var date = IDP.opt('dday', 'date', ''), title = IDP.opt('dday', 'title', '');
+    var target = IDP.parseDate(date) || new Date(today.getFullYear(), 11, 31);
+    var diff = Math.round((target - today) / 864e5);
+    document.getElementById('num').textContent = diff === 0 ? 'D-DAY' : diff > 0 ? 'D-' + diff : 'D+' + (-diff);
+    document.getElementById('label').textContent = title || (date ? '' : today.getFullYear() + '년의 마지막 날');
+    document.getElementById('when').textContent = IDP.plannerDate(target) + ' ' + IDP.DOW[target.getDay()];
+  }
+  IDP.options('dday', [
+    { k: 'title', label: '제목', ph: '예) 자격증 시험' },
+    { k: 'date', t: 'date', label: '날짜' },
+  ], render);
+  render();
+</script>
+</body>
+</html>

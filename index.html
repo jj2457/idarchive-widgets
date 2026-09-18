@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Widget Studio</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  html, body { height: auto; }
+  body { display: block; padding: 0; background: var(--paper); font-weight: 400; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 36px 20px 60px; }
+  header h1 { font-family: 'Playfair Display', serif; font-weight: 400; font-size: 30px; letter-spacing: .08em; margin-top: 14px; }
+  header p { color: var(--sub); margin-top: 8px; font-size: 14px; line-height: 1.6; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 28px; margin-top: 30px; align-items: start; }
+  @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+  section { margin-bottom: 26px; }
+  h2 { font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--sub); font-weight: 500; margin-bottom: 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { text-transform: none; letter-spacing: .02em; font-size: 13px; padding: 8px 14px; background: #fff; }
+  .chip[aria-pressed="true"] { background: var(--soft); border-color: var(--soft); color: color-mix(in srgb, var(--deep) 55%, #2a2a2a); font-weight: 500; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+  .sw { width: 38px; height: 38px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); padding: 0; }
+  .sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--ink); }
+  .sw:hover { color: transparent; }
+  label.f { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--sub); margin-top: 10px; }
+  input[type=text], input[type=date], input[type=number] {
+    font: inherit; font-size: 14px; color: var(--ink); padding: 9px 12px;
+    border: 1px solid var(--line); border-radius: 10px; background: #fff; width: 100%;
+  }
+  input[type=color] { width: 46px; height: 34px; border: 1px solid var(--line); border-radius: 8px; background: #fff; padding: 2px; }
+  .pick { display: flex; gap: 14px; align-items: center; margin-top: 12px; font-size: 12px; color: var(--sub); }
+  .preview { position: sticky; top: 20px; }
+  .stage { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
+  .stage.dark { background: #191919; }
+  .screen { margin: 0 auto; transition: max-width .2s; }
+  .screen.mobile { max-width: 320px; }
+  iframe { width: 100%; border: 0; display: block; }
+  .url { margin-top: 14px; display: flex; gap: 8px; }
+  .url input { font-size: 12px; color: var(--sub); }
+  .copy { background: var(--deep); color: #fff; border-color: var(--deep); white-space: nowrap; font-weight: 500; }
+  .how { margin-top: 18px; font-size: 13px; line-height: 1.8; color: var(--ink); background: var(--tint); border-radius: 14px; padding: 14px 18px; }
+  .how code { background: #fff; border-radius: 6px; padding: 1px 6px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="badge" style="display:inline-block">Widget Studio</div>
+    <h1>ID PLANNER WIDGETS</h1>
+    <p>위젯과 컬러를 고르고 링크를 복사한 뒤, 노션에서 <b>/embed</b> 로 붙여넣으면 끝. 색을 바꾸고 싶으면 여기서 다시 만들어 링크만 교체하세요.</p>
+  </header>
+
+  <div class="layout">
+    <div>
+      <section><h2>1 · Widget</h2><div class="chips" id="widgets"></div></section>
+      <section>
+        <h2>2 · Color</h2>
+        <div class="swatches" id="swatches"></div>
+        <div class="pick">
+          <label>나만의 색 <input type="color" id="soft" aria-label="포인트 색"></label>
+          <label>진한 색 <input type="color" id="deep" aria-label="진한 색"></label>
+          <button id="clearCustom" class="chip" style="font-size:12px;padding:6px 12px">테마색으로 되돌리기</button>
+        </div>
+      </section>
+      <section>
+        <h2>3 · Style</h2>
+        <div class="chips" id="mode"></div>
+        <div class="chips" id="frame" style="margin-top:8px"></div>
+        <label class="pick">모서리 둥글기 <input type="range" id="radius" min="0" max="32" step="2" aria-label="모서리 둥글기"> <span id="radiusVal"></span></label>
+      </section>
+      <section id="optSection"><h2>4 · Options</h2><div id="opts"></div></section>
+    </div>
+
+    <div class="preview">
+      <div class="row" style="align-items:baseline">
+        <h2 style="margin:0">Preview</h2>
+        <div class="chips" id="device"></div>
+      </div>
+      <div class="stage" id="stage"><div class="screen" id="screen"><iframe id="frameEl" title="위젯 미리보기"></iframe></div></div>
+      <div class="url"><input type="text" id="url" readonly aria-label="위젯 링크"><button class="copy" id="copy">Copy Link</button></div>
+      <section style="margin-top:22px">
+        <h2>5 · 노션에 넣기</h2>
+        <div class="how">
+          ① <b>Copy Link</b> → ② 노션에서 <code>/embed</code> 입력 → ③ 붙여넣기 → ④ 모서리를 끌어 크기 조절.<br>
+          위젯을 빼고 싶으면 블록을 지우면 되고, 더 넣고 싶으면 여기서 또 만들면 됩니다.<br>
+          색은 나중에 위젯의 <b>⚙</b> 버튼에서 바꿔도 됩니다. 한 번 고르면 이 기기의 모든 ID Archive 위젯에 함께 적용돼요.
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  var WIDGETS = [
+    { id: 'clock',    name: '시계 · 오늘 날짜', h: 230, opts: [{ k: 'h24', t: 'check', label: '24시간 표시' }] },
+    { id: 'calendar', name: '미니 캘린더',      h: 330, opts: [{ k: 'weekStart', t: 'start' }, { k: 'month', t: 'text', label: '고정할 달 (비우면 이번 달)', ph: '2027-03' }] },
+    { id: 'dday',     name: 'D-Day',            h: 230, opts: [{ k: 'title', t: 'text', label: '제목', ph: '예) 자격증 시험' }, { k: 'date', t: 'date', label: '목표 날짜' }] },
+    { id: 'week',     name: '이번 주 7일',      h: 200, opts: [{ k: 'weekStart', t: 'start' }] },
+    { id: 'year',     name: '올해 365일 점',     h: 300, opts: [{ k: 'year', t: 'number', label: '연도 (비우면 올해)', ph: '2027' }] },
+    { id: 'progress', name: '진행률 (일·주·월·연)', h: 290, opts: [{ k: 'weekStart', t: 'start' }] },
+    { id: 'timeline', name: '타임로그 바',       h: 200, opts: [{ k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
+    { id: 'focus',    name: '집중 타이머',       h: 320, opts: [{ k: 'focus', t: 'number', label: '집중 (분)', ph: '25' }, { k: 'rest', t: 'number', label: '휴식 (분)', ph: '5' }] },
+    { id: 'quote',    name: '나의 한 문장',      h: 230, opts: [{ k: 'text', t: 'text', label: '문장', ph: 'PLAN · DREAM · DO' }, { k: 'by', t: 'text', label: '출처 (선택)' }] },
+    { id: 'top3',     name: '오늘의 Top 3',      h: 230, opts: [{ k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
+    { id: 'routine',  name: '루틴 체크',         h: 280, opts: [
+        { k: 'title', t: 'text', label: '이름', ph: '예) MORNING' },
+        { k: 'items', t: 'text', label: '항목 (쉼표로 구분, 최대 8개)', ph: '기상하고 물 한 잔,스트레칭 5분,오늘 할 일 정하기' },
+        { k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
+    { id: 'water',    name: '물 마시기',         h: 250, opts: [
+        { k: 'goal', t: 'number', label: '하루 목표 (잔)', ph: '8' },
+        { k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] }
+  ];
+  var state = { widget: 'clock', theme: IDP.CFG.defaults.theme, mode: 'light', frame: 'card', radius: IDP.CFG.defaults.radius, soft: '', deep: '', device: 'desktop', opt: {} };
+
+  function chips(el, items, key) {
+    el.innerHTML = '';
+    items.forEach(function (it) {
+      var b = document.createElement('button');
+      b.className = 'chip'; b.textContent = it[1];
+      b.setAttribute('aria-pressed', String(state[key] === it[0]));
+      b.onclick = function () { state[key] = it[0]; if (key === 'widget') state.opt = {}; draw(); };
+      el.appendChild(b);
+    });
+  }
+
+  function drawOpts() {
+    var w = WIDGETS.filter(function (x) { return x.id === state.widget; })[0], box = document.getElementById('opts');
+    box.innerHTML = '';
+    w.opts.forEach(function (o) {
+      if (o.t === 'start') {
+        var d = document.createElement('div'); d.className = 'chips';
+        [['mon', '월요일 시작'], ['sun', '일요일 시작']].forEach(function (it) {
+          var b = document.createElement('button'); b.className = 'chip'; b.textContent = it[1];
+          b.setAttribute('aria-pressed', String((state.opt.weekStart || 'mon') === it[0]));
+          b.onclick = function () { state.opt.weekStart = it[0]; draw(); };
+          d.appendChild(b);
+        });
+        box.appendChild(d); return;
+      }
+      var l = document.createElement('label'); l.className = 'f';
+      var i = document.createElement('input');
+      if (o.t === 'check') {
+        l.style.flexDirection = 'row'; l.style.alignItems = 'center';
+        i.type = 'checkbox'; i.checked = state.opt[o.k] === '1';
+        i.onchange = function () { state.opt[o.k] = i.checked ? '1' : ''; update(); };
+        l.appendChild(i); l.appendChild(document.createTextNode(' ' + o.label));
+      } else {
+        i.type = o.t; i.placeholder = o.ph || ''; i.value = state.opt[o.k] || '';
+        i.oninput = function () { state.opt[o.k] = i.value; update(); };
+        l.appendChild(document.createTextNode(o.label)); l.appendChild(i);
+      }
+      box.appendChild(l);
+    });
+  }
+
+  function buildUrl() {
+    var p = new URLSearchParams();
+    p.set('theme', state.theme);
+    if (state.soft) p.set('soft', state.soft.slice(1));
+    if (state.deep) p.set('deep', state.deep.slice(1));
+    if (state.mode !== 'light') p.set('mode', state.mode);
+    if (state.frame !== 'card') p.set('border', state.frame);
+    if (+state.radius !== IDP.CFG.defaults.radius) p.set('radius', state.radius);
+    Object.keys(state.opt).forEach(function (k) { if (state.opt[k] && !(k === 'weekStart' && state.opt[k] === 'mon')) p.set(k, state.opt[k]); });
+    return new URL(state.widget + '.html?' + p.toString(), location.href).href;
+  }
+
+  function update() {
+    var w = WIDGETS.filter(function (x) { return x.id === state.widget; })[0], url = buildUrl();
+    var f = document.getElementById('frameEl');
+    f.style.height = w.h + 'px'; f.src = url + (url.indexOf('?') < 0 ? '?' : '&') + 'lock=1&settings=0'; // preview shows exactly the chosen settings
+    document.getElementById('url').value = url;
+    document.getElementById('stage').className = 'stage' + (state.mode === 'dark' ? ' dark' : '');
+    document.getElementById('screen').className = 'screen' + (state.device === 'mobile' ? ' mobile' : '');
+    // the studio itself wears the chosen colour
+    var p = new URLSearchParams({ theme: state.theme });
+    if (state.soft) p.set('soft', state.soft.slice(1));
+    if (state.deep) p.set('deep', state.deep.slice(1));
+    IDP.applyTheme(p);
+  }
+
+  function draw() {
+    chips(document.getElementById('widgets'), WIDGETS.map(function (w) { return [w.id, w.name]; }), 'widget');
+    chips(document.getElementById('mode'), [['light', '라이트'], ['dark', '다크'], ['auto', '기기 설정 따라가기']], 'mode');
+    chips(document.getElementById('frame'), [['card', '카드'], ['line', '윗선만'], ['none', '테두리 없음']], 'frame');
+    chips(document.getElementById('device'), [['desktop', '데스크톱'], ['mobile', '휴대폰']], 'device');
+    document.getElementById('radius').value = state.radius; document.getElementById('radiusVal').textContent = state.radius + 'px';
+    var sw = document.getElementById('swatches'); sw.innerHTML = '';
+    Object.keys(IDP.THEMES).forEach(function (name) {
+      var b = document.createElement('button'); b.className = 'sw'; b.title = name; b.setAttribute('aria-label', name + ' 테마');
+      b.style.background = 'linear-gradient(135deg,' + IDP.THEMES[name].soft + ' 50%,' + IDP.THEMES[name].deep + ' 50%)';
+      b.setAttribute('aria-pressed', String(state.theme === name && !state.soft));
+      b.onclick = function () { state.theme = name; state.soft = state.deep = ''; draw(); };
+      sw.appendChild(b);
+    });
+    document.getElementById('soft').value = state.soft || IDP.THEMES[state.theme].soft;
+    document.getElementById('deep').value = state.deep || IDP.THEMES[state.theme].deep;
+    drawOpts(); update();
+  }
+
+  document.getElementById('soft').oninput = function (e) { state.soft = e.target.value; update(); };
+  document.getElementById('deep').oninput = function (e) { state.deep = e.target.value; update(); };
+  document.getElementById('radius').oninput = function (e) { state.radius = +e.target.value; document.getElementById('radiusVal').textContent = state.radius + 'px'; update(); };
+  document.getElementById('clearCustom').onclick = function () { state.soft = state.deep = ''; draw(); };
+  document.getElementById('copy').onclick = function () {
+    var i = document.getElementById('url'), b = this;
+    function done() { b.textContent = 'Copied ✓'; setTimeout(function () { b.textContent = 'Copy Link'; }, 1500); }
+    if (navigator.clipboard) navigator.clipboard.writeText(i.value).then(done, function () { i.select(); document.execCommand('copy'); done(); });
+    else { i.select(); document.execCommand('copy'); done(); }
+  };
+  draw();
+</script>
+</body>
+</html>

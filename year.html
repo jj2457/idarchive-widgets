@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Year in Dots</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .head { display: flex; align-items: baseline; justify-content: space-between; margin-top: 12px; }
+  .big { font-size: clamp(26px, 9vw, 40px); line-height: 1; }
+  .big small { font-size: .38em; color: var(--sub); margin-left: .4em; font-family: 'Roboto', sans-serif; letter-spacing: .1em; }
+  .dots { display: grid; grid-template-columns: repeat(auto-fill, minmax(9px, 1fr)); gap: 3px; margin-top: 12px; }
+  .dots i { aspect-ratio: 1; border-radius: 50%; background: var(--tint); display: block; }
+  .dots i.done { background: var(--soft); }
+  .dots i.off { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--red) 55%, transparent); }
+  .dots i.today { background: var(--deep); }
+  .dots i.m1 { outline: 1px solid var(--line); outline-offset: 1px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">Year</div><span class="caps" id="left"></span></div>
+  <div class="head"><div class="big serif" id="pct"></div></div>
+  <div class="dots" id="dots" aria-label="올해의 날짜 점"></div>
+</div>
+<script src="assets/holidays.js"></script>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // One dot per day of the year: filled = passed, ring = public holiday, dark = today, framed = 1st of a month.
+  // year=YYYY shows another year (e.g. year=2027 while it is still 2026).
+  function render() {
+    var now = new Date(), y = +IDP.q.get('year') || now.getFullYear();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var d = new Date(y, 0, 1), html = '', total = 0, passed = 0;
+    while (d.getFullYear() === y) {
+      var k = IDP.iso(d), cls = [];
+      if (d < today) { cls.push('done'); passed++; }
+      if (+d === +today) cls.push('today');
+      if (IDP_HOLIDAYS[k] || d.getDay() === 0) cls.push('off');
+      if (d.getDate() === 1) cls.push('m1');
+      html += '<i class="' + cls.join(' ') + '" title="' + k + (IDP_HOLIDAYS[k] ? ' ' + IDP_HOLIDAYS[k] : '') + '"></i>';
+      total++; d.setDate(d.getDate() + 1);
+    }
+    document.getElementById('dots').innerHTML = html;
+    document.getElementById('badge').textContent = String(y);
+    document.getElementById('pct').innerHTML = Math.round(passed / total * 100) + '%<small>OF ' + y + '</small>';
+    document.getElementById('left').textContent = (total - passed) + ' DAYS LEFT';
+  }
+  render(); setInterval(render, 3600000);
+</script>
+</body>
+</html>

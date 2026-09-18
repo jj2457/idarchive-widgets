@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Motto</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .q { font-size: clamp(15px, 5vw, 24px); line-height: 1.55; font-family: 'Playfair Display', 'Noto Sans KR', serif; }
+  .by { margin-top: 12px; }
+  .mark { font-family: 'Playfair Display', serif; font-size: 46px; line-height: .6; color: var(--soft); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="badge" id="badge">Motto</div>
+  <div class="grow center" style="padding:0 6px">
+    <div class="mark">“</div>
+    <div class="q" id="q"></div>
+    <div class="by caps" id="by"></div>
+  </div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // text=나의 한 문장, by=출처. Text is set with textContent, never as HTML.
+  document.getElementById('q').textContent = IDP.q.get('text') || 'PLAN · DREAM · DO';
+  document.getElementById('by').textContent = IDP.q.get('by') || '';
+  if (IDP.q.get('label')) document.getElementById('badge').textContent = IDP.q.get('label');
+</script>
+</body>
+</html>

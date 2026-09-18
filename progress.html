@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Progress</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .item { margin-top: 14px; }
+  .item:first-child { margin-top: 0; }
+  .pct { font-size: 13px; color: var(--deep); }
+  .bar { height: 8px; border-radius: 999px; background: var(--tint); margin-top: 6px; overflow: hidden; }
+  .bar b { display: block; height: 100%; border-radius: 999px; background: var(--soft); transition: width .6s ease; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="badge">Progress</div>
+  <div class="grow" style="display:flex;flex-direction:column;justify-content:center;margin-top:14px" id="list"></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // how far through the day / week / month / year we are — the "time left" view of the planner
+  var mon = IDP.weekStart === 'mon'; // weekStart=mon|sun (legacy: start)
+  function render() {
+    var n = new Date(), y = n.getFullYear(), m = n.getMonth();
+    var day0 = new Date(y, m, n.getDate());
+    var wk0 = new Date(day0); wk0.setDate(day0.getDate() - ((n.getDay() - (mon ? 1 : 0) + 7) % 7));
+    var spans = [
+      ['Day', day0, new Date(y, m, n.getDate() + 1)],
+      ['Week', wk0, new Date(wk0.getFullYear(), wk0.getMonth(), wk0.getDate() + 7)],
+      [IDP.MONTHS[m], new Date(y, m, 1), new Date(y, m + 1, 1)],
+      [String(y), new Date(y, 0, 1), new Date(y + 1, 0, 1)]
+    ];
+    document.getElementById('list').innerHTML = spans.map(function (s) {
+      var p = Math.min(100, Math.max(0, (n - s[1]) / (s[2] - s[1]) * 100));
+      return '<div class="item"><div class="row"><span class="caps">' + s[0] + '</span><span class="pct serif">' + p.toFixed(1) + '%</span></div>' +
+        '<div class="bar"><b style="width:' + p + '%"></b></div></div>';
+    }).join('');
+  }
+  render(); setInterval(render, 60000);
+</script>
+</body>
+</html>

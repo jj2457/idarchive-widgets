@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Mini Calendar</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .nav { background: none; border: 0; padding: 4px 8px; font-size: 14px; color: var(--sub); letter-spacing: 0; }
+  .nav:hover { background: var(--tint); color: var(--ink); }
+  .title { font-size: 15px; letter-spacing: .1em; }
+  .title span { color: var(--sub); font-size: .8em; margin-left: .5em; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
+  th { font-size: 9px; font-weight: 400; letter-spacing: .1em; color: var(--sub); padding: 4px 0 6px; }
+  th.wk, td.wk { width: 26px; font-size: 8px; color: var(--sub); letter-spacing: .08em; text-align: left; }
+  td { text-align: center; font-size: 11px; padding: 3px 0; border-top: 1px solid var(--line); height: 26px; }
+  td i { font-style: normal; display: inline-block; width: 22px; line-height: 22px; border-radius: 50%; }
+  .sun, .hol { color: var(--red); } .sat { color: var(--blue); }
+  .today i { background: var(--deep); color: #fff; }
+  .foot { margin-top: 8px; font-size: 10px; color: var(--red); min-height: 13px; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row">
+    <div class="badge" id="badge">Monthly</div>
+    <div class="row" style="gap:2px">
+      <button class="nav" id="prev" aria-label="이전 달">‹</button>
+      <button class="nav" id="next" aria-label="다음 달">›</button>
+    </div>
+  </div>
+  <div class="title serif" style="margin-top:12px" id="title"></div>
+  <table id="grid"></table>
+  <div class="foot" id="foot"></div>
+</div>
+<script src="assets/holidays.js"></script>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // start=mon|sun — the two week-start editions of the planner
+  var mon = IDP.weekStart === 'mon'; // weekStart=mon|sun (legacy: start)
+  var now = new Date(), y = now.getFullYear(), m = now.getMonth();
+  // month=YYYY-MM opens on a fixed month (a month page pins its own month); otherwise it opens on today's month
+  var fixed = (IDP.q.get('month') || '').match(/^(\d{4})-(\d{1,2})$/);
+  if (fixed) { y = +fixed[1]; m = +fixed[2] - 1; }
+  function render() {
+    document.getElementById('title').innerHTML = IDP.pad(m + 1) + ' ' + IDP.MONTHS[m] + '<span>' + y + '</span>';
+    var order = mon ? [1, 2, 3, 4, 5, 6, 0] : [0, 1, 2, 3, 4, 5, 6];
+    var html = '<tr><th class="wk"></th>' + order.map(function (w) {
+      return '<th class="' + (w === 0 ? 'sun' : w === 6 ? 'sat' : '') + '">' + IDP.DOW[w][0] + '</th>';
+    }).join('') + '</tr>';
+    var first = new Date(y, m, 1), lead = (first.getDay() - (mon ? 1 : 0) + 7) % 7;
+    var dim = new Date(y, m + 1, 0).getDate(), names = [];
+    for (var r = 0, d = 1 - lead; d <= dim; r++) {
+      html += '<tr><td class="wk">' + (r + 1) + 'W</td>';
+      for (var c = 0; c < 7; c++, d++) {
+        if (d < 1 || d > dim) { html += '<td></td>'; continue; }
+        var key = y + '-' + IDP.pad(m + 1) + '-' + IDP.pad(d), w = order[c];
+        var cls = IDP_HOLIDAYS[key] ? 'hol' : w === 0 ? 'sun' : w === 6 ? 'sat' : '';
+        if (key === IDP.iso(now)) cls += ' today';
+        if (IDP_HOLIDAYS[key]) names.push(d + ' ' + IDP_HOLIDAYS[key]);
+        html += '<td class="' + cls + '"><i>' + IDP.pad(d) + '</i></td>';
+      }
+      html += '</tr>';
+    }
+    document.getElementById('grid').innerHTML = html;
+    document.getElementById('foot').textContent = names.join(' · ');
+  }
+  document.getElementById('prev').onclick = function () { if (--m < 0) { m = 11; y--; } render(); };
+  document.getElementById('next').onclick = function () { if (++m > 11) { m = 0; y++; } render(); };
+  if (fixed && IDP.q.get('nav') === '0') {
+    document.getElementById('prev').style.display = 'none';
+    document.getElementById('next').style.display = 'none';
+  }
+  render();
+</script>
+</body>
+</html>

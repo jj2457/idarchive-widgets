@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Water</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .cups { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .cup { width: 26px; height: 32px; border: 1.5px solid var(--line); border-radius: 4px 4px 10px 10px; background: none; padding: 0; cursor: pointer; position: relative; overflow: hidden; }
+  .cup.on { border-color: var(--soft); }
+  .cup.on::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 72%; background: var(--soft); }
+  .big { font-size: clamp(24px, 9vw, 34px); line-height: 1; margin-top: 12px; }
+  .big small { font-size: .42em; color: var(--sub); margin-left: .4em; letter-spacing: .08em; }
+  .btns { display: flex; gap: 8px; margin-top: 14px; }
+  .foot { margin-top: 12px; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge">Water</div><span class="caps" id="pct"></span></div>
+  <div class="grow">
+    <div class="big serif" id="n"></div>
+    <div class="cups" id="cups"></div>
+  </div>
+  <div class="btns"><button id="plus">+ 한 잔</button><button id="minus">되돌리기</button></div>
+  <div class="foot">이 기기에 저장돼요 · 매일 새벽 <span id="fromTxt"></span>시에 초기화</div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // goal=8 cups a day (also settable in ⚙). One tap fills up to that cup; tapping a filled cup empties back to it.
+  var GOAL = 8, FROM = 5;
+  function readOpts() {
+    GOAL = Math.min(16, Math.max(1, +IDP.opt('water', 'goal', 8) || 8));
+    FROM = Math.min(23, Math.max(0, +IDP.opt('water', 'from', 5) || 5));
+  }
+  readOpts();
+  var KEY = 'idarchive.water.v1';
+  function dayKey() {
+    var d = new Date();
+    if (d.getHours() < FROM) d.setDate(d.getDate() - 1);
+    return IDP.iso(d);
+  }
+  function load() {
+    try {
+      var s = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (s && s.day === dayKey()) return s.n || 0;
+    } catch (e) { /* storage blocked: this view keeps its own state only */ }
+    return 0;
+  }
+  var n = load();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify({ day: dayKey(), n: n })); } catch (e) {} }
+  function render() {
+    var box = document.getElementById('cups');
+    box.innerHTML = '';
+    for (var i = 0; i < GOAL; i++) (function (i) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'cup' + (i < n ? ' on' : '');
+      b.setAttribute('aria-label', (i + 1) + '잔');
+      b.onclick = function () { n = (i < n) ? i : i + 1; save(); render(); };
+      box.appendChild(b);
+    })(i);
+    document.getElementById('n').innerHTML = n + '<small>/ ' + GOAL + ' 잔</small>';
+    document.getElementById('pct').textContent = Math.round(n / GOAL * 100) + '%';
+    document.getElementById('fromTxt').textContent = FROM;
+  }
+  document.getElementById('plus').onclick = function () { n = Math.min(GOAL, n + 1); save(); render(); };
+  document.getElementById('minus').onclick = function () { n = Math.max(0, n - 1); save(); render(); };
+  IDP.options('water', [
+    { k: 'goal', t: 'number', label: '하루 목표 잔 수', ph: '8' },
+  ], function () { readOpts(); n = Math.min(n, GOAL); save(); render(); });
+  render();
+  setInterval(function () { var v = load(); if (v !== n) { n = v; render(); } }, 60000);
+</script>
+</body>
+</html>

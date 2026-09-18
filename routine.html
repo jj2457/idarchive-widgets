@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Routine</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .list { margin-top: 12px; display: flex; flex-direction: column; gap: 2px; }
+  .it { display: flex; align-items: center; gap: 10px; padding: 7px 4px; border-radius: 10px; cursor: pointer; background: none; border: 0; width: 100%; text-align: left; font: inherit; color: var(--ink); }
+  .it:hover { background: var(--tint); }
+  .box { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--line); flex: none; position: relative; }
+  .it.on .box { background: var(--soft); border-color: var(--soft); }
+  .it.on .box::after { content: ''; position: absolute; left: 4.5px; top: 1px; width: 4px; height: 8px; border: solid color-mix(in srgb, var(--deep) 60%, #2a2a2a); border-width: 0 1.6px 1.6px 0; transform: rotate(45deg); }
+  .it.on .tx { color: var(--sub); text-decoration: line-through; }
+  .tx { font-size: 14px; }
+  .foot { margin-top: 12px; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">Routine</div><span class="caps" id="count"></span></div>
+  <div class="grow"><div class="list" id="list"></div></div>
+  <div class="foot" id="foot"></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // items=기상,물 한 잔,스트레칭 · title=MORNING · from=5
+  // The planner day starts at 5 AM, so a late night still belongs to the day that is ending.
+  // items and title are also settable in ⚙, so nobody has to edit a link.
+  var ITEMS = [], TITLE = 'Routine', FROM = 5, KEY = '';
+  function readOpts() {
+    ITEMS = String(IDP.opt('routine', 'items', '기상하고 물 한 잔,스트레칭 5분,오늘 할 일 정하기,이불 정리')).split(',')
+      .map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 8);
+    TITLE = IDP.opt('routine', 'title', 'Routine');
+    FROM = Math.min(23, Math.max(0, +IDP.opt('routine', 'from', 5) || 5));
+    KEY = 'idarchive.routine.' + (IDP.q.get('id') || TITLE);
+  }
+  readOpts();
+
+  function dayKey() {
+    var d = new Date();
+    if (d.getHours() < FROM) d.setDate(d.getDate() - 1);
+    return IDP.iso(d);
+  }
+  function load() {
+    try {
+      var s = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (s && s.day === dayKey()) return s.done || [];
+    } catch (e) { /* storage blocked: this view keeps its own state only */ }
+    return [];
+  }
+  var done = load();
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify({ day: dayKey(), done: done })); } catch (e) {}
+  }
+  function render() {
+    var box = document.getElementById('list');
+    box.innerHTML = '';
+    ITEMS.forEach(function (name, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'it' + (done.indexOf(i) >= 0 ? ' on' : '');
+      b.innerHTML = '<span class="box"></span><span class="tx"></span>';
+      b.querySelector('.tx').textContent = name;
+      b.onclick = function () {
+        var at = done.indexOf(i);
+        if (at >= 0) done.splice(at, 1); else done.push(i);
+        save(); render();
+      };
+      box.appendChild(b);
+    });
+    document.getElementById('badge').textContent = TITLE;
+    document.getElementById('count').textContent = done.length + ' / ' + ITEMS.length;
+    document.getElementById('foot').textContent = done.length === ITEMS.length
+      ? '오늘 루틴을 다 했어요'
+      : '이 기기에 저장돼요 · 매일 새벽 ' + FROM + '시에 초기화';
+  }
+  IDP.options('routine', [
+    { k: 'title', label: '제목', ph: 'Routine' },
+    { k: 'items', label: '항목 (쉼표로 구분)', ph: '기상하고 물 한 잔, 스트레칭 5분' },
+  ], function () { readOpts(); done = load(); render(); });
+  render();
+  // a tab left open overnight rolls over on its own
+  setInterval(function () { done = load(); render(); }, 60000);
+</script>
+</body>
+</html>

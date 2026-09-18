@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Day Timeline</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .hours { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; margin-top: 14px; }
+  .h { height: 30px; border-radius: 4px; background: var(--tint); position: relative; }
+  .h.past { background: var(--soft); }
+  .h.now { background: var(--tint); overflow: hidden; }
+  .h.now b { position: absolute; left: 0; top: 0; bottom: 0; background: var(--deep); }
+  .ticks { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; margin-top: 5px; }
+  .ticks span { font-size: 8px; color: var(--sub); text-align: center; }
+  .msg { margin-top: 12px; font-size: 13px; }
+  .msg b { color: var(--deep); font-weight: 400; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge">Time Log</div><span class="caps" id="clock"></span></div>
+  <div class="grow" style="display:flex;flex-direction:column;justify-content:center">
+    <div class="hours" id="hours"></div>
+    <div class="ticks" id="ticks"></div>
+    <div class="msg serif" id="msg"></div>
+  </div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // The planner's Daily TIME LOG runs 5 AM → 4 AM, so the widget's day starts at `from` (default 5) too.
+  var FROM = IDP.q.get('from') === null ? 5 : (+IDP.q.get('from') || 0);
+  function render() {
+    var n = new Date(), pos = ((n.getHours() - FROM + 24) % 24) + n.getMinutes() / 60;
+    var hs = '', ts = '';
+    for (var i = 0; i < 24; i++) {
+      var hr = (FROM + i) % 24;
+      if (i + 1 <= pos) hs += '<div class="h past"></div>';
+      else if (i < pos) hs += '<div class="h now"><b style="width:' + ((pos - i) * 100) + '%"></b></div>';
+      else hs += '<div class="h"></div>';
+      ts += '<span>' + (i % 3 === 0 ? (hr % 12 || 12) : '') + '</span>';
+    }
+    document.getElementById('hours').innerHTML = hs;
+    document.getElementById('ticks').innerHTML = ts;
+    var leftMin = Math.round((24 - pos) * 60);
+    document.getElementById('msg').innerHTML = '오늘 남은 시간 <b>' + Math.floor(leftMin / 60) + 'h ' + IDP.pad(leftMin % 60) + 'm</b>';
+    document.getElementById('clock').textContent = (n.getHours() % 12 || 12) + ':' + IDP.pad(n.getMinutes()) + (n.getHours() < 12 ? ' AM' : ' PM');
+  }
+  render(); setInterval(render, 30000);
+</script>
+</body>
+</html>

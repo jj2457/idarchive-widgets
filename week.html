@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · This Week</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 14px; }
+  .d { border-radius: calc(var(--radius) * .6); padding: 10px 0 9px; text-align: center; background: transparent; }
+  .d .w { font-size: 9px; letter-spacing: .16em; color: var(--sub); }
+  .d .n { font-size: clamp(16px, 5vw, 24px); margin-top: 4px; line-height: 1.1; }
+  .d .h { font-size: 9px; color: var(--red); margin-top: 4px; min-height: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
+  .d.sun .w, .d.sun .n, .d.off .n { color: var(--red); }
+  .d.sat .w, .d.sat .n { color: var(--blue); }
+  .d.past { opacity: .45; }
+  .d.today { background: var(--soft); }
+  .d.today .n { color: color-mix(in srgb, var(--deep) 55%, #2a2a2a); }
+  .foot { margin-top: 12px; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+  .foot b { color: var(--deep); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge">This Week</div><span class="caps" id="range"></span></div>
+  <div class="grow" style="display:flex;flex-direction:column;justify-content:center">
+    <div class="days" id="days"></div>
+    <div class="foot serif" id="foot"></div>
+  </div>
+</div>
+<script src="assets/holidays.js"></script>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // The seven days of the current week with holidays, commemorative days and today highlighted.
+  function render() {
+    var now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var lead = (today.getDay() - (IDP.weekStart === 'mon' ? 1 : 0) + 7) % 7;
+    var start = new Date(today); start.setDate(today.getDate() - lead);
+    var html = '', end;
+    for (var i = 0; i < 7; i++) {
+      var d = new Date(start); d.setDate(start.getDate() + i); end = d;
+      var k = IDP.iso(d), w = d.getDay(), hol = IDP_HOLIDAYS[k], mem = IDP_MEMORIAL[k];
+      var cls = 'd' + (w === 0 ? ' sun' : w === 6 ? ' sat' : '') + (hol ? ' off' : '') + (d < today ? ' past' : '') + (+d === +today ? ' today' : '');
+      html += '<div class="' + cls + '"><div class="w">' + IDP.DOW[w] + '</div><div class="n serif">' + IDP.pad(d.getDate()) + '</div>' +
+        '<div class="h" title="' + (hol || mem || '') + '">' + (hol || mem || '') + '</div></div>';
+    }
+    document.getElementById('days').innerHTML = html;
+    document.getElementById('range').textContent = IDP.pad(start.getMonth() + 1) + '.' + IDP.pad(start.getDate()) + ' – ' + IDP.pad(end.getMonth() + 1) + '.' + IDP.pad(end.getDate());
+    var left = 6 - lead;
+    document.getElementById('foot').innerHTML = left === 0 ? '이번 주 <b>마지막 날</b>이에요' : '이번 주 <b>' + left + '일</b> 남았어요';
+  }
+  render(); setInterval(render, 60000);
+</script>
+</body>
+</html>
