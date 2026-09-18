@@ -6,7 +6,9 @@
 <title>ID PLANNER · Mandal-art</title>
 <link rel="stylesheet" href="assets/core.css">
 <style>
-  .grid { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+  /* The board stays square whatever the column width: a wide embed centres it instead of stretching it. */
+  .grid { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;
+          max-width: 340px; margin-left: auto; margin-right: auto; }
   .cell { position: relative; }
   .cell textarea { font: inherit; font-size: 11px; line-height: 1.4; color: var(--ink); background: var(--tint);
                    border: 1px solid var(--line); border-radius: calc(var(--r) * .4); width: 100%; aspect-ratio: 1;

@@ -11,18 +11,21 @@
   .grid.g4 { grid-template-columns: repeat(2, 1fr); }
   .grid.g6 { grid-template-columns: repeat(3, 1fr); }
   .grid.g9 { grid-template-columns: repeat(3, 1fr); }
-  .cell { position: relative; aspect-ratio: 1; border-radius: calc(var(--r) * .45); overflow: hidden;
+  /* Square by default, but capped so a full-width embed becomes a band of photos, not three huge boxes. */
+  .cell { position: relative; aspect-ratio: 1; min-height: 62px; max-height: 158px;
+          border-radius: calc(var(--r) * .45); overflow: hidden;
           background: var(--tint); border: 1px solid var(--line); }
   .cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .cell b { position: absolute; left: 0; right: 0; bottom: 0; padding: 5px 7px; font-weight: 400;
             font-size: 10px; letter-spacing: .06em; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.45)); }
-  .cell.empty b { color: var(--sub); background: none; text-align: center; bottom: 50%; transform: translateY(50%); }
+  .cell.empty b { color: var(--sub); background: none; text-align: center; bottom: 50%; transform: translateY(50%);
+                  font-family: var(--serif); font-size: 13px; letter-spacing: .1em; }
   .foot { margin-top: 12px; font-size: 11px; color: var(--sub); letter-spacing: .04em; }
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="row"><div class="badge">VISION 2027</div><span class="caps" id="n"></span></div>
+  <div class="row"><div class="badge" id="badge">VISION</div><span class="caps" id="n"></span></div>
   <div class="grow">
     <div class="line" id="line"></div>
     <div class="grid" id="grid"></div>
@@ -34,14 +37,16 @@
 <script>
   // The planner's VISION BOARD page, small enough to live on a dashboard.
   // Keywords carry the board even before any photo is added, so it never looks broken on day one.
-  var words = [], urls = [], line = '', cells = 6;
+  var words = [], urls = [], line = '', cells = 6, year = '';
   function readOpts() {
     line = IDP.opt('vision', 'line', '올해 나는 이런 모습으로 지내고 싶다');
     cells = Math.max(4, Math.min(9, +IDP.opt('vision', 'cells', 6) || 6));
     words = String(IDP.opt('vision', 'words', '건강,기록,여행,배움,관계,쉼')).split(',').map(function (s) { return s.trim(); });
     urls = String(IDP.opt('vision', 'urls', '')).split(/[\s,]+/).filter(function (u) { return /^https?:\/\//.test(u); });
+    year = String(IDP.opt('vision', 'year', new Date().getFullYear()));
   }
   function render() {
+    document.getElementById('badge').textContent = 'VISION ' + year;
     document.getElementById('line').textContent = line;
     document.getElementById('n').textContent = urls.length ? urls.length + ' / ' + cells : cells + '칸';
     var box = document.getElementById('grid');
@@ -61,6 +66,7 @@
     { k: 'words', label: '키워드 (쉼표로 구분)', ph: '건강,기록,여행,배움,관계,쉼' },
     { k: 'urls', label: '사진 주소 (쉼표로 구분)', ph: 'https://…' },
     { k: 'cells', t: 'number', label: '칸 수 (4–9)', ph: '6' },
+    { k: 'year', t: 'number', label: '연도', ph: String(new Date().getFullYear()) },
   ], function () { readOpts(); render(); });
   readOpts(); render();
 </script>

@@ -32,10 +32,11 @@
 <script>
   // Not a checklist — cards, so that a wish looks like a wish. The planner's BUCKET LIST keeps the full list;
   // this holds the few that should stay in sight this year.
-  var N = 4, TITLE = 'BUCKET LIST', KEY = '';
+  var N = 4, TITLE = 'BUCKET LIST', KEY = '', YEAR = '';
   function readOpts() {
     TITLE = IDP.opt('bucket', 'title', 'BUCKET LIST');
     N = Math.max(2, Math.min(8, +IDP.opt('bucket', 'cells', 4) || 4));
+    YEAR = String(IDP.opt('bucket', 'year', new Date().getFullYear()));
     KEY = 'idarchive.bucket.' + (IDP.q.get('id') || TITLE);
   }
   readOpts();
@@ -44,7 +45,7 @@
   function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
   function render() {
     document.getElementById('badge').textContent = TITLE;
-    document.getElementById('year').textContent = new Date().getFullYear();
+    document.getElementById('year').textContent = YEAR;
     var done = (st.done || []).filter(function (i) { return i < N; }).length;
     document.getElementById('count').textContent = done + ' / ' + N;
     var box = document.getElementById('cards');
@@ -64,6 +65,7 @@
   IDP.options('bucket', [
     { k: 'title', label: '제목', ph: 'BUCKET LIST' },
     { k: 'cells', t: 'number', label: '칸 수 (2–8)', ph: '4' },
+    { k: 'year', t: 'number', label: '연도', ph: String(new Date().getFullYear()) },
   ], function () { readOpts(); st = load(); render(); });
   render();
 </script>
