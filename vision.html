@@ -43,7 +43,7 @@
     cells = Math.max(4, Math.min(9, +IDP.opt('vision', 'cells', 6) || 6));
     words = String(IDP.opt('vision', 'words', '건강,기록,여행,배움,관계,쉼')).split(',').map(function (s) { return s.trim(); });
     urls = String(IDP.opt('vision', 'urls', '')).split(/[\s,]+/).filter(function (u) { return /^https?:\/\//.test(u); });
-    year = String(IDP.opt('vision', 'year', new Date().getFullYear()));
+    year = String(IDP.opt('vision', 'year', IDP.now().getFullYear()));
   }
   function render() {
     document.getElementById('badge').textContent = 'VISION ' + year;
@@ -66,7 +66,7 @@
     { k: 'words', label: '키워드 (쉼표로 구분)', ph: '건강,기록,여행,배움,관계,쉼' },
     { k: 'urls', label: '사진 주소 (쉼표로 구분)', ph: 'https://…' },
     { k: 'cells', t: 'number', label: '칸 수 (4–9)', ph: '6' },
-    { k: 'year', t: 'number', label: '연도', ph: String(new Date().getFullYear()) },
+    { k: 'year', t: 'number', label: '연도', ph: String(IDP.now().getFullYear()) },
   ], function () { readOpts(); render(); });
   readOpts(); render();
 </script>

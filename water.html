@@ -38,7 +38,7 @@
   readOpts();
   var KEY = 'idarchive.water.' + (IDP.q.get('id') || 'v1');
   function dayKey() {
-    var d = new Date();
+    var d = IDP.now();
     if (d.getHours() < FROM) d.setDate(d.getDate() - 1);
     return IDP.iso(d);
   }

@@ -61,7 +61,7 @@
     document.getElementById('count').textContent = done.length + ' / ' + STEPS.length;
     var t = IDP.parseDate(DUE);
     if (t) {
-      var today = new Date(); today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      var today = IDP.now(); today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       var diff = Math.round((t - today) / 864e5);
       document.getElementById('dday').textContent = diff === 0 ? 'D-DAY' : diff > 0 ? 'D-' + diff : 'D+' + (-diff);
     } else { document.getElementById('dday').textContent = ''; }

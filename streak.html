@@ -40,7 +40,7 @@
   }
   readOpts();
   function dayKey(d) {
-    d = d || new Date();
+    d = d || IDP.now();
     var x = new Date(d.getTime());
     if (x.getHours() < FROM) x.setDate(x.getDate() - 1);
     return IDP.iso(x);
@@ -51,7 +51,7 @@
   var days = load();
   function save() { try { localStorage.setItem(KEY, JSON.stringify(days.slice(-400))); } catch (e) {} }
   function streak() {
-    var n = 0, d = new Date();
+    var n = 0, d = IDP.now();
     if (days.indexOf(dayKey(d)) < 0) d.setDate(d.getDate() - 1);   // today not ticked yet: count up to yesterday
     while (days.indexOf(dayKey(d)) >= 0) { n++; d.setDate(d.getDate() - 1); }
     return n;
@@ -75,7 +75,7 @@
     box.innerHTML = '';
     var today = dayKey();
     for (var i = 29; i >= 0; i--) {
-      var d = new Date(); d.setDate(d.getDate() - i);
+      var d = IDP.now(); d.setDate(d.getDate() - i);
       var k = dayKey(d);
       var el = document.createElement('div');
       el.className = 'd' + (days.indexOf(k) >= 0 ? ' on' : '') + (k === today ? ' today' : '');

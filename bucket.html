@@ -36,7 +36,7 @@
   function readOpts() {
     TITLE = IDP.opt('bucket', 'title', 'BUCKET LIST');
     N = Math.max(2, Math.min(8, +IDP.opt('bucket', 'cells', 4) || 4));
-    YEAR = String(IDP.opt('bucket', 'year', new Date().getFullYear()));
+    YEAR = String(IDP.opt('bucket', 'year', IDP.now().getFullYear()));
     KEY = 'idarchive.bucket.' + (IDP.q.get('id') || TITLE);
   }
   readOpts();
@@ -72,7 +72,7 @@
   IDP.options('bucket', [
     { k: 'title', label: '제목', ph: 'BUCKET LIST' },
     { k: 'cells', t: 'number', label: '칸 수 (2–8)', ph: '4' },
-    { k: 'year', t: 'number', label: '연도', ph: String(new Date().getFullYear()) },
+    { k: 'year', t: 'number', label: '연도', ph: String(IDP.now().getFullYear()) },
   ], function () { readOpts(); st = load(); render(); });
   render();
 </script>

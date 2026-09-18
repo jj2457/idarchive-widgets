@@ -34,13 +34,13 @@
   // Weekly and monthly focus in one card: the two lines people re-read most, without opening the planner.
   var KEY = 'idarchive.focusnote.' + (IDP.q.get('id') || 'v1');
   function weekKey(d) {
-    d = d || new Date();
+    d = d || IDP.now();
     var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     var shift = IDP.weekStart === 'mon' ? (x.getDay() + 6) % 7 : x.getDay();
     x.setDate(x.getDate() - shift);
     return IDP.iso(x);
   }
-  function monthKey(d) { d = d || new Date(); return d.getFullYear() + '-' + IDP.pad(d.getMonth() + 1); }
+  function monthKey(d) { d = d || IDP.now(); return d.getFullYear() + '-' + IDP.pad(d.getMonth() + 1); }
   function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
   var st = load();
   function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
@@ -54,7 +54,7 @@
     var s = IDP.parseDate(wk), e = new Date(s.getTime()); e.setDate(e.getDate() + 6);
     document.getElementById('wk').textContent = IDP.pad(s.getMonth() + 1) + '.' + IDP.pad(s.getDate()) + ' – ' + IDP.pad(e.getMonth() + 1) + '.' + IDP.pad(e.getDate());
     document.getElementById('mo').textContent = mo.replace('-', '. ');
-    document.getElementById('range').textContent = new Date().getFullYear();
+    document.getElementById('range').textContent = IDP.now().getFullYear();
   }
   w.oninput = function () { st.wText = w.value; save(); };
   m.oninput = function () { st.mText = m.value; save(); };

@@ -31,7 +31,7 @@
   // One line a day. Deliberately one line: a blank page stops people, a single line does not.
   var FROM = Math.min(23, Math.max(0, +IDP.opt('journal', 'from', 5) || 5));
   var KEY = 'idarchive.journal.' + (IDP.q.get('id') || 'v1');
-  function dayKey(d) { d = d || new Date(); var x = new Date(d.getTime()); if (x.getHours() < FROM) x.setDate(x.getDate() - 1); return IDP.iso(x); }
+  function dayKey(d) { d = d || IDP.now(); var x = new Date(d.getTime()); if (x.getHours() < FROM) x.setDate(x.getDate() - 1); return IDP.iso(x); }
   function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
   var all = load();
   function save() { try { localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) {} }
@@ -44,7 +44,7 @@
     box.innerHTML = '';
     var shown = 0;
     for (var i = 1; i <= 21 && shown < 5; i++) {
-      var d = new Date(); d.setDate(d.getDate() - i);
+      var d = IDP.now(); d.setDate(d.getDate() - i);
       var k = dayKey(d), t = (all[k] || '').trim();
       if (!t) continue;
       var row = document.createElement('div'); row.className = 'p';
@@ -55,7 +55,7 @@
     }
   }
   function render() {
-    var d = new Date();
+    var d = IDP.now();
     document.getElementById('date').textContent = IDP.pad(d.getMonth() + 1) + '.' + IDP.pad(d.getDate());
     renderPast();
   }

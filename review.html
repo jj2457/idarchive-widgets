@@ -38,13 +38,13 @@
   var MODE = (IDP.opt('review', 'mode', 'week') === 'month') ? 'month' : 'week';
   var KEY = 'idarchive.review.' + (IDP.q.get('id') || 'v1');
   function weekKey(d) {
-    d = d || new Date();
+    d = d || IDP.now();
     var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     var shift = IDP.weekStart === 'mon' ? (x.getDay() + 6) % 7 : x.getDay();
     x.setDate(x.getDate() - shift);
     return 'W' + IDP.iso(x);
   }
-  function monthKey(d) { d = d || new Date(); return 'M' + d.getFullYear() + '-' + IDP.pad(d.getMonth() + 1); }
+  function monthKey(d) { d = d || IDP.now(); return 'M' + d.getFullYear() + '-' + IDP.pad(d.getMonth() + 1); }
   function periodKey() { return MODE === 'month' ? monthKey() : weekKey(); }
   function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
   var all = load();
