@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Alarm</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 560px; }
+  .next { margin-top: 10px; display: flex; align-items: baseline; gap: 9px; }
+  .next .t { font-family: var(--serif); font-size: 26px; line-height: 1; color: var(--ink); }
+  .next .n { font-size: 12px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .add { margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .add input[type=time] { flex: 0 0 96px; }
+  .add input[type=text] { flex: 1 1 130px; min-width: 0; }
+  .add select { flex: 0 0 92px; }
+  .add input, .add select { font: inherit; font-size: 12px; color: var(--ink); background: var(--paper);
+                            border: 1px solid var(--line); border-radius: 9px; padding: 6px 8px; }
+  .add input:focus, .add select:focus { outline: none; border-color: var(--soft); }
+  .add button { flex: 0 0 44px; font-size: 11px; padding: 6px 0; }
+  .list { margin-top: 12px; display: flex; flex-direction: column; gap: 5px; }
+  .it { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 10px; background: var(--tint); }
+  .it.off { opacity: .45; }
+  .it .tm { flex: none; font-family: var(--serif); font-size: 15px; line-height: 1; color: var(--ink); width: 54px; }
+  .it .tx { flex: 1; min-width: 0; }
+  .it .n { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .it .m { margin-top: 2px; font-size: 9px; letter-spacing: .1em; color: var(--sub); }
+  .it .chip { flex: none; font-size: 8.5px; letter-spacing: .1em; padding: 2px 6px; border-radius: 999px;
+              background: var(--soft); color: color-mix(in srgb, var(--deep) 65%, #2a2a2a); }
+  .it button { flex: none; padding: 2px 6px; font-size: 11px; background: none; border: 0; color: var(--sub); }
+  .missed { margin-top: 10px; font-size: 11px; color: var(--red); line-height: 1.6; }
+  .empty { margin-top: 18px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
+  .foot { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+          font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+  .foot button { padding: 4px 9px; font-size: 9.5px; letter-spacing: .06em; background: none;
+                 border-radius: 999px; text-transform: none; }
+  .foot button.on { background: var(--tint); border-color: var(--soft); color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">ALARM</div><span class="caps" id="count"></span></div>
+  <div class="grow"><div class="wrap">
+    <div class="next" id="next"></div>
+    <div class="add">
+      <input type="time" id="t" aria-label="시각">
+      <input type="text" id="n" placeholder="무엇을 알릴까요" maxlength="40">
+      <select id="c" aria-label="분류">
+        <option value="FOCUS">집중</option>
+        <option value="MEETING">미팅</option>
+        <option value="SCHEDULE" selected>일정</option>
+        <option value="HABIT">습관</option>
+        <option value="CUSTOM">기타</option>
+      </select>
+      <select id="r" aria-label="반복">
+        <option value="once">한 번</option>
+        <option value="daily" selected>매일</option>
+        <option value="weekday">평일</option>
+      </select>
+      <button type="button" id="addBtn">＋</button>
+    </div>
+    <div class="list" id="list"></div>
+    <div class="missed" id="missed"></div>
+    <div class="empty" id="empty" hidden>시각과 할 말을 적고 ＋ 를 누르세요.<br>플래너를 열어 둔 동안 알려 드립니다.</div>
+  </div></div>
+  <div class="foot">
+    <span><button type="button" id="snd">소리</button><button type="button" id="perm">알림 허용</button></span>
+    <span id="note">이 기기에 저장돼요</span>
+  </div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // A reminder that is honest about where it lives. It runs while this widget is on screen and it
+  // says so; it does not claim to replace the alarm on a phone. When the planner has been closed and
+  // comes back, it adds up what it could not say at the time and shows that instead of pretending.
+  // The full boundary is written down in docs/CLOCK_AND_ALERTS.md.
+  var CATS = { FOCUS: '집중', MEETING: '미팅', SCHEDULE: '일정', HABIT: '습관', CUSTOM: '기타' };
+  var REPEAT = { once: '한 번', daily: '매일', weekday: '평일' };
+  var MAX = 12, KEY = '';
+
+  function readOpts() { KEY = 'idarchive.alarm.' + (IDP.q.get('id') || IDP.opt('alarm', 'title', 'main')); }
+  readOpts();
+  function load() {
+    try { var v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (v && v.items) return v; } catch (e) {}
+    return { items: [], sound: true, seen: IDP.iso(IDP.now()) + ' ' + IDP.pad(IDP.now().getHours()) + ':' + IDP.pad(IDP.now().getMinutes()) };
+  }
+  var st = load();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+
+  function dueToday(it, d) {
+    if (it.r === 'daily') return true;
+    if (it.r === 'weekday') { var w = d.getDay(); return w >= 1 && w <= 5; }
+    return it.last !== 'done';                       // 한 번짜리는 울리고 나면 끝
+  }
+  function mins(s) { var p = String(s || '').split(':'); return (+p[0]) * 60 + (+p[1] || 0); }
+  function hhmm(d) { return IDP.pad(d.getHours()) + ':' + IDP.pad(d.getMinutes()); }
+
+  function nextOf(d) {
+    var now = d.getHours() * 60 + d.getMinutes(), best = null;
+    st.items.forEach(function (it) {
+      if (it.on === false || !dueToday(it, d)) return;
+      var m = mins(it.t);
+      var away = m >= now ? m - now : m + 1440 - now;
+      if (!best || away < best.away) best = { it: it, away: away };
+    });
+    return best;
+  }
+
+  // what the reader missed while the planner was closed — the one thing we can still be useful about
+  function sweepMissed() {
+    var d = IDP.now(), today = IDP.iso(d), nowM = d.getHours() * 60 + d.getMinutes();
+    var seenDay = (st.seen || '').split(' ')[0], seenM = mins((st.seen || '').split(' ')[1] || '00:00');
+    var out = [];
+    if (seenDay === today) {
+      st.items.forEach(function (it) {
+        if (it.on === false || !dueToday(it, d)) return;
+        var m = mins(it.t);
+        if (m > seenM && m <= nowM && it.last !== today + ' ' + it.t) out.push(it);
+      });
+    }
+    st.seen = today + ' ' + hhmm(d);
+    save();
+    document.getElementById('missed').textContent = out.length
+      ? ('놓친 알림 ' + out.length + '개 — ' + out.map(function (x) { return x.t + ' ' + x.n; }).join(' · '))
+      : '';
+  }
+
+  function fire(it) {
+    var d = IDP.now();
+    it.last = it.r === 'once' ? 'done' : IDP.iso(d) + ' ' + it.t;
+    save();
+    IDP.alert(it.n || CATS[it.c] || '알림', CATS[it.c] + ' · ' + it.t, { sound: st.sound !== false, times: 2 });
+    render();
+  }
+
+  function check() {
+    var d = IDP.now(), today = IDP.iso(d), now = hhmm(d);
+    st.items.forEach(function (it) {
+      if (it.on === false || !dueToday(it, d)) return;
+      if (it.snooze && it.snooze === now) { it.snooze = null; fire(it); return; }
+      if (it.t !== now) return;
+      if (it.last === today + ' ' + it.t) return;
+      fire(it);
+    });
+    document.getElementById('next').innerHTML = '';
+    var n = nextOf(d);
+    if (n) {
+      var t = document.createElement('span'); t.className = 't'; t.textContent = n.it.t;
+      var nm = document.createElement('span'); nm.className = 'n';
+      nm.textContent = (n.it.n || CATS[n.it.c]) + ' · ' +
+        (n.away === 0 ? '지금' : n.away < 60 ? (n.away + '분 뒤') : (Math.floor(n.away / 60) + '시간 ' + (n.away % 60) + '분 뒤'));
+      document.getElementById('next').appendChild(t);
+      document.getElementById('next').appendChild(nm);
+    }
+  }
+
+  function render() {
+    document.getElementById('badge').textContent = IDP.opt('alarm', 'label', 'ALARM');
+    var on = st.items.filter(function (i) { return i.on !== false; }).length;
+    document.getElementById('count').textContent = st.items.length ? (on + ' / ' + st.items.length) : '';
+    document.getElementById('empty').hidden = !!st.items.length;
+    document.getElementById('snd').className = st.sound !== false ? 'on' : '';
+    var list = document.getElementById('list');
+    list.innerHTML = '';
+    st.items.slice().sort(function (a, b) { return mins(a.t) - mins(b.t); }).forEach(function (it) {
+      var row = document.createElement('div');
+      row.className = 'it' + (it.on === false ? ' off' : '');
+      var tm = document.createElement('div'); tm.className = 'tm'; tm.textContent = it.t;
+      var tx = document.createElement('div'); tx.className = 'tx';
+      var n = document.createElement('div'); n.className = 'n'; n.textContent = it.n || CATS[it.c];
+      var m = document.createElement('div'); m.className = 'm';
+      m.textContent = REPEAT[it.r] + (it.snooze ? ' · ' + it.snooze + ' 다시' : '');
+      tx.appendChild(n); tx.appendChild(m);
+      var chip = document.createElement('span'); chip.className = 'chip'; chip.textContent = CATS[it.c] || '기타';
+      var sn = document.createElement('button');
+      sn.type = 'button'; sn.textContent = '5분'; sn.title = '5분 뒤 다시';
+      sn.onclick = function () {
+        var d = new Date(IDP.now().getTime() + 5 * 60000);
+        it.snooze = hhmm(d); save(); render();
+      };
+      var tog = document.createElement('button');
+      tog.type = 'button'; tog.textContent = it.on === false ? '○' : '●'; tog.title = '켜기 / 끄기';
+      tog.onclick = function () { it.on = it.on === false; save(); render(); check(); };
+      var del = document.createElement('button');
+      del.type = 'button'; del.textContent = '×'; del.title = '지우기';
+      del.onclick = function () { st.items.splice(st.items.indexOf(it), 1); save(); render(); check(); };
+      row.appendChild(tm); row.appendChild(tx); row.appendChild(chip);
+      row.appendChild(sn); row.appendChild(tog); row.appendChild(del);
+      list.appendChild(row);
+    });
+    check();
+  }
+
+  document.getElementById('addBtn').onclick = function () {
+    var t = document.getElementById('t').value;
+    if (!t || st.items.length >= MAX) return;
+    st.items.push({ t: t, n: document.getElementById('n').value.trim(),
+                    c: document.getElementById('c').value, r: document.getElementById('r').value, on: true });
+    document.getElementById('n').value = '';
+    save(); render();
+  };
+  document.getElementById('snd').onclick = function () { st.sound = st.sound === false; save(); render(); };
+  document.getElementById('perm').onclick = function () {
+    IDP.askNotify(function (ok) {
+      document.getElementById('note').textContent = ok
+        ? '화면 알림까지 보내요' : '이 화면 안에서만 알려요';
+    });
+  };
+
+  IDP.options('alarm', [
+    { k: 'label', label: '제목', ph: 'ALARM' },
+    { k: 'title', label: '이 알람 목록의 이름 (여러 개 쓸 때)', ph: 'main' }
+  ], function () { readOpts(); st = load(); render(); });
+
+  render();
+  sweepMissed();
+  setInterval(check, 15000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) { sweepMissed(); check(); } });
+</script>
+</body>
+</html>

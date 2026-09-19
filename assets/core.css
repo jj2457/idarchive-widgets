@@ -91,3 +91,12 @@ button:focus-visible { outline: 2px solid var(--deep); outline-offset: 2px; }
             border-radius: 8px; resize: none; word-break: break-all; }
 .idp-link:focus { outline: none; color: var(--ink); }
 .idp-warn { margin-top: 8px; color: color-mix(in srgb, var(--deep) 70%, #2a2a2a); line-height: 1.6; }
+.idp-banner { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 5;
+              display: flex; align-items: baseline; gap: 8px; padding: 9px 11px; border-radius: 12px;
+              background: var(--soft); color: var(--ink); font-size: 12px; line-height: 1.4;
+              box-shadow: 0 6px 18px rgba(0,0,0,.08); animation: idp-rise .28s ease-out; }
+.idp-banner .t { flex: 0 1 auto; }
+.idp-banner .s, .idp-banner .q { flex: 1 1 auto; font-size: 10px; color: color-mix(in srgb, var(--deep) 65%, #2a2a2a); }
+.idp-banner button { flex: none; padding: 0 4px; font-size: 13px; line-height: 1; background: none; border: 0; color: inherit; }
+@keyframes idp-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.card { position: relative; }

@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Analog Clock</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .stage { display: flex; align-items: center; justify-content: center; gap: 22px; flex-wrap: wrap; }
+  svg { width: 100%; max-width: 210px; height: auto; overflow: visible; }
+  .face { fill: var(--tint); stroke: var(--line); stroke-width: 1; }
+  .tick { stroke: var(--sub); stroke-linecap: round; opacity: .55; }
+  .tick.big { stroke: var(--deep); opacity: .85; }
+  .num { font-family: var(--serif); font-size: 9px; fill: var(--sub); text-anchor: middle; dominant-baseline: middle; }
+  .hand { stroke: var(--ink); stroke-linecap: round; }
+  .hand.h { stroke-width: 3.2; }
+  .hand.m { stroke-width: 2.2; }
+  .hand.s { stroke-width: 1; stroke: var(--deep); }
+  .pin { fill: var(--paper); stroke: var(--ink); stroke-width: 1.4; }
+  .side { text-align: center; }
+  .digital { font-family: var(--serif); font-size: clamp(22px, 7vw, 34px); line-height: 1; color: var(--ink); }
+  .digital small { font-size: .34em; letter-spacing: .2em; color: var(--sub); margin-left: .35em; font-family: 'Roboto', sans-serif; }
+  .date { margin-top: 8px; font-family: var(--serif); font-size: 13px; color: var(--ink); }
+  .date b { font-weight: 400; color: var(--deep); margin-left: .5em; letter-spacing: .12em; font-size: .78em; }
+  .date b.sun { color: var(--red); } .date b.sat { color: var(--blue); }
+  .hol { margin-top: 6px; font-size: 10.5px; color: var(--red); letter-spacing: .06em; min-height: 13px; }
+  .foot { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+          font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+  .foot button { padding: 4px 9px; font-size: 9.5px; letter-spacing: .06em; background: none;
+                 border-radius: 999px; text-transform: none; }
+  .foot button.on { background: var(--tint); border-color: var(--soft); color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">CLOCK</div><span class="caps" id="zone"></span></div>
+  <div class="grow center">
+    <div class="stage">
+      <svg viewBox="0 0 100 100" id="dial" role="img" aria-label="아날로그 시계"></svg>
+      <div class="side" id="side" hidden>
+        <div class="digital" id="digital"></div>
+        <div class="date serif" id="date"></div>
+        <div class="hol" id="hol"></div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <span id="styles"></span>
+    <span id="note"></span>
+  </div>
+</div>
+<script src="assets/holidays.js"></script>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // The planner already has a large digital clock. This one is for the people who read a round face
+  // faster than a number — and for a dashboard that wants one quiet object rather than another row
+  // of digits. Three faces, because "minimal" means different things to different desks.
+  var FACES = [['index', '인덱스'], ['number', '숫자'], ['plain', '미니멀']];
+  var KEY = 'idarchive.analog.' + (IDP.q.get('id') || 'v1');
+  var face = 'index', withDate = true, withSec = true, offset = null, label = '';
+
+  function readOpts() {
+    var f = IDP.opt('analog', 'face', 'index');
+    face = FACES.some(function (x) { return x[0] === f; }) ? f : 'index';
+    withDate = String(IDP.opt('analog', 'date', '1')) !== '0';
+    withSec = String(IDP.opt('analog', 'seconds', '1')) !== '0';
+    var o = IDP.opt('analog', 'utc', '');
+    offset = (o === '' || isNaN(parseFloat(o))) ? null : parseFloat(o);
+    label = IDP.opt('analog', 'city', '');
+  }
+  readOpts();
+  try { var saved = localStorage.getItem(KEY); if (saved && FACES.some(function (x) { return x[0] === saved; })) face = saved; } catch (e) {}
+
+  function el(tag, attrs) {
+    var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+    return e;
+  }
+  function polar(cx, cy, r, deg) {
+    var a = (deg - 90) * Math.PI / 180;
+    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  }
+
+  function drawFace() {
+    var svg = document.getElementById('dial');
+    svg.innerHTML = '';
+    svg.appendChild(el('circle', { cx: 50, cy: 50, r: 46, class: 'face' }));
+    if (face === 'plain') {
+      // four marks only — the quietest face
+      [0, 90, 180, 270].forEach(function (d) {
+        var a = polar(50, 50, 40, d), b = polar(50, 50, 36, d);
+        svg.appendChild(el('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], class: 'tick big' }));
+      });
+    } else if (face === 'number') {
+      for (var n = 1; n <= 12; n++) {
+        var p = polar(50, 50, 37, n * 30);
+        var t = el('text', { x: p[0], y: p[1], class: 'num' });
+        t.textContent = n;
+        svg.appendChild(t);
+      }
+    } else {
+      for (var i = 0; i < 60; i++) {
+        var big = i % 5 === 0;
+        var a = polar(50, 50, 42, i * 6), b = polar(50, 50, big ? 36 : 39.5, i * 6);
+        svg.appendChild(el('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], class: 'tick' + (big ? ' big' : '') }));
+      }
+    }
+    ['h', 'm', 's'].forEach(function (k) {
+      var l = el('line', { x1: 50, y1: 50, x2: 50, y2: 50, class: 'hand ' + k, id: 'hand-' + k });
+      if (k === 's' && !withSec) l.setAttribute('opacity', '0');
+      svg.appendChild(l);
+    });
+    svg.appendChild(el('circle', { cx: 50, cy: 50, r: 2.4, class: 'pin' }));
+  }
+
+  // a city offset shifts the shown time without pretending to know that city's summer time
+  function shown() {
+    var d = IDP.now();
+    if (offset == null) return d;
+    return new Date(d.getTime() + (d.getTimezoneOffset() * 60000) + offset * 3600000);
+  }
+
+  function hand(id, deg, len) {
+    var p = polar(50, 50, len, deg);
+    var l = document.getElementById(id);
+    if (!l) return;
+    l.setAttribute('x2', p[0]); l.setAttribute('y2', p[1]);
+    var back = polar(50, 50, -6, deg);
+    l.setAttribute('x1', back[0]); l.setAttribute('y1', back[1]);
+  }
+
+  function tick() {
+    var d = shown();
+    var h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
+    hand('hand-h', (h % 12) * 30 + m * 0.5, 22);
+    hand('hand-m', m * 6 + s * 0.1, 31);
+    if (withSec) hand('hand-s', s * 6, 34);
+
+    document.getElementById('side').hidden = !withDate;
+    if (withDate) {
+      var hh = h % 12 || 12;
+      document.getElementById('digital').innerHTML =
+        hh + ':' + IDP.pad(m) + '<small>' + (h < 12 ? 'AM' : 'PM') + '</small>';
+      var w = d.getDay();
+      document.getElementById('date').innerHTML =
+        IDP.plannerDate(d) + '<b class="' + (w === 0 ? 'sun' : w === 6 ? 'sat' : '') + '">' + IDP.DOW[w] + '</b>';
+      var k = IDP.iso(d);
+      document.getElementById('hol').textContent =
+        offset == null ? (IDP_HOLIDAYS[k] || IDP_MEMORIAL[k] || '') : '';
+    }
+  }
+
+  function render() {
+    document.getElementById('badge').textContent = IDP.opt('analog', 'label', 'CLOCK');
+    document.getElementById('zone').textContent = label || (offset != null ? ('UTC' + (offset >= 0 ? '+' : '') + offset) : '');
+    document.getElementById('note').textContent = offset != null ? '서머타임은 직접 맞춰 주세요' : '';
+    var box = document.getElementById('styles');
+    box.innerHTML = '';
+    FACES.forEach(function (f) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = f[1];
+      if (f[0] === face) b.className = 'on';
+      b.onclick = function () {
+        face = f[0];
+        try { localStorage.setItem(KEY, face); } catch (e) {}
+        drawFace(); tick(); render();
+      };
+      box.appendChild(b);
+    });
+    drawFace(); tick();
+  }
+
+  IDP.options('analog', [
+    { k: 'label', label: '제목', ph: 'CLOCK' },
+    { k: 'face', label: '문자판 (index · number · plain)', ph: 'index' },
+    { k: 'date', label: '날짜 같이 보기 (1 또는 0)', ph: '1' },
+    { k: 'seconds', label: '초침 (1 또는 0)', ph: '1' },
+    { k: 'city', label: '도시 이름 (선택)', ph: '예) NEW YORK' },
+    { k: 'utc', label: '그 도시의 UTC 차이 (선택)', ph: '-4' }
+  ], function () { readOpts(); render(); });
+  render();
+  setInterval(tick, withSec ? 1000 : 10000);
+</script>
+</body>
+</html>

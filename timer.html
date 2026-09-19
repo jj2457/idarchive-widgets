@@ -62,7 +62,12 @@
       var now = Date.now(), d = (now - last) / 1000; last = now;
       if (mode === 'timer') {
         left -= d;
-        if (left <= 0) { left = 0; stop(); document.getElementById('foot').textContent = '시간이 다 됐어요'; }
+        if (left <= 0) {
+          left = 0; stop();
+          document.getElementById('foot').textContent = '시간이 다 됐어요';
+          // the reader pressed 시작 a moment ago, so the tone is allowed to play here
+          IDP.alert('타이머 끝', Math.round(DEFAULT) + '분 집중했어요', { times: 2 });
+        }
       } else { elapsed += d; }
       render();
     }, 250);

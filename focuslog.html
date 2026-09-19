@@ -194,11 +194,13 @@
   }
   function stop() {
     if (!st.run) return;
-    var m = running() / 60;
-    if (m >= 1) st.s.push({ d: dayKey(), h: st.run.h, m: Math.round(m) });
+    var m = running() / 60, name = st.run.h;
+    if (m >= 1) st.s.push({ d: dayKey(), h: name, m: Math.round(m) });
     st.run = null;
     st.s = st.s.slice(-600);
     save(); render();
+    // the session is already written down; this only says so out loud
+    if (m >= 1) IDP.alert(name + ' ' + Math.round(m) + '분', '오늘 기록에 더했어요', { times: 1 });
   }
   document.getElementById('go').onclick = start;
   document.getElementById('stop').onclick = stop;

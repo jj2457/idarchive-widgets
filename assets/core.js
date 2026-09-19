@@ -297,6 +297,101 @@
   }
   if (document.body) settingsPanel(); else document.addEventListener('DOMContentLoaded', settingsPanel);
 
+
+  // ---- Sound, banner, and a best-effort browser notification ---------------------------------
+  // What a widget in a Notion embed may actually do is narrow, and pretending otherwise would put
+  // a promise in the product we cannot keep (docs/CLOCK_AND_ALERTS.md):
+  //   · a tone plays only after the reader has clicked something inside this widget — autoplay policy
+  //   · a desktop notification needs a permission this iframe may not be allowed to ask for
+  //   · nothing at all runs once the page is closed
+  // So every alert falls back to a banner drawn inside the card, which always works.
+  var AC = null, soundReady = false;
+  function unlock() {
+    if (soundReady) return;
+    try {
+      var Ctor = window.AudioContext || window.webkitAudioContext;
+      if (!Ctor) return;
+      AC = AC || new Ctor();
+      if (AC.state === 'suspended') AC.resume();
+      soundReady = true;
+    } catch (e) { /* no audio here */ }
+  }
+  document.addEventListener('pointerdown', unlock, true);
+  document.addEventListener('keydown', unlock, true);
+
+  // two soft tones, a fifth apart — a chime, not an alarm clock
+  function chime(times) {
+    if (!soundReady || !AC) return false;
+    var n = Math.max(1, Math.min(3, times || 2));
+    for (var i = 0; i < n; i++) {
+      [0, 0.18].forEach(function (off, k) {
+        var t = AC.currentTime + i * 0.75 + off;
+        var o = AC.createOscillator(), g = AC.createGain();
+        o.type = 'sine';
+        o.frequency.value = k ? 784 : 523.25;     // C5 → G5
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.14, t + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+        o.connect(g); g.connect(AC.destination);
+        o.start(t); o.stop(t + 0.6);
+      });
+    }
+    return true;
+  }
+
+  function banner(text, sub) {
+    var card = document.querySelector('.card');
+    if (!card) return;
+    var old = card.querySelector('.idp-banner');
+    if (old) old.remove();
+    var b = document.createElement('div');
+    b.className = 'idp-banner';
+    b.innerHTML = '<span class="t"></span>' + (sub ? '<span class="s"></span>' : '') +
+                  '<button type="button" aria-label="닫기">×</button>';
+    b.querySelector('.t').textContent = text;
+    if (sub) b.querySelector('.s').textContent = sub;
+    b.querySelector('button').onclick = function () { b.remove(); };
+    card.appendChild(b);
+    return b;
+  }
+
+  var notifyAsked = false;
+  function canNotify() {
+    try { return typeof Notification !== 'undefined' && Notification.permission === 'granted'; }
+    catch (e) { return false; }
+  }
+  // only ever called from a click, because that is the only place the request may be allowed
+  function askNotify(then) {
+    try {
+      if (typeof Notification === 'undefined') { then && then(false); return; }
+      if (Notification.permission === 'granted') { then && then(true); return; }
+      if (Notification.permission === 'denied' || notifyAsked) { then && then(false); return; }
+      notifyAsked = true;
+      var r = Notification.requestPermission(function (p) { then && then(p === 'granted'); });
+      if (r && r.then) r.then(function (p) { then && then(p === 'granted'); }, function () { then && then(false); });
+    } catch (e) { then && then(false); }
+  }
+  function notify(title, body) {
+    var shown = false;
+    try { if (canNotify()) { new Notification(title, { body: body || '', silent: true }); shown = true; } }
+    catch (e) { /* blocked in this frame */ }
+    return shown;
+  }
+  // one call for "tell the reader now": tone + banner + a desktop notification when we are allowed one
+  function alertNow(title, body, opts) {
+    var o = opts || {};
+    var played = o.sound === false ? false : chime(o.times);
+    var sent = notify(title, body);
+    var el = banner(title, body);
+    if (el && !played && o.sound !== false) {
+      var s = document.createElement('span');
+      s.className = 'q';
+      s.textContent = '소리는 위젯을 한 번 누른 뒤부터 납니다';
+      el.insertBefore(s, el.querySelector('button'));
+    }
+    return { sound: played, notification: sent };
+  }
+
   var weekStart = q.get('weekStart') || q.get('start') || D.weekStart;
 
   var DOW = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -350,5 +445,6 @@
   window.IDP = { q: q, CFG: CFG, THEMES: THEMES, applyTheme: applyTheme, weekStart: weekStart === 'sun' ? 'sun' : 'mon',
     DOW: DOW, MONTHS: MONTHS, pad: pad, iso: iso, plannerDate: plannerDate, parseDate: parseDate,
     options: options, opt: opt, seed: seed, seedDone: seedDone, now: now,
-    share: share, shareLink: shareLink };
+    share: share, shareLink: shareLink,
+    chime: chime, banner: banner, notify: notify, askNotify: askNotify, canNotify: canNotify, alert: alertNow };
 })();

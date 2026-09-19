@@ -155,6 +155,15 @@
         { k: 'title', t: 'text', label: '이 위젯의 이름 (여러 개 쓸 때)', ph: 'main' }] },
 
     { id: 'clock',    g: '오늘', name: '시계 · 오늘 날짜', h: 230, opts: [{ k: 'h24', t: 'check', label: '24시간 표시' }] },
+    { id: 'analog',   g: '오늘', name: '아날로그 시계',      h: 300, opts: [
+        { k: 'label', t: 'text', label: '제목', ph: 'CLOCK' },
+        { k: 'face', t: 'text', label: '문자판 (index · number · plain)', ph: 'index' },
+        { k: 'date', t: 'number', label: '날짜 같이 보기 (1/0)', ph: '1' },
+        { k: 'city', t: 'text', label: '도시 이름 (선택)', ph: 'NEW YORK' },
+        { k: 'utc', t: 'text', label: 'UTC 차이 (선택)', ph: '-4' }] },
+    { id: 'alarm',    g: '오늘', name: '알람 · 리마인더',    h: 420, opts: [
+        { k: 'label', t: 'text', label: '제목', ph: 'ALARM' },
+        { k: 'title', t: 'text', label: '이 목록의 이름 (여러 개 쓸 때)', ph: 'main' }] },
     { id: 'week',     g: '오늘', name: '이번 주 7일',      h: 200, opts: [{ k: 'weekStart', t: 'start' }] },
     { id: 'weekplan', g: '오늘', name: '주간 계획 (요일별 한 줄)', h: 360, opts: [
         { k: 'label', t: 'text', label: '제목', ph: 'WEEK PLAN' },
@@ -162,6 +171,8 @@
     { id: 'calendar', g: '오늘', name: '미니 캘린더',      h: 330, opts: [{ k: 'weekStart', t: 'start' }, { k: 'month', t: 'text', label: '고정할 달 (비우면 이번 달)', ph: '2027-03' }, { k: 'style', t: 'text', label: '디자인 (grid · editorial · minimal)', ph: 'editorial' }] },
     { id: 'timeline', g: '오늘', name: '타임로그 바',       h: 200, opts: [{ k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
     { id: 'top3',     g: '오늘', name: '오늘의 Top 3',      h: 230, opts: [{ k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
+    { id: 'summary',  g: '오늘', name: '오늘 요약 (위젯 모아보기)', h: 340, opts: [
+        { k: 'label', t: 'text', label: '제목', ph: 'TODAY' }] },
 
     { id: 'todo',     g: '오늘', name: '투두리스트',        h: 360, opts: [
         { k: 'label', t: 'text', label: '제목', ph: 'TO DO' },

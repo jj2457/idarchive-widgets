@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Today Summary</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 620px; }
+  .head { margin-top: 8px; }
+  .head .d { font-family: var(--serif); font-size: clamp(17px, 5vw, 22px); line-height: 1.2; color: var(--ink); }
+  .head .d b { font-weight: 400; color: var(--deep); margin-left: .5em; letter-spacing: .12em; font-size: .72em; }
+  .head .d b.sun { color: var(--red); } .head .d b.sat { color: var(--blue); }
+  .head .h { margin-top: 4px; font-size: 11px; color: var(--red); letter-spacing: .06em; min-height: 14px; }
+  .grid { margin-top: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 7px; }
+  .c { padding: 10px 12px; border-radius: 12px; background: var(--tint); min-width: 0; }
+  .c .k { font-size: 8.5px; letter-spacing: .16em; color: var(--sub); }
+  .c .v { margin-top: 5px; font-family: var(--serif); font-size: 18px; line-height: 1.15; color: var(--ink); }
+  .c .v small { font-size: .55em; letter-spacing: .04em; color: var(--sub); margin-left: .3em; font-family: 'Roboto', sans-serif; }
+  .c .s { margin-top: 3px; font-size: 10.5px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .c.quiet { background: none; box-shadow: inset 0 0 0 1px var(--line); }
+  .c.quiet .v { color: var(--sub); }
+  .bar { margin-top: 6px; height: 3px; border-radius: 999px; background: var(--line); overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--deep); opacity: .5; }
+  .foot { margin-top: 12px; display: flex; justify-content: space-between; gap: 10px;
+          font-size: 10.5px; color: var(--sub); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">TODAY</div><span class="caps" id="clock"></span></div>
+  <div class="grow"><div class="wrap">
+    <div class="head">
+      <div class="d serif" id="date"></div>
+      <div class="h" id="hol"></div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div></div>
+  <div class="foot"><span>위젯에 적힌 기록만 모아 보여 줍니다</span><span>새로 적는 칸은 없어요</span></div>
+</div>
+<script src="assets/holidays.js"></script>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // A summary that asks for nothing. Every number here already exists in another ID Archive widget
+  // on this device — widgets share one origin, so this card can read their storage and add it up.
+  // It cannot read the planner's Notion tables (api.notion.com sends no CORS header, measured), and
+  // the footer says as much rather than letting a buyer assume otherwise.
+  function readJSON(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }
+  function keysWith(prefix) {
+    var out = [];
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf(prefix) === 0) out.push(k); } }
+    catch (e) {}
+    return out;
+  }
+  function opts(widget) {
+    try { return (JSON.parse(localStorage.getItem('idp-widget-opts') || '{}') || {})[widget] || {}; }
+    catch (e) { return {}; }
+  }
+  // the planner's day turns at 5am, the same rule the routine and water widgets use
+  function dayKey(d) {
+    var x = new Date((d || IDP.now()).getTime());
+    if (x.getHours() < 5) x.setDate(x.getDate() - 1);
+    return IDP.iso(x);
+  }
+  function weekKey(d) {
+    var x = d || IDP.now(), day = x.getDay();
+    var shift = IDP.weekStart === 'sun' ? day : (day + 6) % 7;
+    var mon = new Date(x.getFullYear(), x.getMonth(), x.getDate() - shift);
+    var first = new Date(mon.getFullYear(), 0, 1);
+    return mon.getFullYear() + '-W' + IDP.pad(Math.floor((mon - first) / 6048e5) + 1);
+  }
+
+  function cardTodo() {
+    var all = keysWith('idarchive.todo.'), left = 0, done = 0, first = '';
+    all.forEach(function (k) {
+      var v = readJSON(k); if (!v || !v.items) return;
+      v.items.forEach(function (it) { if (it.d) done++; else { left++; if (!first) first = it.t; } });
+    });
+    if (!all.length) return null;
+    return { k: '할 일', v: left ? left : '0', unit: left ? '개 남음' : '다 했어요', s: left ? first : '',
+             quiet: !left, pct: (done + left) ? done / (done + left) : 0 };
+  }
+  function cardTop3() {
+    var today = dayKey(), best = null;
+    keysWith('idarchive.top3.').forEach(function (k) {
+      var v = readJSON(k);
+      if (v && v.day === today && v.text) best = v;
+    });
+    if (!best) return null;
+    var filled = best.text.filter(function (t) { return t && t.trim(); }).length;
+    var done = (best.done || []).filter(function (i) { return best.text[i] && best.text[i].trim(); }).length;
+    if (!filled) return { k: 'TOP 3', v: '비어 있어요', quiet: true, s: '오늘 가장 중요한 세 가지' };
+    return { k: 'TOP 3', v: done + ' / ' + filled, s: best.text.find(function (t) { return t && t.trim(); }) || '', pct: done / filled };
+  }
+  function cardFocus() {
+    var today = dayKey(), min = 0, top = {}, any = false;
+    keysWith('idarchive.focuslog.').forEach(function (k) {
+      var v = readJSON(k); if (!v || !v.s) return;
+      any = true;
+      v.s.forEach(function (r) { if (r.d === today) { min += r.m || 0; top[r.h] = (top[r.h] || 0) + (r.m || 0); } });
+    });
+    if (!any) return null;
+    var lead = Object.keys(top).sort(function (a, b) { return top[b] - top[a]; })[0] || '';
+    return { k: '오늘 집중', v: min >= 60 ? (Math.floor(min / 60) + '시간 ' + (min % 60) + '분') : (min + '분'),
+             s: lead ? (lead + ' ' + top[lead] + '분') : '', quiet: !min };
+  }
+  function cardWeek() {
+    var wk = weekKey(), filled = 0, done = 0, any = false;
+    keysWith('idarchive.weekplan.').forEach(function (k) {
+      if (k.indexOf(wk) < 0) return;
+      var v = readJSON(k); if (!v || !v.lines) return;
+      any = true;
+      v.lines.forEach(function (t, i) { if (t && t.trim()) { filled++; if (v.done && v.done[i]) done++; } });
+    });
+    if (!any) return null;
+    if (!filled) return { k: '이번 주 계획', v: '비어 있어요', quiet: true, s: '요일마다 한 줄이면 충분해요' };
+    return { k: '이번 주 계획', v: done + ' / ' + filled, s: filled + '일 적어 두었어요', pct: done / filled };
+  }
+  function cardHabit() {
+    var today = dayKey(), parts = [];
+    keysWith('idarchive.routine.').forEach(function (k) {
+      var v = readJSON(k);
+      if (v && v.day === today && v.done) parts.push({ n: '루틴', c: v.done.length });
+    });
+    var yearOn = 0, yearAny = false;
+    keysWith('idarchive.habityear.').forEach(function (k) {
+      var v = readJSON(k); if (!v || !v.days) return;
+      yearAny = true;
+      var d = IDP.now(), key = (d.getMonth() + 1) + ':' + d.getDate();
+      if (v.days[key]) yearOn++;
+    });
+    var streak = 0, streakAny = false;
+    keysWith('idarchive.streak.').forEach(function (k) {
+      var v = readJSON(k);
+      if (v && v.length != null) { streakAny = true; if (v.indexOf(today) >= 0) streak++; }
+    });
+    if (!parts.length && !yearAny && !streakAny) return null;
+    var checked = (parts[0] ? parts[0].c : 0) + yearOn + streak;
+    return { k: '오늘 습관', v: checked ? (checked + '개') : '아직', unit: checked ? '체크' : '',
+             quiet: !checked, s: checked ? '' : '한 칸만 눌러도 이어집니다' };
+  }
+  function cardWater() {
+    var today = dayKey(), n = null;
+    keysWith('idarchive.water.').forEach(function (k) {
+      var v = readJSON(k); if (v && v.day === today) n = v.n || 0;
+    });
+    if (n == null) return null;
+    var goal = parseInt(opts('water').goal, 10) || 8;
+    return { k: '물', v: n + ' / ' + goal, unit: '잔', quiet: !n, pct: Math.min(1, n / goal) };
+  }
+  function cardDday() {
+    var today = IDP.now();
+    today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    var rows = [];
+    String(opts('countdown').items || '').split(',').forEach(function (p) {
+      var at = p.lastIndexOf('|'); if (at < 0) return;
+      var n = p.slice(0, at).trim(), d = IDP.parseDate(p.slice(at + 1).trim());
+      if (n && d) rows.push({ n: n, k: Math.round((d - today) / 864e5) });
+    });
+    var one = opts('dday');
+    if (one.date) { var d1 = IDP.parseDate(one.date); if (d1) rows.push({ n: one.title || 'D-DAY', k: Math.round((d1 - today) / 864e5) }); }
+    rows = rows.filter(function (r) { return r.k >= 0; }).sort(function (a, b) { return a.k - b.k; });
+    if (!rows.length) return null;
+    return { k: '다가오는 날', v: rows[0].k === 0 ? '오늘' : ('D-' + rows[0].k), s: rows[0].n };
+  }
+  function cardAlarm() {
+    var d = IDP.now(), now = d.getHours() * 60 + d.getMinutes(), best = null, any = false;
+    keysWith('idarchive.alarm.').forEach(function (k) {
+      var v = readJSON(k); if (!v || !v.items) return;
+      any = true;
+      v.items.forEach(function (it) {
+        if (it.on === false) return;
+        if (it.r === 'weekday') { var w = d.getDay(); if (w === 0 || w === 6) return; }
+        var p = String(it.t).split(':'), m = (+p[0]) * 60 + (+p[1] || 0);
+        var away = m >= now ? m - now : m + 1440 - now;
+        if (!best || away < best.away) best = { away: away, t: it.t, n: it.n };
+      });
+    });
+    if (!any || !best) return null;
+    return { k: '다음 알림', v: best.t, s: (best.n || '') + (best.away < 60 ? (' · ' + best.away + '분 뒤') : '') };
+  }
+
+  function render() {
+    document.getElementById('badge').textContent = IDP.opt('summary', 'label', 'TODAY');
+    var d = IDP.now(), w = d.getDay();
+    document.getElementById('clock').textContent = (d.getHours() % 12 || 12) + ':' + IDP.pad(d.getMinutes()) + (d.getHours() < 12 ? ' AM' : ' PM');
+    document.getElementById('date').innerHTML =
+      IDP.plannerDate(d) + '<b class="' + (w === 0 ? 'sun' : w === 6 ? 'sat' : '') + '">' + IDP.DOW[w] + '</b>';
+    var k = IDP.iso(d);
+    document.getElementById('hol').textContent = IDP_HOLIDAYS[k] || IDP_MEMORIAL[k] || '';
+
+    var cards = [cardTop3(), cardTodo(), cardWeek(), cardHabit(), cardFocus(), cardWater(), cardDday(), cardAlarm()]
+      .filter(Boolean);
+    var grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    if (!cards.length) {
+      var e = document.createElement('div');
+      e.className = 'c quiet';
+      e.innerHTML = '<div class="k">아직 모을 기록이 없어요</div>' +
+        '<div class="v" style="font-size:13px">TO DO · TOP 3 · 주간 계획 · FOCUS LOG 같은 위젯을 쓰기 시작하면 여기에 모입니다</div>';
+      grid.appendChild(e);
+      return;
+    }
+    cards.forEach(function (c) {
+      var box = document.createElement('div');
+      box.className = 'c' + (c.quiet ? ' quiet' : '');
+      var kk = document.createElement('div'); kk.className = 'k'; kk.textContent = c.k;
+      var vv = document.createElement('div'); vv.className = 'v';
+      vv.textContent = c.v;
+      if (c.unit) { var u = document.createElement('small'); u.textContent = c.unit; vv.appendChild(u); }
+      box.appendChild(kk); box.appendChild(vv);
+      if (c.pct != null && c.pct > 0) {
+        var bar = document.createElement('div'); bar.className = 'bar';
+        var i = document.createElement('i'); i.style.width = Math.round(c.pct * 100) + '%';
+        bar.appendChild(i); box.appendChild(bar);
+      }
+      if (c.s) { var s = document.createElement('div'); s.className = 's'; s.textContent = c.s; box.appendChild(s); }
+      grid.appendChild(box);
+    });
+  }
+
+  IDP.options('summary', [
+    { k: 'label', label: '제목', ph: 'TODAY' }
+  ], render);
+  render();
+  setInterval(render, 60000);
+  window.addEventListener('storage', render);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) render(); });
+</script>
+</body>
+</html>
