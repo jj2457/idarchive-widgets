@@ -82,6 +82,13 @@
     while (t.length % 4) t += '=';
     return decodeURIComponent(escape(atob(t)));
   }
+  // How long a link may get. A browser would swallow far more, but a link is something a person
+  // copies, pastes into a Notion block and sometimes sends to themselves — past a few thousand
+  // characters that stops being a link and becomes a problem. A year of diary entries or a year of
+  // focus sessions genuinely does not fit, and saying so is better than handing over a broken address.
+  var LIMIT = 6000;
+  var DATEKEY = /^\d{4}-\d{2}(-\d{2})?$/, WEEKKEY = /^\d{4}-W\d{2}$/;
+
   function bake(w) {
     var keys = {}, pre = prefixOf(w);
     try {
@@ -91,6 +98,45 @@
       }
     } catch (e) {}
     return { t: Date.now(), o: optsFor(w), k: keys };
+  }
+  function lenOf(pay) {
+    return (location.origin + location.pathname).length + 4 +
+      new URLSearchParams(q.toString()).toString().length + b64(JSON.stringify(pay)).length;
+  }
+  // Keeping the newest is the only trim a person would have chosen themselves: this week's plan
+  // matters, the week in February does not. It works in two places — one storage key per period
+  // (weekplan, worklog), and one blob keyed by day inside a single key (journal, mood).
+  function datedKeys(obj) {
+    var ks = Object.keys(obj);
+    if (ks.length < 4) return null;
+    var dated = ks.filter(function (k) { return DATEKEY.test(k) || WEEKKEY.test(k); });
+    return dated.length >= ks.length * 0.8 ? ks.slice().sort() : null;
+  }
+  function trim(w, pay) {
+    var note = '';
+    // 1. whole keys, oldest first — "idarchive.weekplan.main.2027-W07"
+    var names = Object.keys(pay.k).sort();
+    while (names.length > 1 && lenOf(pay) > LIMIT) {
+      delete pay.k[names.shift()];
+      note = '최근 ' + names.length + '개 기간만 담았어요';
+    }
+    // 2. inside one key, days or weeks written as object keys
+    if (lenOf(pay) > LIMIT && names.length === 1) {
+      var only = names[0], val = null;
+      try { val = JSON.parse(pay.k[only]); } catch (e) { val = null; }
+      var sorted = (val && typeof val === 'object' && !Array.isArray(val)) ? datedKeys(val) : null;
+      if (sorted) {
+        var keep = sorted.length;
+        while (keep > 1 && lenOf(pay) > LIMIT) {
+          keep = Math.max(1, keep - Math.max(1, Math.round(keep * 0.2)));
+          var cut = {};
+          sorted.slice(sorted.length - keep).forEach(function (k) { cut[k] = val[k]; });
+          pay.k[only] = JSON.stringify(cut);
+        }
+        note = '최근 ' + keep + '개 날짜만 담았어요';
+      }
+    }
+    return lenOf(pay) > LIMIT ? { over: lenOf(pay) } : { note: note };
   }
   function applyPayload(w, pay) {
     var mine = 0;
@@ -124,11 +170,14 @@
     if (optHandler) optHandler();
     else setTimeout(function () { location.reload(); }, 0);  // no redraw hook: the stamp stops this repeating
   }
+  // returns {url, note} when it fits, or {over: <length>} when the content is simply too much
   function shareLink(w) {
     var pay = bake(w); pay.w = w;
+    var fit = trim(w, pay);
+    if (fit.over) return fit;
     var p = new URLSearchParams(q.toString());
     p.set('s', b64(JSON.stringify(pay)));
-    return location.origin + location.pathname + '?' + p.toString();
+    return { url: location.origin + location.pathname + '?' + p.toString(), note: fit.note };
   }
 
   var optWidget = null, optDefs = [], optHandler = null, panelEl = null;
@@ -197,23 +246,28 @@
     var box = document.createElement('div');
     box.className = 'idp-share';
     box.innerHTML = '<div class="idp-panel-title" style="margin-top:14px">다른 기기에서도</div>' +
+      '<div class="idp-note idp-warn">공유 링크에는 지금 적은 내용이 그대로 들어갑니다. 공개된 곳에는 올리지 마세요.</div>' +
       '<div class="idp-row"><button type="button" data-bake>지금 내용을 링크에 담기</button></div>' +
       '<textarea class="idp-link" readonly hidden rows="2"></textarea>' +
-      '<div class="idp-note" data-share-note>노트북 · 태블릿 · 휴대폰에서 같은 내용을 보려면, 만들어진 주소를 노션 블록의 링크로 바꿔 주세요. 주소 안에 적은 내용이 들어가니 공개된 곳에는 올리지 마세요.</div>';
+      '<div class="idp-note" data-share-note>노트북 · 태블릿 · 휴대폰에서 같은 내용을 보려면, 만들어진 주소를 노션 블록의 링크로 바꿔 주세요.</div>';
     var ta = box.querySelector('.idp-link');
     box.querySelector('[data-bake]').addEventListener('click', function () {
-      var url = shareLink(w);
-      ta.hidden = false; ta.value = url; ta.focus(); ta.select();
-      var note = box.querySelector('[data-share-note]');
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url).then(function () {
-          note.textContent = '주소를 복사했어요. 노션에서 이 블록의 링크를 바꾸면 모든 기기에서 같은 내용이 보입니다.';
-        }, function () {
-          note.textContent = '위 주소를 직접 복사해서, 노션에서 이 블록의 링크를 바꿔 주세요.';
-        });
-      } else {
-        note.textContent = '위 주소를 직접 복사해서, 노션에서 이 블록의 링크를 바꿔 주세요.';
+      var made = shareLink(w), note = box.querySelector('[data-share-note]');
+      if (made.over) {
+        ta.hidden = true;
+        note.textContent = '적은 내용이 링크에 담기에는 많아요(약 ' + Math.round(made.over / 1000) +
+          ',000자 · 한도 ' + (LIMIT / 1000) + ',000자). 이 위젯의 기록은 이 기기에 그대로 있습니다. ' +
+          '다른 기기에서는 ⚙ 로 새로 시작하거나, 이 위젯을 여러 개로 나눠 쓰세요.';
+        return;
       }
+      ta.hidden = false; ta.value = made.url; ta.focus(); ta.select();
+      var tail = made.note ? ' ' + made.note + '.' : '';
+      function manual() { note.textContent = '위 주소를 직접 복사해서, 노션에서 이 블록의 링크를 바꿔 주세요.' + tail; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(made.url).then(function () {
+          note.textContent = '주소를 복사했어요. 노션에서 이 블록의 링크를 바꾸면 모든 기기에서 같은 내용이 보입니다.' + tail;
+        }, manual);
+      } else manual();
     });
     panelEl.insertBefore(box, panelEl.querySelector('.idp-tail'));
   }

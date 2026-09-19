@@ -90,3 +90,4 @@ button:focus-visible { outline: 2px solid var(--deep); outline-offset: 2px; }
             letter-spacing: 0; color: var(--sub); background: var(--tint); border: 1px solid var(--line);
             border-radius: 8px; resize: none; word-break: break-all; }
 .idp-link:focus { outline: none; color: var(--ink); }
+.idp-warn { margin-top: 8px; color: color-mix(in srgb, var(--deep) 70%, #2a2a2a); line-height: 1.6; }
