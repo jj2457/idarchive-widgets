@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Visual Board</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .line { margin-top: 10px; font-family: var(--serif); font-size: 15px; letter-spacing: .01em; color: var(--ink); }
+  .line input { font: inherit; color: inherit; background: none; border: 0; width: 100%; padding: 0; }
+  .line input:focus { outline: none; }
+  .stage { margin-top: 12px; }
+  .cell { position: relative; overflow: hidden; border-radius: 10px; background: var(--tint); }
+  .cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* four ways to arrange the same pictures — the layout is the whole point of this widget */
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  .grid .cell { aspect-ratio: 1; }
+  .strip { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+  .strip::-webkit-scrollbar { display: none; }
+  .strip .cell { flex: 0 0 96px; aspect-ratio: 1; }
+  .cols { display: flex; gap: 7px; height: 100%; min-height: 190px; }
+  .cols .cell { flex: 1; min-width: 0; }
+  .focus .big { aspect-ratio: 4 / 3; }
+  .focus .thumbs { margin-top: 7px; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  .focus .thumbs::-webkit-scrollbar { display: none; }
+  .focus .thumbs .cell { flex: 0 0 52px; aspect-ratio: 1; cursor: pointer; opacity: .55; transition: opacity .2s; }
+  .focus .thumbs .cell.on { opacity: 1; box-shadow: 0 0 0 1.5px var(--soft); }
+
+  .empty { margin-top: 20px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
+  .foot { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+          font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+  .foot .modes { display: flex; gap: 4px; }
+  .foot button { padding: 4px 9px; font-size: 9.5px; letter-spacing: .06em; background: none;
+                 border-radius: 999px; text-transform: none; }
+  .foot button.on { background: var(--tint); border-color: var(--soft); color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">VISUAL BOARD</div><span class="caps" id="count"></span></div>
+  <div class="grow">
+    <div class="line"><input type="text" id="line" placeholder="이 보드의 한 문장"></div>
+    <div class="stage" id="stage"></div>
+    <div class="empty" id="empty" hidden>⚙ 에서 사진 주소를 넣으면 이 자리에 붙습니다.<br>노션에 올린 이미지도 주소를 복사해 쓸 수 있어요.</div>
+  </div>
+  <div class="foot">
+    <span class="modes" id="modes"></span>
+    <span>이 기기에 저장돼요</span>
+  </div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // A board of pictures and one sentence. The arrangement is the feature: the same images read very
+  // differently as a grid, a strip, tall columns or one large frame, and a person changes their mind
+  // about that far more often than they change the pictures.
+  var MODES = [['grid', '격자'], ['strip', '가로'], ['cols', '세로'], ['focus', '크게']];
+  var KEY = '', URLS = [], mode = 'grid', at = 0;
+
+  function readOpts() {
+    KEY = 'idarchive.board.' + (IDP.q.get('id') || IDP.opt('board', 'title', 'main'));
+    URLS = String(IDP.opt('board', 'urls', '')).split(',').map(function (s) { return s.trim(); })
+      .filter(function (s) { return /^https?:\/\//.test(s); }).slice(0, 12);
+    var m = IDP.opt('board', 'layout', 'grid');
+    mode = MODES.some(function (x) { return x[0] === m; }) ? m : 'grid';
+  }
+  readOpts();
+  function load() {
+    try {
+      var v = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (v) return v;
+    } catch (e) { /* storage blocked */ }
+    return { line: IDP.q.get('line') || '', mode: mode };
+  }
+  var st = load();
+  if (st.mode && MODES.some(function (x) { return x[0] === st.mode; })) mode = st.mode;
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+
+  function cell(url, cls) {
+    var d = document.createElement('div');
+    d.className = 'cell' + (cls ? ' ' + cls : '');
+    var img = document.createElement('img');
+    img.src = url; img.loading = 'lazy'; img.alt = '';
+    // a dead link should leave a quiet pastel tile, not a broken-image glyph
+    img.onerror = function () { img.remove(); };
+    d.appendChild(img);
+    return d;
+  }
+
+  function renderStage() {
+    var stage = document.getElementById('stage');
+    stage.innerHTML = '';
+    document.getElementById('empty').hidden = !!URLS.length;
+    document.getElementById('count').textContent = URLS.length ? (URLS.length + '장') : '';
+    if (!URLS.length) return;
+
+    if (mode === 'focus') {
+      stage.className = 'stage focus';
+      if (at >= URLS.length) at = 0;
+      stage.appendChild(cell(URLS[at], 'big'));
+      var th = document.createElement('div');
+      th.className = 'thumbs';
+      URLS.forEach(function (u, i) {
+        var c = cell(u, i === at ? 'on' : '');
+        c.onclick = function () { at = i; renderStage(); };
+        th.appendChild(c);
+      });
+      stage.appendChild(th);
+      return;
+    }
+    stage.className = 'stage ' + (mode === 'strip' ? 'strip' : mode === 'cols' ? 'cols' : 'grid');
+    URLS.forEach(function (u) { stage.appendChild(cell(u)); });
+  }
+
+  function render() {
+    document.getElementById('badge').textContent = IDP.opt('board', 'label', 'VISUAL BOARD');
+    var l = document.getElementById('line');
+    if (document.activeElement !== l) l.value = st.line || '';
+    var box = document.getElementById('modes');
+    box.innerHTML = '';
+    MODES.forEach(function (m) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = m[1];
+      if (m[0] === mode) b.className = 'on';
+      b.onclick = function () { mode = m[0]; st.mode = mode; save(); render(); };
+      box.appendChild(b);
+    });
+    renderStage();
+  }
+  document.getElementById('line').oninput = function () { st.line = this.value; save(); };
+
+  IDP.options('board', [
+    { k: 'label', label: '제목', ph: 'VISUAL BOARD' },
+    { k: 'urls', label: '사진 주소 (쉼표로 구분, 최대 12장)', ph: 'https://…' },
+    { k: 'layout', label: '기본 배치 (grid · strip · cols · focus)', ph: 'grid' },
+    { k: 'title', label: '이 보드의 이름 (여러 개 쓸 때)', ph: 'main' }
+  ], function () { readOpts(); st = load(); render(); });
+  render();
+</script>
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Calculator</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 560px; }
+  .ask { margin-top: 14px; display: flex; align-items: center; gap: 9px;
+         border-bottom: 1px solid var(--line); padding-bottom: 7px; }
+  .ask .q { flex: none; font-size: 12px; color: var(--sub); line-height: 1; }
+  .ask input { flex: 1; min-width: 0; font: inherit; font-size: 14px; color: var(--ink);
+               background: none; border: 0; padding: 2px 0; }
+  .ask input:focus { outline: none; }
+  .out { margin-top: 14px; min-height: 46px; display: flex; align-items: baseline; gap: 8px; }
+  .out .v { font-family: var(--serif); font-size: 30px; letter-spacing: .02em; color: var(--ink); line-height: 1.15;
+            word-break: break-all; }
+  .out .u { font-size: 12px; letter-spacing: .1em; color: var(--sub); text-transform: uppercase; }
+  .out.miss .v { font-size: 13px; font-family: inherit; color: var(--sub); letter-spacing: .02em; }
+  .tips { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 5px; }
+  .tips button { font-size: 10px; letter-spacing: .02em; padding: 4px 10px; border-radius: 999px;
+                 background: none; text-transform: none; color: var(--sub); }
+  .tips button:hover { background: var(--tint); }
+  .hist { margin-top: 14px; display: flex; flex-direction: column; gap: 4px; }
+  .hist .h { display: flex; justify-content: space-between; gap: 10px; align-items: baseline;
+             font-size: 11.5px; cursor: pointer; padding: 3px 0; }
+  .hist .h span:first-child { color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hist .h span:last-child { flex: none; color: var(--ink); }
+  .foot { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+          font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+  .foot button { padding: 4px 9px; font-size: 9.5px; letter-spacing: .08em; background: none;
+                 border-radius: 999px; text-transform: none; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">CALCULATOR</div><span class="caps" id="kind"></span></div>
+  <div class="grow"><div class="wrap">
+    <div class="ask">
+      <span class="q" aria-hidden="true">⌕</span>
+      <input type="text" id="q" placeholder="100 km in mi · 20달러를 원 · 오늘 + 30일 · 1 + 2 * 3" aria-label="계산">
+    </div>
+    <div class="out" id="out"><span class="v" id="v"></span><span class="u" id="u"></span></div>
+    <div class="tips" id="tips"></div>
+    <div class="hist" id="hist"></div>
+  </div></div>
+  <div class="foot"><span id="note"></span><button type="button" id="copy">결과 복사</button></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // One line in, one answer out — arithmetic, units, currency and dates, all offline.
+  // Currency is the only part that cannot be computed: the rates are the buyer's own, set in ⚙,
+  // and the card says which month they were set for. A widget that quietly shows a year-old rate
+  // as if it were live would be worse than one that admits where the number came from.
+  var KEY = '', RATES = {}, RATEDATE = '';
+
+  var UNITS = {
+    // dimension, factor to the dimension's base
+    mm: ['len', .001], cm: ['len', .01], m: ['len', 1], km: ['len', 1000],
+    'in': ['len', .0254], ft: ['len', .3048], yd: ['len', .9144], mi: ['len', 1609.344],
+    밀리미터: ['len', .001], 센티미터: ['len', .01], 센치: ['len', .01], 미터: ['len', 1],
+    킬로미터: ['len', 1000], 인치: ['len', .0254], 피트: ['len', .3048], 마일: ['len', 1609.344],
+    mg: ['mass', .001], g: ['mass', 1], kg: ['mass', 1000], t: ['mass', 1e6],
+    lb: ['mass', 453.59237], oz: ['mass', 28.349523125],
+    그램: ['mass', 1], 킬로그램: ['mass', 1000], 킬로: ['mass', 1000], 파운드: ['mass', 453.59237],
+    온스: ['mass', 28.349523125], 근: ['mass', 600], 돈: ['mass', 3.75],
+    ml: ['vol', 1], cc: ['vol', 1], l: ['vol', 1000], 리터: ['vol', 1000], 밀리리터: ['vol', 1], 컵: ['vol', 200],
+    kb: ['data', 1], mb: ['data', 1024], gb: ['data', 1048576], tb: ['data', 1073741824],
+    초: ['time', 1], s: ['time', 1], 분: ['time', 60], min: ['time', 60], 시간: ['time', 3600],
+    h: ['time', 3600], 일: ['time', 86400], 주: ['time', 604800]
+  };
+  var TEMP = { c: 1, '℃': 1, 섭씨: 1, f: 2, '℉': 2, 화씨: 2, k: 3, 켈빈: 3 };
+  var CUR = {
+    krw: 'KRW', 원: 'KRW', '₩': 'KRW',
+    usd: 'USD', 달러: 'USD', 불: 'USD', '$': 'USD',
+    eur: 'EUR', 유로: 'EUR', '€': 'EUR',
+    jpy: 'JPY', 엔: 'JPY', 엔화: 'JPY', '¥': 'JPY',
+    cny: 'CNY', 위안: 'CNY', gbp: 'GBP', 영국파운드: 'GBP',
+    aud: 'AUD', 호주달러: 'AUD', cad: 'CAD', 캐나다달러: 'CAD'
+  };
+
+  function readOpts() {
+    KEY = 'idarchive.calc.' + (IDP.q.get('id') || IDP.opt('calc', 'title', 'main'));
+    RATES = { KRW: 1 };
+    String(IDP.opt('calc', 'rates', 'USD=1380, EUR=1490, JPY=9.1, CNY=190, GBP=1760'))
+      .split(',').forEach(function (p) {
+        var kv = p.split('=');
+        var k = (kv[0] || '').trim().toUpperCase(), v = parseFloat(kv[1]);
+        if (k && v > 0) RATES[k] = v;
+      });
+    RATEDATE = IDP.opt('calc', 'rateDate', '');
+  }
+  readOpts();
+
+  function num(s) { return parseFloat(String(s).replace(/,/g, '')); }
+  function fmt(n) {
+    if (!isFinite(n)) return '—';
+    var abs = Math.abs(n);
+    var dp = abs >= 1000 ? 0 : abs >= 100 ? 1 : abs >= 1 ? 2 : 4;
+    var r = Number(n.toFixed(dp));
+    return r.toLocaleString('ko-KR', { maximumFractionDigits: dp });
+  }
+
+  /* ---- arithmetic: a small shunting-yard, because eval() has no place in a page we ship ---- */
+  function evalMath(src) {
+    var s = src.replace(/,/g, '').replace(/×/g, '*').replace(/÷/g, '/').replace(/[−–]/g, '-');
+    if (!/^[\d\s+\-*/().%^]+$/.test(s)) return null;
+    var tk = s.match(/\d*\.?\d+|[+\-*/()^%]/g);
+    if (!tk) return null;
+    var prec = { '+': 1, '-': 1, '*': 2, '/': 2, '%': 2, '^': 3 }, out = [], ops = [], prev = null;
+    for (var i = 0; i < tk.length; i++) {
+      var t = tk[i];
+      if (/^\d|\./.test(t)) { out.push(parseFloat(t)); prev = 'n'; continue; }
+      if (t === '(') { ops.push(t); prev = '('; continue; }
+      if (t === ')') {
+        while (ops.length && ops[ops.length - 1] !== '(') out.push(ops.pop());
+        if (!ops.length) return null;
+        ops.pop(); prev = 'n'; continue;
+      }
+      if (t === '-' && (prev === null || prev === 'o' || prev === '(')) { out.push(0); }
+      while (ops.length && ops[ops.length - 1] !== '(' && prec[ops[ops.length - 1]] >= prec[t]) out.push(ops.pop());
+      ops.push(t); prev = 'o';
+    }
+    while (ops.length) { var o = ops.pop(); if (o === '(') return null; out.push(o); }
+    var st = [];
+    for (var j = 0; j < out.length; j++) {
+      var x = out[j];
+      if (typeof x === 'number') { st.push(x); continue; }
+      var b = st.pop(), a = st.pop();
+      if (a === undefined || b === undefined) return null;
+      st.push(x === '+' ? a + b : x === '-' ? a - b : x === '*' ? a * b :
+              x === '/' ? a / b : x === '%' ? a % b : Math.pow(a, b));
+    }
+    return st.length === 1 && isFinite(st[0]) ? st[0] : null;
+  }
+
+  /* ---- dates ---- */
+  function parseDay(s) {
+    s = s.trim();
+    if (/^(오늘|today)$/i.test(s)) { var t = IDP.now(); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); }
+    if (/^(내일|tomorrow)$/i.test(s)) { var a = IDP.now(); return new Date(a.getFullYear(), a.getMonth(), a.getDate() + 1); }
+    if (/^(어제|yesterday)$/i.test(s)) { var b = IDP.now(); return new Date(b.getFullYear(), b.getMonth(), b.getDate() - 1); }
+    var m = s.match(/^(\d{4})[.\-/\s]+(\d{1,2})[.\-/\s]+(\d{1,2})\.?$/);
+    if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+    return null;
+  }
+  function dateAnswer(q) {
+    var m = q.match(/^(.+?)\s*([+\-])\s*(\d+)\s*(일|day|days|주|week|weeks|개월|달|month|months|년|year|years)$/i);
+    if (m) {
+      var d = parseDay(m[1]); if (!d) return null;
+      var n = +m[3] * (m[2] === '-' ? -1 : 1), u = m[4].toLowerCase();
+      var r = new Date(d.getTime());
+      if (/^(주|week)/.test(u)) r.setDate(r.getDate() + n * 7);
+      else if (/^(개월|달|month)/.test(u)) r.setMonth(r.getMonth() + n);
+      else if (/^(년|year)/.test(u)) r.setFullYear(r.getFullYear() + n);
+      else r.setDate(r.getDate() + n);
+      return { v: IDP.plannerDate(r), u: IDP.DOW[r.getDay()], kind: '날짜' };
+    }
+    var p = q.split(/\s*[-−–]\s*/);
+    if (p.length === 2) {
+      var a = parseDay(p[0]), b = parseDay(p[1]);
+      if (a && b) {
+        var days = Math.round((a - b) / 864e5);
+        return { v: (days >= 0 ? '+' : '') + days, u: '일', kind: '날짜 차이' };
+      }
+    }
+    var one = parseDay(q);
+    if (one) return { v: IDP.plannerDate(one), u: IDP.DOW[one.getDay()], kind: '날짜' };
+    return null;
+  }
+
+  /* ---- units and currency ---- */
+  function unitKey(s) {
+    s = s.trim().toLowerCase().replace(/[.]$/, '');
+    if (CUR[s]) return { cur: CUR[s] };
+    if (TEMP[s]) return { temp: TEMP[s] };
+    if (UNITS[s]) return { unit: s };
+    return null;
+  }
+  function toC(v, k) { return k === 1 ? v : k === 2 ? (v - 32) * 5 / 9 : v - 273.15; }
+  function fromC(v, k) { return k === 1 ? v : k === 2 ? v * 9 / 5 + 32 : v + 273.15; }
+
+  function convertAnswer(q) {
+    var s = q.replace(/\s*(을|를|은|는)\s*/g, ' ').replace(/\s*(으로|로)\s*/g, ' to ').replace(/→|->/g, ' to ');
+    var m = s.match(/^([\d.,]+)\s*([^\d\s]+)\s+(?:to|in)\s+([^\d\s]+)$/i);
+    var one = s.match(/^([\d.,]+)\s*([^\d\s]+)$/);
+    var a, from, to;
+    if (m) { a = num(m[1]); from = unitKey(m[2]); to = unitKey(m[3]); }
+    else if (one) {
+      a = num(one[1]); from = unitKey(one[2]);
+      // a bare amount in a foreign currency is nearly always a "how much is that in won" question
+      if (from && from.cur) to = { cur: from.cur === 'KRW' ? 'USD' : 'KRW' };
+    }
+    if (!isFinite(a) || !from || !to) return null;
+
+    if (from.cur && to.cur) {
+      var rf = RATES[from.cur], rt = RATES[to.cur];
+      if (!rf || !rt) return { v: '환율이 없어요', u: '', kind: '환율', miss: true };
+      return { v: fmt(a * rf / rt), u: to.cur, kind: '환율' };
+    }
+    if (from.temp && to.temp) return { v: fmt(fromC(toC(a, from.temp), to.temp)), u: to.temp === 1 ? '°C' : to.temp === 2 ? '°F' : 'K', kind: '온도' };
+    if (from.unit && to.unit) {
+      var u1 = UNITS[from.unit], u2 = UNITS[to.unit];
+      if (u1[0] !== u2[0]) return null;
+      return { v: fmt(a * u1[1] / u2[1]), u: to.unit, kind: '단위' };
+    }
+    return null;
+  }
+
+  /* ---- percentages ---- */
+  function percentAnswer(q) {
+    var m = q.match(/^([\d.,]+)\s*(?:의)\s*([\d.,]+)\s*%$/);
+    if (m) return { v: fmt(num(m[1]) * num(m[2]) / 100), u: '', kind: '퍼센트' };
+    m = q.match(/^([\d.,]+)\s*%\s*of\s*([\d.,]+)$/i);
+    if (m) return { v: fmt(num(m[2]) * num(m[1]) / 100), u: '', kind: '퍼센트' };
+    m = q.match(/^([\d.,]+)\s*([+\-])\s*([\d.,]+)\s*%$/);
+    if (m) return { v: fmt(num(m[1]) * (1 + (m[2] === '-' ? -1 : 1) * num(m[3]) / 100)), u: '', kind: '퍼센트' };
+    m = q.match(/^([\d.,]+)\s*(?:에서)?\s*([\d.,]+)\s*%\s*(?:할인|세일)$/);
+    if (m) return { v: fmt(num(m[1]) * (1 - num(m[2]) / 100)), u: '', kind: '할인' };
+    m = q.match(/^([\d.,]+)\s*(?:중|\/)\s*([\d.,]+)\s*(?:은|는)?\s*몇\s*%$/);
+    if (m) return { v: fmt(num(m[2]) / num(m[1]) * 100), u: '%', kind: '비율' };
+    return null;
+  }
+
+  function answer(q) {
+    q = (q || '').trim();
+    if (!q) return null;
+    var r = dateAnswer(q) || convertAnswer(q) || percentAnswer(q);
+    if (r) return r;
+    var n = evalMath(q);
+    return n === null ? null : { v: fmt(n), u: '', kind: '계산' };
+  }
+
+  /* ---- screen ---- */
+  var hist = [];
+  try { hist = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { hist = []; }
+  function saveHist() { try { localStorage.setItem(KEY, JSON.stringify(hist.slice(0, 8))); } catch (e) {} }
+
+  var TIPS = ['100 km in mi', '20달러를 원', '오늘 + 30일', '32000 20% 할인', '1 + 2 * 3'];
+  function renderTips() {
+    var box = document.getElementById('tips');
+    box.innerHTML = '';
+    if (hist.length) return;             // once there is history the examples step aside
+    TIPS.forEach(function (t) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = t;
+      b.onclick = function () { document.getElementById('q').value = t; run(true); };
+      box.appendChild(b);
+    });
+  }
+  function renderHist() {
+    var box = document.getElementById('hist');
+    box.innerHTML = '';
+    hist.slice(0, 5).forEach(function (h) {
+      var row = document.createElement('div');
+      row.className = 'h';
+      row.innerHTML = '<span></span><span></span>';
+      row.children[0].textContent = h.q;
+      row.children[1].textContent = h.v + (h.u ? (' ' + h.u) : '');
+      row.onclick = function () { document.getElementById('q').value = h.q; run(false); };
+      box.appendChild(row);
+    });
+  }
+
+  var last = null;
+  function run(remember) {
+    var q = document.getElementById('q').value;
+    var r = answer(q);
+    var out = document.getElementById('out');
+    last = r;
+    document.getElementById('v').textContent = r ? r.v : (q.trim() ? '아직 모르는 말이에요' : '');
+    document.getElementById('u').textContent = r && !r.miss ? (r.u || '') : '';
+    document.getElementById('kind').textContent = r && !r.miss ? (r.kind || '') : '';
+    out.className = 'out' + (r && !r.miss ? '' : ' miss');
+    if (remember && r && !r.miss) {
+      hist = hist.filter(function (h) { return h.q !== q.trim(); });
+      hist.unshift({ q: q.trim(), v: r.v, u: r.u });
+      hist = hist.slice(0, 8);
+      saveHist(); renderHist(); renderTips();
+    }
+  }
+
+  document.getElementById('q').oninput = function () { run(false); };
+  document.getElementById('q').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); run(true); } };
+  document.getElementById('copy').onclick = function () {
+    if (!last) return;
+    var text = last.v + (last.u ? (' ' + last.u) : '');
+    try { navigator.clipboard.writeText(text); } catch (e) {}
+    var b = this, old = b.textContent;
+    b.textContent = '복사했어요';
+    setTimeout(function () { b.textContent = old; }, 1400);
+  };
+
+  function render() {
+    document.getElementById('badge').textContent = IDP.opt('calc', 'label', 'CALCULATOR');
+    document.getElementById('note').textContent = '환율은 직접 정한 값이에요' + (RATEDATE ? (' · ' + RATEDATE + ' 기준') : '');
+    renderTips(); renderHist();
+    var seed = IDP.seed()[0] || IDP.q.get('q');
+    if (seed) { document.getElementById('q').value = seed; run(false); }
+  }
+  IDP.options('calc', [
+    { k: 'label', label: '제목', ph: 'CALCULATOR' },
+    { k: 'rates', label: '환율 (원 기준)', ph: 'USD=1380, EUR=1490, JPY=9.1' },
+    { k: 'rateDate', label: '환율 기준 시점', ph: '2026.09' },
+    { k: 'title', label: '이 위젯의 이름 (여러 개 쓸 때)', ph: 'main' }
+  ], function () { readOpts(); render(); run(false); });
+  render();
+</script>
+</body>
+</html>

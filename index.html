@@ -172,6 +172,11 @@
         { k: 'date', t: 'date', label: '마감일 (선택)' }] },
     { id: 'focusnote', g: '목표', name: '이번 주 · 이번 달 포커스', h: 280, opts: [] },
     { id: 'quote',    g: '목표', name: '나의 한 문장',      h: 230, opts: [{ k: 'text', t: 'text', label: '문장', ph: 'PLAN · DREAM · DO' }, { k: 'by', t: 'text', label: '출처 (선택)' }] },
+    { id: 'board',    g: '목표', name: '비주얼 보드 (배치 4종)', h: 470, opts: [
+        { k: 'label', t: 'text', label: '제목', ph: 'VISUAL BOARD' },
+        { k: 'urls', t: 'text', label: '사진 주소 (쉼표로 구분, 최대 12장)', ph: 'https://…' },
+        { k: 'layout', t: 'text', label: '기본 배치 (grid · strip · cols · focus)', ph: 'grid' },
+        { k: 'line', t: 'text', label: '한 문장', ph: '올해 이런 장면으로' }] },
     { id: 'moodboard', g: '목표', name: '무드보드 (사진)',  h: 300, opts: [
         { k: 'title', t: 'text', label: '제목', ph: 'MOODBOARD' },
         { k: 'urls', t: 'text', label: '이미지 주소 (쉼표로 구분)', ph: 'https://…' },
@@ -197,7 +202,20 @@
         { k: 'since', t: 'text', label: '시작한 해 (선택)', ph: '2021' },
         { k: 'title', t: 'text', label: '이 위젯의 이름 (여러 개 쓸 때)', ph: 'main' }] },
 
+    { id: 'calc',     g: '도구', name: '스마트 계산기',      h: 470, opts: [
+        { k: 'label', t: 'text', label: '제목', ph: 'CALCULATOR' },
+        { k: 'rates', t: 'text', label: '환율 (원 기준)', ph: 'USD=1380, EUR=1490, JPY=9.1' },
+        { k: 'rateDate', t: 'text', label: '환율 기준 시점', ph: '2026.09' }] },
+    { id: 'links',    g: '도구', name: '바로가기',          h: 330, opts: [
+        { k: 'label', t: 'text', label: '제목', ph: 'LINKS' },
+        { k: 'items', t: 'text', label: '바로가기 (이름|주소, 쉼표로 구분)', ph: '노션|https://notion.so' },
+        { k: 'cols', t: 'number', label: '한 줄에 몇 개 (1 또는 2)', ph: '2' }] },
+
     { id: 'journal',  g: '기록', name: '한 줄 일기',        h: 290, opts: [] },
+    { id: 'chart',    g: '기록', name: '미니 차트 (막대·도넛·선)', h: 420, opts: [
+        { k: 'label', t: 'text', label: '제목', ph: 'CHART' },
+        { k: 'data', t: 'text', label: '값 (이름=숫자, 쉼표로 구분)', ph: '공부=8, 독서=5, 운동=3' },
+        { k: 'type', t: 'text', label: '모양 (bar · donut · line)', ph: 'bar' }] },
     { id: 'review',   g: '기록', name: '주간 · 월간 리뷰',  h: 380, opts: [
         { k: 'mode', t: 'text', label: '주간은 week, 월간은 month', ph: 'week' }] },
     { id: 'reading',  g: '기록', name: '독서 진행률',       h: 340, opts: [
@@ -227,7 +245,9 @@
     { id: 'life', name: 'LIFE', desc: '미니 캘린더 · 한 줄 일기 · 무드보드 · 365일', list: ['calendar', 'journal', 'moodboard', 'year'] },
     { id: 'idarchive', name: 'ID ARCHIVE', desc: '비전 보드 · 5-STEP GOAL · 목표 사슬 · 버킷 리스트', list: ['vision', 'goal5', 'goalchain', 'bucket'] },
     { id: 'habit', name: 'HABIT', desc: '연간 트래커 · 습관 스트릭 · 루틴 체크 · 물 마시기', list: ['habityear', 'streak', 'routine', 'water'] },
-    { id: 'work', name: 'WORK', desc: '주간 업무일지 · Top 3 · 집중 타이머 · 메모지', list: ['worklog', 'top3', 'focus', 'memo'] }
+    { id: 'work', name: 'WORK', desc: '주간 업무일지 · Top 3 · 집중 타이머 · 메모지', list: ['worklog', 'top3', 'focus', 'memo'] },
+    { id: 'desk', name: 'DESK', desc: '스마트 계산기 · 바로가기 · 메모지 · 시계', list: ['calc', 'links', 'memo', 'clock'] },
+    { id: 'visual', name: 'VISUAL', desc: '비주얼 보드 · 미니 차트 · 한 문장 · 365일', list: ['board', 'chart', 'quote', 'year'] }
   ];
 
   var state = { widget: 'clock', theme: IDP.CFG.defaults.theme, mode: 'light', frame: 'card', radius: IDP.CFG.defaults.radius, soft: '', deep: '', device: 'desktop', opt: {}, preset: '' };

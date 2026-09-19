@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Chart</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 560px; }
+  .stage { margin-top: 14px; display: flex; justify-content: center; }
+  svg { width: 100%; max-width: 420px; height: auto; overflow: visible; }
+  .axis { stroke: var(--line); stroke-width: 1; }
+  .lab { font-size: 9px; fill: var(--sub); letter-spacing: .04em; }
+  .val { font-size: 9.5px; fill: var(--ink); }
+  .legend { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; }
+  .legend .l { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--sub); }
+  .legend .d { width: 9px; height: 9px; border-radius: 3px; flex: none; }
+  .legend .n { color: var(--ink); }
+  .empty { margin-top: 20px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
+  .foot { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+          font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+  .foot .modes { display: flex; gap: 4px; }
+  .foot button { padding: 4px 9px; font-size: 9.5px; letter-spacing: .06em; background: none;
+                 border-radius: 999px; text-transform: none; }
+  .foot button.on { background: var(--tint); border-color: var(--soft); color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">CHART</div><span class="caps" id="sum"></span></div>
+  <div class="grow"><div class="wrap">
+    <div class="stage" id="stage"></div>
+    <div class="legend" id="legend"></div>
+    <div class="empty" id="empty" hidden>⚙ 에서 <b>이름=숫자</b> 로 적으면 그려집니다.<br>예) 공부=8, 독서=5, 운동=3</div>
+  </div></div>
+  <div class="foot">
+    <span class="modes" id="modes"></span>
+    <span>이 기기에 저장돼요</span>
+  </div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // Numbers a person types, drawn three ways. One hue throughout, stepped in opacity — a pastel
+  // planner does not want six competing colours, and one shade per row keeps it readable when the
+  // card is 200px wide on a phone.
+  var MODES = [['bar', '막대'], ['donut', '도넛'], ['line', '선']];
+  var KEY = '', DATA = [], mode = 'bar';
+
+  function readOpts() {
+    KEY = 'idarchive.chart.' + (IDP.q.get('id') || IDP.opt('chart', 'title', 'main'));
+    DATA = String(IDP.opt('chart', 'data', '공부=8, 독서=5, 운동=3, 업무=12'))
+      .split(',').map(function (p) {
+        var at = p.lastIndexOf('=');
+        if (at < 0) return null;
+        var n = p.slice(0, at).trim(), v = parseFloat(p.slice(at + 1));
+        return (n && isFinite(v)) ? { n: n, v: v } : null;
+      }).filter(Boolean).slice(0, 8);
+    var m = IDP.opt('chart', 'type', 'bar');
+    mode = MODES.some(function (x) { return x[0] === m; }) ? m : 'bar';
+  }
+  readOpts();
+  function load() {
+    try { var v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (v) return v; } catch (e) {}
+    return { mode: mode };
+  }
+  var st = load();
+  if (st.mode && MODES.some(function (x) { return x[0] === st.mode; })) mode = st.mode;
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+
+  function shade(i, n) { return (1 - (i / Math.max(1, n)) * 0.55).toFixed(2); }
+  function el(tag, attrs) {
+    var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+    return e;
+  }
+  function fmt(v) { return Number(v.toFixed(2)).toLocaleString('ko-KR'); }
+
+  function drawBar(svg, W, H) {
+    var pad = { l: 8, r: 8, t: 14, b: 20 };
+    var max = Math.max.apply(null, DATA.map(function (d) { return d.v; })) || 1;
+    var bw = (W - pad.l - pad.r) / DATA.length;
+    svg.appendChild(el('line', { x1: pad.l, y1: H - pad.b, x2: W - pad.r, y2: H - pad.b, class: 'axis' }));
+    DATA.forEach(function (d, i) {
+      var h = Math.max(2, (H - pad.t - pad.b) * (d.v / max));
+      var x = pad.l + i * bw + bw * 0.22, w = bw * 0.56;
+      var r = el('rect', { x: x, y: H - pad.b - h, width: w, height: h, rx: Math.min(5, w / 2),
+                           fill: 'var(--soft)', opacity: shade(i, DATA.length) });
+      svg.appendChild(r);
+      var v = el('text', { x: x + w / 2, y: H - pad.b - h - 4, 'text-anchor': 'middle', class: 'val' });
+      v.textContent = fmt(d.v); svg.appendChild(v);
+      var l = el('text', { x: x + w / 2, y: H - pad.b + 12, 'text-anchor': 'middle', class: 'lab' });
+      l.textContent = d.n; svg.appendChild(l);
+    });
+  }
+  function drawDonut(svg, W, H) {
+    var total = DATA.reduce(function (a, d) { return a + d.v; }, 0) || 1;
+    var cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2 - 8, r = R * 0.6, a0 = -Math.PI / 2;
+    DATA.forEach(function (d, i) {
+      var a1 = a0 + Math.PI * 2 * (d.v / total);
+      var big = (a1 - a0) > Math.PI ? 1 : 0;
+      var p = ['M', cx + R * Math.cos(a0), cy + R * Math.sin(a0),
+               'A', R, R, 0, big, 1, cx + R * Math.cos(a1), cy + R * Math.sin(a1),
+               'L', cx + r * Math.cos(a1), cy + r * Math.sin(a1),
+               'A', r, r, 0, big, 0, cx + r * Math.cos(a0), cy + r * Math.sin(a0), 'Z'].join(' ');
+      svg.appendChild(el('path', { d: p, fill: 'var(--deep)', opacity: shade(i, DATA.length) }));
+      a0 = a1;
+    });
+    var t = el('text', { x: cx, y: cy + 4, 'text-anchor': 'middle', class: 'val' });
+    t.setAttribute('font-size', '13'); t.textContent = fmt(total);
+    svg.appendChild(t);
+  }
+  function drawLine(svg, W, H) {
+    var pad = { l: 10, r: 10, t: 16, b: 20 };
+    var max = Math.max.apply(null, DATA.map(function (d) { return d.v; })) || 1;
+    var step = DATA.length > 1 ? (W - pad.l - pad.r) / (DATA.length - 1) : 0;
+    var pts = DATA.map(function (d, i) {
+      return [pad.l + i * step, H - pad.b - (H - pad.t - pad.b) * (d.v / max)];
+    });
+    svg.appendChild(el('line', { x1: pad.l, y1: H - pad.b, x2: W - pad.r, y2: H - pad.b, class: 'axis' }));
+    var area = 'M' + pts.map(function (p) { return p.join(' '); }).join(' L ') +
+               ' L ' + pts[pts.length - 1][0] + ' ' + (H - pad.b) + ' L ' + pts[0][0] + ' ' + (H - pad.b) + ' Z';
+    svg.appendChild(el('path', { d: area, fill: 'var(--soft)', opacity: '.35' }));
+    svg.appendChild(el('path', { d: 'M' + pts.map(function (p) { return p.join(' '); }).join(' L '),
+                                 fill: 'none', stroke: 'var(--deep)', 'stroke-width': 2,
+                                 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
+    pts.forEach(function (p, i) {
+      svg.appendChild(el('circle', { cx: p[0], cy: p[1], r: 3, fill: 'var(--paper)',
+                                     stroke: 'var(--deep)', 'stroke-width': 1.6 }));
+      var l = el('text', { x: p[0], y: H - pad.b + 12, 'text-anchor': 'middle', class: 'lab' });
+      l.textContent = DATA[i].n; svg.appendChild(l);
+    });
+  }
+
+  function render() {
+    document.getElementById('badge').textContent = IDP.opt('chart', 'label', 'CHART');
+    document.getElementById('empty').hidden = !!DATA.length;
+    var total = DATA.reduce(function (a, d) { return a + d.v; }, 0);
+    document.getElementById('sum').textContent = DATA.length ? ('합계 ' + fmt(total)) : '';
+
+    var stage = document.getElementById('stage');
+    stage.innerHTML = '';
+    if (DATA.length) {
+      var W = 400, H = mode === 'donut' ? 200 : 170;
+      var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img' });
+      (mode === 'donut' ? drawDonut : mode === 'line' ? drawLine : drawBar)(svg, W, H);
+      stage.appendChild(svg);
+    }
+
+    var lg = document.getElementById('legend');
+    lg.innerHTML = '';
+    if (mode === 'donut') {
+      DATA.forEach(function (d, i) {
+        var w = document.createElement('span'); w.className = 'l';
+        var dot = document.createElement('span');
+        dot.className = 'd'; dot.style.background = 'var(--deep)'; dot.style.opacity = shade(i, DATA.length);
+        var n = document.createElement('span'); n.textContent = d.n;
+        var v = document.createElement('span'); v.className = 'n'; v.textContent = fmt(d.v);
+        w.appendChild(dot); w.appendChild(n); w.appendChild(v);
+        lg.appendChild(w);
+      });
+    }
+
+    var box = document.getElementById('modes');
+    box.innerHTML = '';
+    MODES.forEach(function (m) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = m[1];
+      if (m[0] === mode) b.className = 'on';
+      b.onclick = function () { mode = m[0]; st.mode = mode; save(); render(); };
+      box.appendChild(b);
+    });
+  }
+
+  IDP.options('chart', [
+    { k: 'label', label: '제목', ph: 'CHART' },
+    { k: 'data', label: '값 (이름=숫자, 쉼표로 구분, 최대 8개)', ph: '공부=8, 독서=5, 운동=3' },
+    { k: 'type', label: '모양 (bar · donut · line)', ph: 'bar' },
+    { k: 'title', label: '이 차트의 이름 (여러 개 쓸 때)', ph: 'main' }
+  ], function () { readOpts(); st = load(); render(); });
+  render();
+</script>
+</body>
+</html>
