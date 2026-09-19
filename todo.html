@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · To Do</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 560px; }
+  .bar { margin-top: 10px; height: 3px; border-radius: 999px; background: var(--tint); overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--soft); border-radius: 999px; transition: width .25s; }
+  .add { margin-top: 12px; display: flex; align-items: center; gap: 8px;
+         border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+  .add .plus { flex: none; font-size: 14px; color: var(--sub); line-height: 1; }
+  .add input { flex: 1; min-width: 0; font: inherit; font-size: 13px; color: var(--ink);
+               background: none; border: 0; padding: 2px 0; }
+  .add input:focus { outline: none; }
+  .list { margin-top: 8px; display: flex; flex-direction: column; }
+  .it { display: flex; align-items: center; gap: 9px; padding: 6px 0; }
+  .it .box { flex: none; width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--line);
+             background: var(--paper); cursor: pointer; padding: 0; }
+  .it .box.on { background: var(--soft); border-color: var(--soft); }
+  .it input { flex: 1; min-width: 0; font: inherit; font-size: 13px; color: var(--ink); background: none;
+              border: 0; border-bottom: 1px solid transparent; padding: 2px 0; }
+  .it input:focus { outline: none; border-bottom-color: var(--soft); }
+  .it.done input { color: var(--sub); text-decoration: line-through; }
+  .it .x { flex: none; width: 18px; padding: 0; border: 0; background: none; color: var(--sub);
+           font-size: 13px; line-height: 1; opacity: 0; transition: opacity .15s; letter-spacing: 0; }
+  .it:hover .x, .it .x:focus-visible { opacity: .75; }
+  @media (hover: none) { .it .x { opacity: .4; } }
+  .empty { margin-top: 18px; text-align: center; font-size: 11.5px; color: var(--sub); letter-spacing: .02em; }
+  .foot { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+          font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+  .foot .acts { display: flex; gap: 6px; }
+  .foot button { padding: 4px 9px; font-size: 9.5px; letter-spacing: .08em; background: none;
+                 border-radius: 999px; text-transform: none; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">TO DO</div><span class="caps" id="count"></span></div>
+  <div class="grow"><div class="wrap">
+    <div class="bar"><i id="fill"></i></div>
+    <div class="add">
+      <span class="plus" aria-hidden="true">+</span>
+      <input type="text" id="new" placeholder="할 일을 적고 Enter" aria-label="할 일 추가">
+    </div>
+    <div class="list" id="list"></div>
+    <div class="empty" id="empty" hidden>적을 것이 아직 없어요</div>
+  </div></div>
+  <div class="foot">
+    <span class="acts">
+      <button type="button" id="toggleDone"></button>
+      <button type="button" id="clearDone">완료 지우기</button>
+    </span>
+    <span>이 기기에 저장돼요</span>
+  </div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // A plain to-do list: write it, tick it, throw it away. It does not reset at 5 AM the way TOP 3 does —
+  // a to-do stays until it is done. The record is this device's (docs/WIDGET_STORAGE.md); the planner's
+  // TASKS table is the one that carries dates, goals and projects, and this never pretends to be it.
+  var MAX = 50, KEY = '', hideDone = false;
+  function readOpts() {
+    KEY = 'idarchive.todo.' + (IDP.q.get('id') || IDP.opt('todo', 'title', 'main'));
+    hideDone = String(IDP.opt('todo', 'hide', '')) === '1';
+  }
+  readOpts();
+  function load() {
+    try {
+      var v = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (v && v.items) return v;
+    } catch (e) { /* storage blocked */ }
+    var d = IDP.seed(), done = IDP.seedDone(), t = { items: [] };
+    d.slice(0, MAX).forEach(function (text, i) {
+      t.items.push({ t: text, d: done.indexOf(i) >= 0 });
+    });
+    return t;
+  }
+  var st = load();
+  // finished lines belong at the bottom from the first paint, not only after a click
+  st.items.sort(function (a, c) { return (a.d ? 1 : 0) - (c.d ? 1 : 0); });
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+
+  function paint() {
+    var done = st.items.filter(function (x) { return x.d; }).length, all = st.items.length;
+    document.getElementById('count').textContent = all ? (done + ' / ' + all) : '';
+    document.getElementById('fill').style.width = all ? Math.round(done / all * 100) + '%' : '0';
+    document.getElementById('toggleDone').textContent = hideDone ? ('완료 ' + done + '개 보기') : '완료 숨기기';
+    document.getElementById('toggleDone').hidden = !done;
+    document.getElementById('clearDone').hidden = !done;
+    document.getElementById('empty').hidden = !!all;
+  }
+
+  // typing in a row must not rebuild the list, so rows are built once and only the chrome repaints
+  function render() {
+    document.getElementById('badge').textContent = IDP.opt('todo', 'label', 'TO DO');
+    var box = document.getElementById('list');
+    box.innerHTML = '';
+    st.items.forEach(function (item, i) {
+      if (hideDone && item.d) return;
+      var row = document.createElement('div');
+      row.className = 'it' + (item.d ? ' done' : '');
+
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'box' + (item.d ? ' on' : '');
+      b.setAttribute('aria-label', '완료'); b.setAttribute('aria-pressed', item.d ? 'true' : 'false');
+      b.onclick = function () {
+        item.d = !item.d;
+        save();
+        // a finished line drops to the bottom of the list, where it stops competing for attention
+        st.items.sort(function (a, c) { return (a.d ? 1 : 0) - (c.d ? 1 : 0); });
+        render();
+      };
+
+      var inp = document.createElement('input');
+      inp.type = 'text'; inp.value = item.t;
+      inp.oninput = function () { item.t = inp.value; save(); };
+      inp.onkeydown = function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); document.getElementById('new').focus(); }
+        if (e.key === 'Backspace' && !inp.value) { e.preventDefault(); remove(i); }
+      };
+
+      var x = document.createElement('button');
+      x.type = 'button'; x.className = 'x'; x.textContent = '×';
+      x.setAttribute('aria-label', '지우기');
+      x.onclick = function () { remove(i); };
+
+      row.appendChild(b); row.appendChild(inp); row.appendChild(x);
+      box.appendChild(row);
+    });
+    paint();
+  }
+  function remove(i) { st.items.splice(i, 1); save(); render(); }
+  function add(text) {
+    text = (text || '').trim();
+    if (!text || st.items.length >= MAX) return;
+    // new lines go above the finished ones, not at the very bottom under a pile of strikethroughs
+    var at = st.items.findIndex(function (x) { return x.d; });
+    st.items.splice(at < 0 ? st.items.length : at, 0, { t: text, d: false });
+    save(); render();
+  }
+
+  document.getElementById('new').onkeydown = function (e) {
+    if (e.key !== 'Enter') return;
+    add(this.value);
+    this.value = '';
+  };
+  document.getElementById('toggleDone').onclick = function () { hideDone = !hideDone; render(); };
+  document.getElementById('clearDone').onclick = function () {
+    st.items = st.items.filter(function (x) { return !x.d; });
+    save(); render();
+  };
+
+  IDP.options('todo', [
+    { k: 'label', label: '제목', ph: 'TO DO' },
+    { k: 'hide', label: '완료한 줄 숨기기 (1이면 숨김)', ph: '' },
+    { k: 'title', label: '이 목록의 이름 (여러 개 쓸 때)', ph: 'main' }
+  ], function () { readOpts(); st = load(); render(); });
+  render();
+</script>
+</body>
+</html>

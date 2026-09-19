@@ -160,6 +160,11 @@
     { id: 'timeline', g: '오늘', name: '타임로그 바',       h: 200, opts: [{ k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
     { id: 'top3',     g: '오늘', name: '오늘의 Top 3',      h: 230, opts: [{ k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
 
+    { id: 'todo',     g: '오늘', name: '투두리스트',        h: 360, opts: [
+        { k: 'label', t: 'text', label: '제목', ph: 'TO DO' },
+        { k: 'hide', t: 'text', label: '완료한 줄 숨기기 (1이면 숨김)', ph: '' },
+        { k: 'title', t: 'text', label: '이 목록의 이름 (여러 개 쓸 때)', ph: 'main' }] },
+
     { id: 'goalprogress', g: '목표', name: '목표 · 프로젝트 진행률', h: 330, opts: [
         { k: 'title', t: 'text', label: '목표 이름', ph: '예) 10km 50분 안에' },
         { k: 'label', t: 'text', label: '배지 (GOAL / PROJECT)', ph: 'GOAL' },
@@ -215,7 +220,7 @@
   // Ready-made dashboards, for buyers who would rather start from something than from nothing.
   var PRESETS = [
     { id: 'minimal', name: 'MINIMAL', desc: '시계 · 이번 주 · 한 문장', list: ['clock', 'week', 'quote'] },
-    { id: 'productivity', name: 'PRODUCTIVITY', desc: 'Top 3 · 타임로그 · 목표 진행률 · 주간 리뷰', list: ['top3', 'timeline', 'goalprogress', 'review'] },
+    { id: 'productivity', name: 'PRODUCTIVITY', desc: 'Top 3 · 타임로그 · 목표 진행률 · 주간 리뷰', list: ['todo', 'top3', 'timeline', 'goalprogress'] },
     { id: 'focus', name: 'FOCUS', desc: '집중 타이머 · 주·월 포커스 · 한 문장', list: ['focuslog', 'focus', 'focusnote', 'quote'] },
     { id: 'wellness', name: 'WELLNESS', desc: '데일리 체크인 · 물 · 습관 스트릭 · 루틴', list: ['checkin', 'water', 'streak', 'routine'] },
     { id: 'study', name: 'STUDY', desc: 'D-Day · 타이머 · 독서 진행률 · 메모지', list: ['dday', 'timer', 'reading', 'memo'] },
