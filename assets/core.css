@@ -33,7 +33,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 .card {
-  width: 100%; height: 100%;
+  /* body is a flex row; without this the card's automatic min-width is its min-content
+     width, so a wide grid or a long footer pushes the whole card past a narrow screen
+     instead of wrapping inside it. Measured on a 330px render of WORLD CLOCK. */
+  width: 100%; height: 100%; min-width: 0;
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: var(--radius);
