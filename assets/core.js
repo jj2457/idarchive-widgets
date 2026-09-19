@@ -47,7 +47,90 @@
     var all = optsAll(); all[w] = all[w] || {};
     if (v === '' || v == null) delete all[w][k]; else all[w][k] = String(v);
     try { localStorage.setItem(OPTS, JSON.stringify(all)); } catch (e) { /* storage blocked: this view only */ }
+    touch(w);
   }
+
+  // ---- Carrying content to another device -------------------------------------------------
+  // Widgets keep what a person writes in this browser's storage, and browser storage never leaves
+  // the device. Rather than promise a sync we cannot honestly provide without a server, the ⚙ panel
+  // can bake the widget's current content into its own link: paste that link back into the Notion
+  // block and every device that opens the planner shows the same content.
+  // The stamp decides conflicts — a link only overwrites a device whose own last edit is older.
+  var SHARE = {}, applying = false;
+  function prefixOf(w) { return 'idarchive.' + w + '.'; }
+  function stampOf(w) { return 'idarchive.stamp.' + w; }
+  function touch(w) {
+    if (!w || applying) return;
+    try { localStorage.setItem(stampOf(w), String(Date.now())); } catch (e) {}
+  }
+  try {
+    var _set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      _set.call(this, k, v);
+      if (this === localStorage && typeof k === 'string' && k.indexOf('idarchive.') === 0) {
+        var w = k.slice(10).split('.')[0];
+        if (SHARE[w] && k !== stampOf(w)) touch(w);
+      }
+    };
+  } catch (e) { /* storage locked down: sharing simply stays off */ }
+
+  function b64(str) {
+    return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function unb64(str) {
+    var t = String(str).replace(/-/g, '+').replace(/_/g, '/');
+    while (t.length % 4) t += '=';
+    return decodeURIComponent(escape(atob(t)));
+  }
+  function bake(w) {
+    var keys = {}, pre = prefixOf(w);
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf(pre) === 0) keys[k] = localStorage.getItem(k);
+      }
+    } catch (e) {}
+    return { t: Date.now(), o: optsFor(w), k: keys };
+  }
+  function applyPayload(w, pay) {
+    var mine = 0;
+    try { mine = +(localStorage.getItem(stampOf(w)) || 0); } catch (e) {}
+    if (!pay || !pay.t || pay.t <= mine) return false;   // this device edited more recently — keep it
+    applying = true;
+    try {
+      var all = optsAll();
+      all[w] = pay.o || {};
+      try { localStorage.setItem(OPTS, JSON.stringify(all)); } catch (e) {}
+      Object.keys(pay.k || {}).forEach(function (k) {
+        if (k.indexOf(prefixOf(w)) !== 0) return;         // a link may only fill its own widget
+        try { localStorage.setItem(k, pay.k[k]); } catch (e) {}
+      });
+      try { localStorage.setItem(stampOf(w), String(pay.t)); } catch (e) {}
+    } finally { applying = false; }
+    return true;
+  }
+  // A widget declares itself shareable. IDP.options() does this for you; widgets with no settings
+  // of their own call IDP.share('name') directly.
+  function share(w) {
+    if (!w || SHARE[w]) return;
+    SHARE[w] = true;
+    renderShare();
+    var raw = q.get('s');
+    if (!raw) return;
+    var pay = null;
+    try { pay = JSON.parse(unb64(raw)); } catch (e) { return; }
+    if (!pay || pay.w !== w) return;
+    if (!applyPayload(w, pay)) return;
+    if (optHandler) optHandler();
+    else setTimeout(function () { location.reload(); }, 0);  // no redraw hook: the stamp stops this repeating
+  }
+  function shareLink(w) {
+    var pay = bake(w); pay.w = w;
+    var p = new URLSearchParams(q.toString());
+    p.set('s', b64(JSON.stringify(pay)));
+    return location.origin + location.pathname + '?' + p.toString();
+  }
+
   var optWidget = null, optDefs = [], optHandler = null, panelEl = null;
   function effective() {
     var p = new URLSearchParams(q.toString()), s = saved();
@@ -74,7 +157,7 @@
       '<div class="idp-row"><button type="button" data-border="card">카드</button><button type="button" data-border="line">윗선</button><button type="button" data-border="none">없음</button></div>' +
       '<label class="idp-row">둥글기 <input type="range" min="0" max="32" step="2" data-k="radius"></label>' +
       '<div class="idp-row"><button type="button" data-reset>기본값</button><button type="button" data-close>닫기</button></div>' +
-      '<div class="idp-note">이 기기의 모든 ID Archive 위젯에 적용돼요</div>';
+      '<div class="idp-note idp-tail">이 기기의 모든 ID Archive 위젯에 적용돼요</div>';
     panel.innerHTML = html;
     function save(patch) {
       var cur = saved() || {};
@@ -103,6 +186,36 @@
     document.body.appendChild(btn); document.body.appendChild(panel);
     panelEl = panel;
     if (optDefs.length) renderOptions();
+    renderShare();
+  }
+
+  // "이 내용을 다른 기기에서도" — one button, an honest sentence, and the link itself in a box the
+  // reader can copy by hand when the clipboard is blocked inside the Notion frame.
+  function renderShare() {
+    var w = Object.keys(SHARE)[0];
+    if (!panelEl || !w || panelEl.querySelector('.idp-share')) return;
+    var box = document.createElement('div');
+    box.className = 'idp-share';
+    box.innerHTML = '<div class="idp-panel-title" style="margin-top:14px">다른 기기에서도</div>' +
+      '<div class="idp-row"><button type="button" data-bake>지금 내용을 링크에 담기</button></div>' +
+      '<textarea class="idp-link" readonly hidden rows="2"></textarea>' +
+      '<div class="idp-note" data-share-note>노트북 · 태블릿 · 휴대폰에서 같은 내용을 보려면, 만들어진 주소를 노션 블록의 링크로 바꿔 주세요. 주소 안에 적은 내용이 들어가니 공개된 곳에는 올리지 마세요.</div>';
+    var ta = box.querySelector('.idp-link');
+    box.querySelector('[data-bake]').addEventListener('click', function () {
+      var url = shareLink(w);
+      ta.hidden = false; ta.value = url; ta.focus(); ta.select();
+      var note = box.querySelector('[data-share-note]');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(function () {
+          note.textContent = '주소를 복사했어요. 노션에서 이 블록의 링크를 바꾸면 모든 기기에서 같은 내용이 보입니다.';
+        }, function () {
+          note.textContent = '위 주소를 직접 복사해서, 노션에서 이 블록의 링크를 바꿔 주세요.';
+        });
+      } else {
+        note.textContent = '위 주소를 직접 복사해서, 노션에서 이 블록의 링크를 바꿔 주세요.';
+      }
+    });
+    panelEl.insertBefore(box, panelEl.querySelector('.idp-tail'));
   }
 
   function renderOptions() {
@@ -126,8 +239,7 @@
       optSave(optWidget, k, e.target.value);
       if (optHandler) optHandler();
     });
-    var last = panelEl.querySelector('.idp-note');
-    panelEl.insertBefore(box, last || null);
+    panelEl.insertBefore(box, panelEl.querySelector('.idp-tail'));
   }
   if (document.body) settingsPanel(); else document.addEventListener('DOMContentLoaded', settingsPanel);
 
@@ -148,6 +260,7 @@
   function options(widget, defs, onChange) {
     optWidget = widget; optDefs = defs || []; optHandler = onChange || null;
     renderOptions();
+    share(widget);
   }
   // value for a widget option: what the buyer chose in ⚙ first, then the link's parameter, then the default
   function opt(widget, k, fallback) {
@@ -182,5 +295,6 @@
 
   window.IDP = { q: q, CFG: CFG, THEMES: THEMES, applyTheme: applyTheme, weekStart: weekStart === 'sun' ? 'sun' : 'mon',
     DOW: DOW, MONTHS: MONTHS, pad: pad, iso: iso, plannerDate: plannerDate, parseDate: parseDate,
-    options: options, opt: opt, seed: seed, seedDone: seedDone, now: now };
+    options: options, opt: opt, seed: seed, seedDone: seedDone, now: now,
+    share: share, shareLink: shareLink };
 })();

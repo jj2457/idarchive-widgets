@@ -77,6 +77,8 @@
   setInterval(function () {
     if (st.day !== dayKey() && document.activeElement.tagName !== 'INPUT') { st = fresh(); save(); render(); }
   }, 60000);
+  // no settings of its own, but the three lines are worth carrying to another device
+  IDP.share('top3');
 </script>
 </body>
 </html>

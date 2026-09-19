@@ -52,13 +52,15 @@
     focuslog: '&d=%EA%B3%B5%EB%B6%80%3A80%2C%EB%8F%85%EC%84%9C%3A40%2C%EC%9A%B4%EB%8F%99%3A35%2C%EC%97%85%EB%AC%B4%3A130%2C%EC%BD%98%ED%85%90%EC%B8%A0%3A25',
     goalchain: '&d=%ED%95%98%EA%B3%A0%20%EC%8B%B6%EC%9D%80%20%EC%9D%BC%EB%A1%9C%20%EB%A8%B9%EA%B3%A0%EC%82%B4%EA%B8%B0%7C%EB%82%98%EB%A7%8C%EC%9D%98%20%EB%B8%8C%EB%9E%9C%EB%93%9C%20%EB%A7%8C%EB%93%A4%EA%B8%B0%7C10km%2050%EB%B6%84%20%EC%95%88%EC%97%90%20%EC%99%84%EC%A3%BC%7C3%EC%9B%94%2012%EC%A3%BC%20%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%A8%20%EB%81%9D%EB%82%B4%EA%B8%B0%7C%EC%9D%B8%ED%84%B0%EB%B2%8C%2030%EB%B6%84%20%ED%95%9C%20%EB%B2%88%7C%EC%95%84%EC%B9%A8%EC%97%90%205km%20%EB%8B%AC%EB%A6%AC%EA%B8%B0',
     habityear: '&year=2027&name=%EC%95%84%EC%B9%A8%EC%97%90%205km%20%EB%8B%AC%EB%A6%AC%EA%B8%B0&d=1%3A1%2C2%2C3%2C5%2C6%2C7%2C9%2C10%2C11%2C13%2C14%2C15%2C17%2C18%2C19%2C21%2C22%2C23%2C25%2C26%2C27%2C29%2C30%2C31%7C2%3A1%2C2%2C3%2C4%2C6%2C7%2C8%2C9%2C11%2C12%2C13%2C14%2C16%2C17%2C18%2C19%2C21%2C22%2C23%2C24%2C26%2C27%2C28%7C3%3A1%2C2%2C3%2C4%2C5%2C6%2C8%2C9%2C10%2C11%2C12%2C13%2C15%2C16%2C17%2C18%2C19%2C20',
+    countdown: '&items=%EC%9E%90%EA%B2%A9%EC%A6%9D%20%EC%8B%9C%ED%97%98%7C2027-04-11%2C%EC%A0%9C%EC%A3%BC%7C2027-06-02%2C%EC%A0%84%EC%8B%9C%20%EC%98%A4%ED%94%88%7C2027-03-20%2C%EC%9D%B4%EC%82%AC%7C2027-02-28',
+    weekplan: '&d=%EA%B8%B0%ED%9A%8D%EC%84%9C%20%EC%B4%88%EC%95%88%7C%EB%AF%B8%ED%8C%85%20%EC%A4%80%EB%B9%84%7C%EC%A0%9C%EC%95%88%20%EB%B0%9C%EC%86%A1%7C%EC%B4%AC%EC%98%81%7C%EC%A0%95%EC%82%B0%7C%EB%8B%AC%EB%A6%AC%EA%B8%B0%7C%EC%89%AC%EA%B8%B0&done=0%2C1',
     vision: '&year=2027&line=%EC%98%AC%ED%95%B4%20%EB%82%98%EB%8A%94%20%EC%9D%B4%EB%9F%B0%20%EB%AA%A8%EC%8A%B5%EC%9C%BC%EB%A1%9C%20%EC%A7%80%EB%82%B4%EA%B3%A0%20%EC%8B%B6%EB%8B%A4&words=%EB%8B%AC%EB%A6%AC%EA%B8%B0%2C%EA%B8%B0%EB%A1%9D%2C%EC%97%AC%ED%96%89%2C%EB%B0%B0%EC%9B%80%2C%EA%B4%80%EA%B3%84%2C%EC%89%BC'
   };
   // ID ARCHIVE first: the widgets that exist nowhere else are what the catalogue is for.
   ['goal5', 'goalchain', 'mandal', 'mandalfull', 'vision', 'roadmap', 'bucket', 'habityear',
    'clock', 'week', 'calendar', 'timeline', 'top3', 'routine', 'water', 'checkin', 'streak', 'mood', 'journal', 'memo',
    'focus', 'timer', 'progress', 'dday', 'year', 'focusnote', 'goalprogress', 'reading', 'review', 'quote', 'moodboard',
-   'worklog', 'career', 'focuslog', 'todo', 'calc', 'board', 'chart', 'links'].forEach(function (w) {
+   'worklog', 'career', 'focuslog', 'todo', 'calc', 'board', 'chart', 'links', 'countdown', 'weekplan'].forEach(function (w) {
     var f = document.createElement('iframe');
     f.src = w + '.html' + q + (extra[w] || ''); f.title = w;
     document.getElementById('grid').appendChild(f);

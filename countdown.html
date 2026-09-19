@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Countdown</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 560px; }
+  .list { margin-top: 12px; display: flex; flex-direction: column; gap: 7px; }
+  .it { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 11px; background: var(--tint); }
+  .it .tx { flex: 1; min-width: 0; }
+  .it .n { font-size: 12.5px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .it .d { margin-top: 2px; font-size: 9.5px; letter-spacing: .08em; color: var(--sub); }
+  .it .k { flex: none; font-family: var(--serif); font-size: 19px; line-height: 1; color: var(--ink); }
+  .it .k small { font-size: 10px; letter-spacing: .06em; color: var(--sub); margin-left: 2px; }
+  .it.today { background: var(--soft); }
+  .it.past { opacity: .5; }
+  .bar { margin-top: 6px; height: 3px; border-radius: 999px; background: var(--line); overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--deep); opacity: .55; }
+  .empty { margin-top: 20px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
+  .foot { margin-top: 12px; display: flex; justify-content: space-between; gap: 10px;
+          font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">COUNTDOWN</div><span class="caps" id="next"></span></div>
+  <div class="grow"><div class="wrap">
+    <div class="list" id="list"></div>
+    <div class="empty" id="empty" hidden>⚙ 에서 <b>이름|2027-03-15</b> 로 적으면 남은 날이 세어집니다.<br>예) 자격증 시험|2027-04-11, 제주|2027-06-02</div>
+  </div></div>
+  <div class="foot"><span id="hint">가까운 날부터 위에</span><span>지난 날은 아래로</span></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // One D-Day is a card. Several D-Days are a plan — which is why this exists next to dday.html:
+  // a person tracking a certification, a trip and a deadline at once wants to see the order they arrive in.
+  var ITEMS = [], MAX = 8;
+
+  function readOpts() {
+    ITEMS = String(IDP.opt('countdown', 'items', ''))
+      .split(',').map(function (p) {
+        var at = p.lastIndexOf('|');
+        if (at < 0) return null;
+        var n = p.slice(0, at).trim();
+        var d = IDP.parseDate(p.slice(at + 1).trim());
+        return (n && d) ? { n: n, d: d } : null;
+      }).filter(Boolean).slice(0, MAX);
+  }
+  readOpts();
+
+  function days(from, to) { return Math.round((to - from) / 864e5); }
+
+  function render() {
+    document.getElementById('badge').textContent = IDP.opt('countdown', 'label', 'COUNTDOWN');
+    var today = IDP.now();
+    today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    var rows = ITEMS.map(function (it) { return { n: it.n, d: it.d, k: days(today, it.d) }; });
+    // upcoming first, nearest at the top; days already gone sink to the bottom, most recent first
+    rows.sort(function (a, b) {
+      if ((a.k < 0) !== (b.k < 0)) return a.k < 0 ? 1 : -1;
+      return a.k < 0 ? b.k - a.k : a.k - b.k;
+    });
+
+    // the header names what is coming, not the number — the number is already on its own row
+    var soon = rows.filter(function (r) { return r.k >= 0; })[0];
+    document.getElementById('next').textContent = soon ? (soon.k === 0 ? '오늘 · ' : '다음 · ') + soon.n : '';
+    document.getElementById('empty').hidden = !!rows.length;
+
+    // the bar fills over the last 100 days before a date — a quiet sense of "it is getting close"
+    var SPAN = 100;
+    var list = document.getElementById('list');
+    list.innerHTML = '';
+    rows.forEach(function (r) {
+      var el = document.createElement('div');
+      el.className = 'it' + (r.k === 0 ? ' today' : r.k < 0 ? ' past' : '');
+      var tx = document.createElement('div'); tx.className = 'tx';
+      var n = document.createElement('div'); n.className = 'n'; n.textContent = r.n;
+      var d = document.createElement('div'); d.className = 'd';
+      d.textContent = IDP.plannerDate(r.d) + ' ' + IDP.DOW[r.d.getDay()];
+      tx.appendChild(n); tx.appendChild(d);
+      if (r.k > 0 && r.k <= SPAN) {
+        var bar = document.createElement('div'); bar.className = 'bar';
+        var i = document.createElement('i'); i.style.width = Math.round((SPAN - r.k) / SPAN * 100) + '%';
+        bar.appendChild(i); tx.appendChild(bar);
+      }
+      var k = document.createElement('div'); k.className = 'k';
+      if (r.k === 0) k.textContent = 'D-DAY';
+      else { k.textContent = (r.k > 0 ? 'D-' : 'D+') + Math.abs(r.k); }
+      el.appendChild(tx); el.appendChild(k);
+      list.appendChild(el);
+    });
+  }
+
+  IDP.options('countdown', [
+    { k: 'label', label: '제목', ph: 'COUNTDOWN' },
+    { k: 'items', label: '날짜 (이름|2027-03-15, 쉼표로 구분, 최대 8개)', ph: '자격증 시험|2027-04-11' }
+  ], function () { readOpts(); render(); });
+  render();
+  // the day changes while the card is open on a desk
+  setInterval(render, 60000);
+</script>
+</body>
+</html>

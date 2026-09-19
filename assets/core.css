@@ -86,3 +86,7 @@ body:hover .idp-gear, .idp-gear:focus-visible, .idp-panel:not([hidden]) ~ .idp-g
 .idp-row input[type=color] { width: 34px; height: 22px; border: 1px solid var(--line); border-radius: 6px; padding: 0; background: none; }
 .idp-note { margin-top: 10px; font-size: 10px; color: var(--sub); }
 button:focus-visible { outline: 2px solid var(--deep); outline-offset: 2px; }
+.idp-link { width: 100%; margin-top: 8px; padding: 6px 8px; font: inherit; font-size: 9.5px; line-height: 1.5;
+            letter-spacing: 0; color: var(--sub); background: var(--tint); border: 1px solid var(--line);
+            border-radius: 8px; resize: none; word-break: break-all; }
+.idp-link:focus { outline: none; color: var(--ink); }

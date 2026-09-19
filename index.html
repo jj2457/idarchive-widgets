@@ -156,6 +156,9 @@
 
     { id: 'clock',    g: '오늘', name: '시계 · 오늘 날짜', h: 230, opts: [{ k: 'h24', t: 'check', label: '24시간 표시' }] },
     { id: 'week',     g: '오늘', name: '이번 주 7일',      h: 200, opts: [{ k: 'weekStart', t: 'start' }] },
+    { id: 'weekplan', g: '오늘', name: '주간 계획 (요일별 한 줄)', h: 360, opts: [
+        { k: 'label', t: 'text', label: '제목', ph: 'WEEK PLAN' },
+        { k: 'title', t: 'text', label: '이 계획의 이름 (여러 개 쓸 때)', ph: 'main' }] },
     { id: 'calendar', g: '오늘', name: '미니 캘린더',      h: 330, opts: [{ k: 'weekStart', t: 'start' }, { k: 'month', t: 'text', label: '고정할 달 (비우면 이번 달)', ph: '2027-03' }, { k: 'style', t: 'text', label: '디자인 (grid · editorial · minimal)', ph: 'editorial' }] },
     { id: 'timeline', g: '오늘', name: '타임로그 바',       h: 200, opts: [{ k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
     { id: 'top3',     g: '오늘', name: '오늘의 Top 3',      h: 230, opts: [{ k: 'from', t: 'number', label: '하루 시작 시각 (0–23)', ph: '5' }] },
@@ -190,6 +193,9 @@
     { id: 'timer',    g: '시간', name: '타이머 · 스톱워치', h: 300, opts: [{ k: 'minutes', t: 'number', label: '기본 분', ph: '25' }] },
     { id: 'progress', g: '시간', name: '진행률 (일·주·월·연)', h: 290, opts: [{ k: 'weekStart', t: 'start' }] },
     { id: 'dday',     g: '시간', name: 'D-Day · 기념일',    h: 230, opts: [{ k: 'title', t: 'text', label: '제목', ph: '예) 자격증 시험' }, { k: 'date', t: 'date', label: '목표 날짜' }] },
+    { id: 'countdown', g: '시간', name: '카운트다운 (여러 날)', h: 380, opts: [
+        { k: 'label', t: 'text', label: '제목', ph: 'COUNTDOWN' },
+        { k: 'items', t: 'text', label: '날짜 (이름|2027-03-15, 쉼표로 구분)', ph: '자격증 시험|2027-04-11' }] },
     { id: 'year',     g: '시간', name: '올해 365일 점',     h: 300, opts: [{ k: 'year', t: 'number', label: '연도 (비우면 올해)', ph: '2027' }] },
 
     { id: 'worklog',  g: '업무', name: '주간 업무일지',      h: 430, opts: [

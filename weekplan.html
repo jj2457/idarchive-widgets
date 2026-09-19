@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Week Plan</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 560px; }
+  .rows { margin-top: 12px; display: flex; flex-direction: column; gap: 4px; }
+  .r { display: flex; align-items: center; gap: 9px; padding: 6px 9px; border-radius: 10px; }
+  .r.today { background: var(--tint); }
+  .r .day { flex: none; width: 58px; display: flex; align-items: baseline; gap: 5px; }
+  .r .w { font-size: 9px; letter-spacing: .14em; color: var(--sub); }
+  .r .n { font-family: var(--serif); font-size: 14px; line-height: 1; color: var(--ink); }
+  .r.today .w, .r.today .n { color: var(--ink); }
+  .r .box { flex: none; width: 13px; height: 13px; border-radius: 3px; border: 1px solid var(--line);
+            background: var(--paper); cursor: pointer; padding: 0; }
+  .r .box.on { background: var(--soft); border-color: var(--soft); }
+  .r input { flex: 1; min-width: 0; font: inherit; font-size: 12.5px; color: var(--ink); background: none;
+             border: 0; border-bottom: 1px solid transparent; padding: 3px 2px; }
+  .r input:focus { outline: none; border-bottom-color: var(--soft); }
+  .r.done input { color: var(--sub); text-decoration: line-through; }
+  .foot { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+          font-size: 11px; color: var(--sub); letter-spacing: .04em; }
+  .foot .nav { display: flex; gap: 4px; }
+  .foot button { padding: 4px 9px; font-size: 9.5px; letter-spacing: .06em; background: none;
+                 border-radius: 999px; text-transform: none; }
+  .foot button.on { background: var(--tint); border-color: var(--soft); color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">WEEK PLAN</div><span class="caps" id="range"></span></div>
+  <div class="grow"><div class="wrap">
+    <div class="rows" id="rows"></div>
+  </div></div>
+  <div class="foot">
+    <span class="nav"><button type="button" id="prev">지난주</button><button type="button" id="now">이번 주</button><button type="button" id="next">다음 주</button></span>
+    <span id="count"></span>
+  </div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // One line for each day of the week — the smallest plan that still is a plan.
+  // The week's start follows the planner's own setting, so a SUN planner never shows a MON week.
+  var KEY = '', TITLE = 'main', offset = 0;
+
+  function startOf(d, off) {
+    var day = d.getDay();
+    var shift = IDP.weekStart === 'sun' ? day : (day + 6) % 7;
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() - shift + (off || 0) * 7);
+  }
+  function weekKey(mon) {
+    var first = new Date(mon.getFullYear(), 0, 1);
+    return mon.getFullYear() + '-W' + IDP.pad(Math.floor((mon - first) / 6048e5) + 1);
+  }
+  function readOpts() { TITLE = IDP.q.get('id') || IDP.opt('weekplan', 'title', 'main'); }
+  readOpts();
+
+  function load() {
+    try { var v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (v) return v; } catch (e) {}
+    var d = IDP.seed(), done = IDP.seedDone();
+    var t = { lines: d.slice(0, 7), done: {} };
+    done.forEach(function (i) { t.done[i] = 1; });
+    return t;
+  }
+  var st = null;
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+
+  function render() {
+    document.getElementById('badge').textContent = IDP.opt('weekplan', 'label', 'WEEK PLAN');
+    var mon = startOf(IDP.now(), offset);
+    KEY = 'idarchive.weekplan.' + TITLE + '.' + weekKey(mon);
+    if (!st || render.key !== KEY) { st = load(); render.key = KEY; }
+    if (!st.lines) st.lines = [];
+    if (!st.done) st.done = {};
+
+    var end = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + 6);
+    document.getElementById('range').textContent =
+      IDP.pad(mon.getMonth() + 1) + '.' + IDP.pad(mon.getDate()) + ' – ' + IDP.pad(end.getMonth() + 1) + '.' + IDP.pad(end.getDate());
+
+    var todayIso = IDP.iso(IDP.now());
+    var rows = document.getElementById('rows');
+    rows.innerHTML = '';
+    for (var i = 0; i < 7; i++) {
+      var d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i);
+      var r = document.createElement('div');
+      r.className = 'r' + (IDP.iso(d) === todayIso ? ' today' : '') + (st.done[i] ? ' done' : '');
+      var day = document.createElement('div'); day.className = 'day';
+      var w = document.createElement('span'); w.className = 'w'; w.textContent = IDP.DOW[d.getDay()];
+      var n = document.createElement('span'); n.className = 'n'; n.textContent = IDP.pad(d.getDate());
+      day.appendChild(w); day.appendChild(n);
+      var box = document.createElement('button');
+      box.type = 'button'; box.className = 'box' + (st.done[i] ? ' on' : ''); box.setAttribute('aria-label', '완료');
+      box.dataset.b = i;
+      var inp = document.createElement('input');
+      inp.type = 'text'; inp.dataset.i = i; inp.value = st.lines[i] || '';
+      inp.placeholder = i === 0 ? '이 날 하나만 고른다면' : '';
+      r.appendChild(day); r.appendChild(box); r.appendChild(inp);
+      rows.appendChild(r);
+    }
+    updateCount();
+    document.getElementById('now').className = offset === 0 ? 'on' : '';
+  }
+
+  function updateCount() {
+    var filled = st.lines.filter(function (s) { return s && s.trim(); }).length;
+    var done = Object.keys(st.done).filter(function (k) { return st.done[k] && st.lines[k] && st.lines[k].trim(); }).length;
+    document.getElementById('count').textContent = filled ? (done + ' / ' + filled) : '';
+  }
+  document.getElementById('rows').addEventListener('input', function (e) {
+    var i = e.target.dataset.i;
+    if (i == null) return;
+    st.lines[i] = e.target.value; save();
+    updateCount();
+  });
+  document.getElementById('rows').addEventListener('click', function (e) {
+    var i = e.target.dataset.b;
+    if (i == null) return;
+    if (st.done[i]) delete st.done[i]; else st.done[i] = 1;
+    save(); render();
+  });
+  document.getElementById('prev').onclick = function () { offset--; render(); };
+  document.getElementById('next').onclick = function () { offset++; render(); };
+  document.getElementById('now').onclick = function () { offset = 0; render(); };
+
+  IDP.options('weekplan', [
+    { k: 'label', label: '제목', ph: 'WEEK PLAN' },
+    { k: 'title', label: '이 계획의 이름 (여러 개 쓸 때)', ph: 'main' }
+  ], function () { readOpts(); st = null; render(); });
+  render();
+</script>
+</body>
+</html>
