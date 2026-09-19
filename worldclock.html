@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · World Clock</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 620px; }
+  .row4 { margin-top: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 9px; }
+  .c { padding: 12px 10px 11px; border-radius: 13px; background: var(--tint); text-align: center; min-width: 0; }
+  .c.here { background: var(--soft); }
+  .c svg { width: 100%; max-width: 62px; height: auto; overflow: visible; }
+  .face { fill: var(--paper); stroke: var(--line); stroke-width: 1.2; }
+  .tick { stroke: var(--deep); stroke-width: 1.6; stroke-linecap: round; opacity: .7; }
+  .hand { stroke: var(--ink); stroke-linecap: round; }
+  .hand.h { stroke-width: 4; }
+  .hand.m { stroke-width: 2.6; }
+  .pin { fill: var(--paper); stroke: var(--ink); stroke-width: 1.6; }
+  .c .n { margin-top: 8px; font-size: 9px; letter-spacing: .16em; color: var(--sub);
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .c .t { margin-top: 3px; font-family: var(--serif); font-size: 19px; line-height: 1.1; color: var(--ink); }
+  .c .t small { font-size: .45em; letter-spacing: .12em; color: var(--sub); margin-left: .25em; font-family: 'Roboto', sans-serif; }
+  .c .u { margin-top: 2px; font-size: 9px; letter-spacing: .06em; color: var(--sub); }
+  .c .u b { font-weight: 400; color: var(--deep); }
+  .empty { margin-top: 20px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
+  .foot { margin-top: 12px; display: flex; justify-content: space-between; gap: 10px;
+          font-size: 10.5px; color: var(--sub); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">WORLD CLOCK</div><span class="caps" id="mine"></span></div>
+  <div class="grow"><div class="wrap">
+    <div class="row4" id="row"></div>
+    <div class="empty" id="empty" hidden>⚙ 에서 <b>도시|UTC차이</b> 로 적으면 나란히 보입니다.<br>예) 서울|9, 뉴욕|-4, 파리|2</div>
+  </div></div>
+  <div class="foot"><span>여기 시각은 이 기기 시계를 따릅니다</span><span>서머타임은 직접 맞춰 주세요</span></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // Four small faces of the same clock. The offsets are the reader's to type, because a widget that
+  // guessed summer time from a bundled table would be wrong twice a year and quietly — better to say
+  // plainly that the number is theirs than to be confidently late.
+  var MAX = 4, CITIES = [];
+
+  function readOpts() {
+    CITIES = String(IDP.opt('worldclock', 'cities', '서울|9, 뉴욕|-4, 런던|1'))
+      .split(',').map(function (p) {
+        var at = p.lastIndexOf('|');
+        if (at < 0) return null;
+        var n = p.slice(0, at).trim(), u = parseFloat(p.slice(at + 1));
+        return (n && isFinite(u)) ? { n: n, u: u } : null;
+      }).filter(Boolean).slice(0, MAX);
+  }
+  readOpts();
+
+  function el(tag, attrs) {
+    var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+    return e;
+  }
+  function polar(r, deg) {
+    var a = (deg - 90) * Math.PI / 180;
+    return [50 + r * Math.cos(a), 50 + r * Math.sin(a)];
+  }
+  function dial(h, m) {
+    var svg = el('svg', { viewBox: '0 0 100 100', role: 'img' });
+    svg.appendChild(el('circle', { cx: 50, cy: 50, r: 44, class: 'face' }));
+    [0, 90, 180, 270].forEach(function (d) {
+      var a = polar(38, d), b = polar(31, d);
+      svg.appendChild(el('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], class: 'tick' }));
+    });
+    [[(h % 12) * 30 + m * 0.5, 21, 'h'], [m * 6, 31, 'm']].forEach(function (x) {
+      var p = polar(x[1], x[0]), back = polar(-6, x[0]);
+      svg.appendChild(el('line', { x1: back[0], y1: back[1], x2: p[0], y2: p[1], class: 'hand ' + x[2] }));
+    });
+    svg.appendChild(el('circle', { cx: 50, cy: 50, r: 3, class: 'pin' }));
+    return svg;
+  }
+
+  // the local clock, shifted by the difference between this machine's offset and the city's
+  function at(city, base) {
+    return new Date(base.getTime() + base.getTimezoneOffset() * 60000 + city.u * 3600000);
+  }
+
+  function render() {
+    document.getElementById('badge').textContent = IDP.opt('worldclock', 'label', 'WORLD CLOCK');
+    var base = IDP.now();
+    var hereU = -base.getTimezoneOffset() / 60;
+    document.getElementById('mine').textContent = 'UTC' + (hereU >= 0 ? '+' : '') + hereU;
+    document.getElementById('empty').hidden = !!CITIES.length;
+
+    var row = document.getElementById('row');
+    row.innerHTML = '';
+    CITIES.forEach(function (c) {
+      var d = at(c, base);
+      var box = document.createElement('div');
+      box.className = 'c' + (Math.abs(c.u - hereU) < 0.01 ? ' here' : '');
+      box.appendChild(dial(d.getHours(), d.getMinutes()));
+      var n = document.createElement('div'); n.className = 'n'; n.textContent = c.n;
+      var t = document.createElement('div'); t.className = 't';
+      t.innerHTML = (d.getHours() % 12 || 12) + ':' + IDP.pad(d.getMinutes()) +
+        '<small>' + (d.getHours() < 12 ? 'AM' : 'PM') + '</small>';
+      var u = document.createElement('div'); u.className = 'u';
+      var diff = Math.round((c.u - hereU) * 10) / 10;
+      var dayGap = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) -
+        new Date(base.getFullYear(), base.getMonth(), base.getDate())) / 864e5);
+      u.innerHTML = (diff === 0 ? '여기와 같음' : '<b>' + (diff > 0 ? '+' : '') + diff + '시간</b>') +
+        (dayGap ? ' · ' + (dayGap > 0 ? '내일' : '어제') : '');
+      box.appendChild(n); box.appendChild(t); box.appendChild(u);
+      row.appendChild(box);
+    });
+  }
+
+  IDP.options('worldclock', [
+    { k: 'label', label: '제목', ph: 'WORLD CLOCK' },
+    { k: 'cities', label: '도시 (이름|UTC차이, 쉼표로 구분, 최대 4개)', ph: '서울|9, 뉴욕|-4' }
+  ], function () { readOpts(); render(); });
+  render();
+  setInterval(render, 20000);
+</script>
+</body>
+</html>
