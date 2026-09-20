@@ -16,6 +16,14 @@
     return allowed.indexOf(v) >= 0 ? v : fallback;
   }
 
+  var STYLES = [
+    ['editorial', 'SOFT EDITORIAL'],
+    ['minimal', 'MINIMAL PASTEL'],
+    ['cream', 'COZY CREAM'],
+    ['sage', 'SAGE PLANNER'],
+    ['note', 'LAVENDER NOTE'],
+    ['business', 'CLEAN BUSINESS']
+  ];
   function applyTheme(p) {
     var t = THEMES[p.get('theme')] || THEMES[D.theme] || THEMES[Object.keys(THEMES)[0]];
     var soft = hex(p.get('soft')) || t.soft, deep = hex(p.get('deep')) || t.deep;
@@ -28,6 +36,10 @@
       : hex(p.get('soft')) ? 'color-mix(in srgb, ' + soft + ' 35%, #fff)' : (t.tint || 'color-mix(in srgb, ' + soft + ' 35%, #fff)');
     root.style.setProperty('--tint', tint);
     root.dataset.mode = mode;
+    // a style preset changes density, corner, edge, shadow, badge and heading face together;
+    // colour still comes from the theme, so any preset works with any of the nine pastels
+    var style = pick(p, 'style', STYLES.map(function (s) { return s[0]; }), '');
+    if (style) root.dataset.style = style; else root.removeAttribute('data-style');
     var border = p.get('frame') === 'none' ? 'none' : pick(p, 'border', ['card', 'line', 'none'], D.border);
     root.dataset.frame = border;
     var r = parseInt(p.get('radius'), 10);
@@ -196,7 +208,12 @@
     var panel = document.createElement('div');
     panel.className = 'idp-panel'; panel.hidden = true;
     var s = saved() || {};
-    var html = '<div class="idp-panel-title">THEME</div><div class="idp-swatches">';
+    var html = '<div class="idp-panel-title">STYLE</div><div class="idp-styles">';
+    STYLES.forEach(function (st) {
+      html += '<button type="button" data-style="' + st[0] + '">' + st[1] + '</button>';
+    });
+    html += '<button type="button" data-style="">기본</button></div>' +
+      '<div class="idp-panel-title" style="margin-top:14px">THEME</div><div class="idp-swatches">';
     Object.keys(THEMES).forEach(function (name) {
       html += '<button type="button" data-theme="' + name + '" title="' + name + '" aria-label="' + name + '" style="background:linear-gradient(135deg,' +
         THEMES[name].soft + ' 50%,' + THEMES[name].deep + ' 50%)"></button>';
@@ -218,7 +235,8 @@
     }
     panel.addEventListener('click', function (e) {
       var t = e.target;
-      if (t.dataset.theme) save({ theme: t.dataset.theme, soft: '', deep: '' });
+      if (t.hasAttribute('data-style')) { save({ style: t.dataset.style }); markStyle(panel); }
+      else if (t.dataset.theme) save({ theme: t.dataset.theme, soft: '', deep: '' });
       else if (t.dataset.mode) save({ mode: t.dataset.mode });
       else if (t.dataset.border) save({ border: t.dataset.border, frame: '' });
       else if (t.hasAttribute('data-reset')) { try { localStorage.removeItem(STORE); } catch (err) {} applyTheme(q); }
@@ -231,6 +249,7 @@
     var range = panel.querySelector('[data-k="radius"]');
     range.value = s.radius || D.radius;
     range.addEventListener('input', function (e) { save({ radius: e.target.value }); });
+    markStyle(panel);
     btn.addEventListener('click', function () { panel.hidden = !panel.hidden; });
     document.body.appendChild(btn); document.body.appendChild(panel);
     panelEl = panel;
@@ -272,6 +291,12 @@
     panelEl.insertBefore(box, panelEl.querySelector('.idp-tail'));
   }
 
+  function markStyle(panel) {
+    var now = root.dataset.style || '';
+    Array.prototype.forEach.call(panel.querySelectorAll('[data-style]'), function (b) {
+      b.className = b.getAttribute('data-style') === now ? 'on' : '';
+    });
+  }
   function renderOptions() {
     if (!panelEl || !optDefs.length || panelEl.querySelector('.idp-opts')) return;
     var box = document.createElement('div');
@@ -445,6 +470,6 @@
   window.IDP = { q: q, CFG: CFG, THEMES: THEMES, applyTheme: applyTheme, weekStart: weekStart === 'sun' ? 'sun' : 'mon',
     DOW: DOW, MONTHS: MONTHS, pad: pad, iso: iso, plannerDate: plannerDate, parseDate: parseDate,
     options: options, opt: opt, seed: seed, seedDone: seedDone, now: now,
-    share: share, shareLink: shareLink,
+    STYLES: STYLES, share: share, shareLink: shareLink,
     chime: chime, banner: banner, notify: notify, askNotify: askNotify, canNotify: canNotify, alert: alertNow };
 })();

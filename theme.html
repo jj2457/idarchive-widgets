@@ -53,7 +53,13 @@
     </nav>
   </header>
 
-  <h2>1 · 색 고르기</h2>
+  <h2>1 · 스타일 고르기</h2>
+  <p style="margin:6px 0 0;font-size:13px;color:var(--sub);line-height:1.7">
+    색만 바뀌는 것이 아니라 카드의 여백 · 모서리 · 테두리 · 그림자 · 제목 모양까지 함께 바뀝니다.
+    어떤 스타일에도 아래 아홉 가지 색을 그대로 쓸 수 있어요.</p>
+  <div class="swatches" id="styles" style="margin-top:12px"></div>
+
+  <h2 style="margin-top:28px">2 · 색 고르기</h2>
   <div class="swatches" id="swatches"></div>
   <div class="custom">
     <label>나만의 색 <input type="color" id="soft" aria-label="포인트 색"></label>
@@ -62,14 +68,14 @@
     <span id="picked"></span>
   </div>
 
-  <h2>2 · 위젯은 이렇게 보입니다</h2>
+  <h2>3 · 위젯은 이렇게 보입니다</h2>
   <div class="strip" id="strip"></div>
   <div class="how">
     위젯 색은 <b>위젯 오른쪽 위 ⚙</b> 에서 바꿉니다. 한 번 고르면 <b>그 기기에서 보는 모든 위젯</b>이 같은 색이 돼요.<br>
     "나만의 색"을 쓰려면 ⚙ 안의 색상 상자를 눌러 원하는 색을 고르면 됩니다.
   </div>
 
-  <h2>3 · 페이지 커버 바꾸기</h2>
+  <h2>4 · 페이지 커버 바꾸기</h2>
   <div class="bulk">
     <button class="copy" id="copyAll">이 색 커버 링크 전부 복사</button>
     <button class="chip" id="copyMonths" style="font-size:11px;padding:7px 12px">달 커버 12개만 복사</button>
@@ -94,12 +100,13 @@
   var MONTHS = ['01 JANUARY', '02 FEBRUARY', '03 MARCH', '04 APRIL', '05 MAY', '06 JUNE',
                 '07 JULY', '08 AUGUST', '09 SEPTEMBER', '10 OCTOBER', '11 NOVEMBER', '12 DECEMBER'];
   var PREVIEW = ['clock', 'week', 'progress'];
-  var state = { theme: IDP.CFG.defaults.theme, soft: '', deep: '' };
+  var state = { theme: IDP.CFG.defaults.theme, soft: '', deep: '', style: '' };
 
   function base() { return new URL('covers/', location.href).href; }
   function coverUrl(file) { return base() + state.theme + '/' + file + '.png'; }
   function params() {
     var p = new URLSearchParams({ theme: state.theme, lock: '1', settings: '0' });
+    if (state.style) p.set('style', state.style);
     if (state.soft) p.set('soft', state.soft.slice(1));
     if (state.deep) p.set('deep', state.deep.slice(1));
     return p;
@@ -109,6 +116,21 @@
     if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, done); else done();
   }
 
+  // the six presets, drawn as chips above the colours — style first, then colour
+  function drawStyles() {
+    var box = document.getElementById('styles');
+    box.innerHTML = '';
+    [['', '기본']].concat(IDP.STYLES).forEach(function (st) {
+      var b = document.createElement('button');
+      b.className = 'chip';
+      b.style.cssText = 'font-size:11px;padding:8px 13px;letter-spacing:.1em';
+      b.textContent = st[1];
+      b.setAttribute('aria-pressed', String(state.style === st[0]));
+      if (state.style === st[0]) { b.style.background = 'var(--soft)'; b.style.borderColor = 'var(--soft)'; }
+      b.onclick = function () { state.style = st[0]; draw(); };
+      box.appendChild(b);
+    });
+  }
   function drawSwatches() {
     var box = document.getElementById('swatches');
     box.innerHTML = '';
@@ -158,11 +180,12 @@
   }
 
   function draw() {
-    drawSwatches(); drawStrip(); drawCovers();
+    drawStyles(); drawSwatches(); drawStrip(); drawCovers();
     document.getElementById('soft').value = state.soft || IDP.THEMES[state.theme].soft;
     document.getElementById('deep').value = state.deep || IDP.THEMES[state.theme].deep;
     document.getElementById('picked').textContent = state.soft ? '나만의 색 · 커버는 가장 가까운 기본 색(' + state.theme.toUpperCase() + ')을 씁니다' : state.theme.toUpperCase();
     var p = new URLSearchParams({ theme: state.theme });
+    if (state.style) p.set('style', state.style);
     if (state.soft) p.set('soft', state.soft.slice(1));
     if (state.deep) p.set('deep', state.deep.slice(1));
     IDP.applyTheme(p);
