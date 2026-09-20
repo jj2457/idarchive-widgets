@@ -10,8 +10,8 @@
   .stage { margin-top: 14px; display: flex; justify-content: center; }
   svg { width: 100%; max-width: 420px; height: auto; overflow: visible; }
   .axis { stroke: var(--line); stroke-width: 1; }
-  .lab { font-size: 9px; fill: var(--sub); letter-spacing: .04em; }
-  .val { font-size: 9.5px; fill: var(--ink); }
+  .lab { font-size: 15px; fill: var(--sub); letter-spacing: .04em; }
+  .val { font-size: 14px; fill: var(--ink); }
   .legend { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; }
   .legend .l { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--sub); }
   .legend .d { width: 9px; height: 9px; border-radius: 3px; flex: none; }
@@ -77,7 +77,7 @@
   function fmt(v) { return Number(v.toFixed(2)).toLocaleString('ko-KR'); }
 
   function drawBar(svg, W, H) {
-    var pad = { l: 8, r: 8, t: 14, b: 20 };
+    var pad = { l: 8, r: 8, t: 16, b: 24 };
     var max = Math.max.apply(null, DATA.map(function (d) { return d.v; })) || 1;
     var bw = (W - pad.l - pad.r) / DATA.length;
     svg.appendChild(el('line', { x1: pad.l, y1: H - pad.b, x2: W - pad.r, y2: H - pad.b, class: 'axis' }));
@@ -107,11 +107,11 @@
       a0 = a1;
     });
     var t = el('text', { x: cx, y: cy + 4, 'text-anchor': 'middle', class: 'val' });
-    t.setAttribute('font-size', '13'); t.textContent = fmt(total);
+    t.setAttribute('font-size', '19'); t.textContent = fmt(total);
     svg.appendChild(t);
   }
   function drawLine(svg, W, H) {
-    var pad = { l: 10, r: 10, t: 16, b: 20 };
+    var pad = { l: 10, r: 10, t: 18, b: 24 };
     var max = Math.max.apply(null, DATA.map(function (d) { return d.v; })) || 1;
     var step = DATA.length > 1 ? (W - pad.l - pad.r) / (DATA.length - 1) : 0;
     var pts = DATA.map(function (d, i) {
