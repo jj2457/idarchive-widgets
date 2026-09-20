@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Habit Dots</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 560px; margin: 0 auto; }
+  .pick { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px; }
+  .pick button { display: flex; align-items: center; gap: 6px; padding: 5px 10px; font-size: 11px;
+                 letter-spacing: .02em; text-transform: none; background: none; border-radius: 999px;
+                 border: 1px solid var(--line); color: var(--sub); min-width: 0; }
+  .pick button.on { background: var(--tint); border-color: var(--soft); color: var(--ink); }
+  .pick button span.nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 92px; }
+  .pick button span.n { font-size: 10px; color: var(--sub); }
+  .pick i { flex: none; width: 9px; height: 9px; border-radius: 50%; display: block; }
+  /* one cell a day; inside it up to four dots, one per habit, always in the same corner */
+  .grid { margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(18px, 1fr));
+          gap: 4px; }
+  /* 빈 날도 동그라미다 — 사각형 격자가 아니라 점이 모인 한 해로 보이게 */
+  .d { aspect-ratio: 1; position: relative; border-radius: 50%;
+       background: color-mix(in srgb, var(--tint) 70%, var(--paper));
+       padding: 0; border: 0; cursor: pointer; min-width: 0; }
+  .d.m1 { box-shadow: inset 0 0 0 1px var(--line); }
+  .d.today { box-shadow: inset 0 0 0 1.5px var(--deep); }
+  .d i { position: absolute; width: 46%; height: 46%; border-radius: 50%; display: block; }
+  .d i.p0 { left: 6%;  top: 6%; }
+  .d i.p1 { right: 6%; top: 6%; }
+  .d i.p2 { left: 6%;  bottom: 6%; }
+  .d i.p3 { right: 6%; bottom: 6%; }
+  .foot { margin-top: 12px; display: flex; justify-content: space-between; gap: 10px;
+          font-size: 10.5px; letter-spacing: .04em; color: var(--sub); }
+  .empty { margin-top: 20px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">HABIT DOTS</div><span class="caps" id="yr"></span></div>
+  <div class="grow"><div class="wrap">
+    <div class="pick" id="pick"></div>
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="empty" hidden>⚙ 에서 습관 이름을 적으면 한 해가 점으로 그려집니다.</div>
+  </div></div>
+  <div class="foot"><span id="sum"></span><span>이 기기에 저장돼요</span></div>
+</div>
+<script src="assets/holidays.js"></script>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // YEAR TRACKER 가 습관 하나를 열두 줄로 보여 준다면, 이 카드는 습관 넷을 한 해 한 장에 겹쳐 놓는다.
+  // 하루 한 칸, 그 안에 네 자리가 있고 습관마다 자리와 진하기가 정해져 있다.
+  // 그래서 하루에 하나를 했으면 점이 하나, 둘을 했으면 둘이 보인다 — 겹쳐 그리지 않는다.
+  //
+  // 노션 표를 읽지 않는다(읽을 수 없다 — docs/WIDGET_DATA_MODES.md). 여기 적은 것은
+  // 지금 보고 있는 이 브라우저에만 남는 ② 기기 저장 위젯이다.
+  var MAX = 4;
+  // 같은 테마 색의 진하기 사다리. 넷째만 테두리로 두어 네 자리가 서로 구별된다.
+  var TONE = [
+    'var(--deep)',
+    'color-mix(in srgb, var(--deep) 58%, var(--paper))',
+    'var(--soft)',
+    'color-mix(in srgb, var(--soft) 45%, var(--paper))'
+  ];
+  // 넷째는 가장 옅어서 빈 칸과 헷갈릴 수 있다. 얇은 테두리 하나로 갈라 둔다.
+  var RING = [null, null, null, 'color-mix(in srgb, var(--deep) 45%, transparent)'];
+
+  var KEY = '', YEAR = 2027, names = [], sel = 0;
+
+  function readOpts() {
+    YEAR = parseInt(IDP.opt('habitdots', 'year', IDP.now().getFullYear()), 10) || IDP.now().getFullYear();
+    KEY = 'idarchive.habitdots.' + (IDP.q.get('id') || IDP.opt('habitdots', 'title', 'main'));
+    names = String(IDP.opt('habitdots', 'habits', ''))
+      .split(',').map(function (s) { return s.trim(); }).filter(Boolean).slice(0, MAX);
+  }
+  readOpts();
+
+  // seed: d1 … d4, each "1:2,3,4|2:1,5" — month:days, the same shape YEAR TRACKER uses.
+  function seedFor(i) {
+    var raw = IDP.q.get('d' + (i + 1));
+    var out = {};
+    if (!raw) return out;
+    String(raw).split('|').forEach(function (part) {
+      var at = part.indexOf(':');
+      if (at < 0) return;
+      var m = parseInt(part.slice(0, at), 10);
+      part.slice(at + 1).split(',').forEach(function (d) {
+        var n = parseInt(d, 10);
+        if (m >= 1 && m <= 12 && n >= 1 && n <= 31) out[YEAR + '-' + IDP.pad(m) + '-' + IDP.pad(n)] = 1;
+      });
+    });
+    return out;
+  }
+  function load() {
+    try {
+      var v = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (v && v.days) return v;
+    } catch (e) { /* storage blocked */ }
+    var seedNames = IDP.q.get('h');
+    return {
+      names: seedNames ? String(seedNames).split('|').slice(0, MAX) : null,
+      days: [0, 1, 2, 3].map(seedFor)
+    };
+  }
+  var st = load();
+  if (!st.days) st.days = [{}, {}, {}, {}];
+  while (st.days.length < MAX) st.days.push({});
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+
+  function habitNames() {
+    // ⚙ 에 적은 이름이 우선, 없으면 링크로 받은 이름, 그것도 없으면 빈 칸
+    var out = [];
+    for (var i = 0; i < MAX; i++) {
+      out.push(names[i] || (st.names && st.names[i]) || '');
+    }
+    return out;
+  }
+
+  function days() {
+    var out = [], d = new Date(YEAR, 0, 1);
+    while (d.getFullYear() === YEAR) {
+      out.push(IDP.iso(d));
+      d.setDate(d.getDate() + 1);
+    }
+    return out;
+  }
+
+  function render() {
+    document.getElementById('badge').textContent = IDP.opt('habitdots', 'label', 'HABIT DOTS');
+    document.getElementById('yr').textContent = YEAR;
+    var nm = habitNames();
+    var live = nm.filter(Boolean).length;
+    document.getElementById('empty').hidden = live > 0;
+
+    // 습관 고르기 — 고른 습관의 자리에 점이 찍힌다
+    var pick = document.getElementById('pick');
+    pick.innerHTML = '';
+    nm.forEach(function (n, i) {
+      if (!n) return;
+      var b = document.createElement('button');
+      b.type = 'button';
+      if (i === sel) b.className = 'on';
+      var dot = document.createElement('i');
+      dot.style.background = TONE[i];
+      if (RING[i]) dot.style.boxShadow = 'inset 0 0 0 1px ' + RING[i];
+      var nameEl = document.createElement('span');
+      nameEl.className = 'nm'; nameEl.textContent = n;
+      var cnt = document.createElement('span');
+      cnt.className = 'n'; cnt.textContent = Object.keys(st.days[i]).length;
+      b.appendChild(dot); b.appendChild(nameEl); b.appendChild(cnt);
+      b.onclick = function () { sel = i; render(); };
+      pick.appendChild(b);
+    });
+
+    var list = days(), today = IDP.iso(IDP.now());
+    var grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    list.forEach(function (iso) {
+      var cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'd' + (iso.slice(8) === '01' ? ' m1' : '') + (iso === today ? ' today' : '');
+      cell.title = iso + (IDP_HOLIDAYS[iso] ? ' · ' + IDP_HOLIDAYS[iso] : '');
+      for (var i = 0; i < MAX; i++) {
+        if (!nm[i] || !st.days[i][iso]) continue;
+        var dot = document.createElement('i');
+        dot.className = 'p' + i;
+        dot.style.background = TONE[i];
+        if (RING[i]) dot.style.boxShadow = 'inset 0 0 0 1px ' + RING[i];
+        cell.appendChild(dot);
+      }
+      cell.onclick = function () {
+        if (!nm[sel]) return;
+        if (st.days[sel][iso]) delete st.days[sel][iso]; else st.days[sel][iso] = 1;
+        save(); render();
+      };
+      grid.appendChild(cell);
+    });
+
+    var total = list.length;
+    var parts = [];
+    nm.forEach(function (n, i) {
+      if (!n) return;
+      parts.push(n + ' ' + Math.round(Object.keys(st.days[i]).length / total * 100) + '%');
+    });
+    document.getElementById('sum').textContent = parts.join('  ·  ');
+  }
+
+  IDP.options('habitdots', [
+    { k: 'label', label: '제목', ph: 'HABIT DOTS' },
+    { k: 'habits', label: '습관 (쉼표로 구분, 최대 4개)', ph: '책 읽기, 운동, 물 마시기, 일기' },
+    { k: 'year', label: '연도 (비우면 올해)', ph: '2027' },
+    { k: 'title', label: '이 카드의 이름 (여러 개 쓸 때)', ph: 'main' }
+  ], function () { readOpts(); sel = 0; render(); });
+
+  render();
+</script>
+</body>
+</html>
