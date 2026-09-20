@@ -210,6 +210,10 @@
     { id: 'countdown', g: '시간', name: '카운트다운 (여러 날)', h: 380, opts: [
         { k: 'label', t: 'text', label: '제목', ph: 'COUNTDOWN' },
         { k: 'items', t: 'text', label: '날짜 (이름|2027-03-15, 쉼표로 구분)', ph: '자격증 시험|2027-04-11' }] },
+    { id: 'holiday',  g: '시간', name: '공휴일 · 기념일 카운트다운', h: 360, opts: [
+        { k: 'label', t: 'text', label: '제목', ph: 'HOLIDAYS' },
+        { k: 'mode', t: 'text', label: '무엇을 (all · holiday · memorial)', ph: 'all' },
+        { k: 'count', t: 'number', label: '몇 개까지 (1–10)', ph: '6' }] },
     { id: 'year',     g: '시간', name: '올해 365일 점',     h: 300, opts: [{ k: 'year', t: 'number', label: '연도 (비우면 올해)', ph: '2027' }] },
 
     { id: 'worklog',  g: '업무', name: '주간 업무일지',      h: 430, opts: [

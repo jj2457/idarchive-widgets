@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Holidays</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 560px; }
+  .list { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .it { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 11px; background: var(--tint); }
+  .it.red { background: color-mix(in srgb, var(--red) 12%, var(--tint)); }
+  .it.today { background: var(--soft); }
+  .it .tx { flex: 1; min-width: 0; }
+  .it .n { font-size: 12.5px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .it.red .n { color: var(--red); }
+  .it .d { margin-top: 2px; font-size: 9.5px; letter-spacing: .08em; color: var(--sub); }
+  .it .k { flex: none; font-family: var(--serif); font-size: 17px; line-height: 1; color: var(--ink); }
+  .it .long { flex: none; font-size: 9.5px; letter-spacing: .06em; color: var(--sub); }
+  .empty { margin-top: 20px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
+  .foot { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+          font-size: 10.5px; color: var(--sub); letter-spacing: .04em; }
+  .foot .modes { display: flex; gap: 4px; }
+  .foot button { padding: 4px 9px; font-size: 9.5px; letter-spacing: .06em; background: none;
+                 border-radius: 999px; text-transform: none; }
+  .foot button.on { background: var(--tint); border-color: var(--soft); color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">HOLIDAYS</div><span class="caps" id="next"></span></div>
+  <div class="grow"><div class="wrap">
+    <div class="list" id="list"></div>
+    <div class="empty" id="empty" hidden>올해 남은 공휴일이 없어요.<br>내년 달력이 오면 다시 채워집니다.</div>
+  </div></div>
+  <div class="foot">
+    <span class="modes" id="modes"></span>
+    <span>2027년 달력 기준</span>
+  </div>
+</div>
+<script src="assets/holidays.js"></script>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // The one countdown nobody should have to type. Korean public holidays and the eleven
+  // commemorative days already ship with the planner — the same file the calendar and the day
+  // pages read — so this widget asks for nothing and cannot disagree with the rest of the product.
+  // (docs/WIDGET_DATA_MODES.md: widgets may not read Notion, but bundled calendar data is ours.)
+  var MODES = [['all', '전체'], ['holiday', '공휴일'], ['memorial', '기념일']];
+  var KEY = 'idarchive.holiday.' + (IDP.q.get('id') || 'v1');
+  var mode = 'all', MAX = 6;
+
+  function readOpts() {
+    var m = IDP.opt('holiday', 'mode', 'all');
+    mode = MODES.some(function (x) { return x[0] === m; }) ? m : 'all';
+    MAX = Math.max(1, Math.min(10, parseInt(IDP.opt('holiday', 'count', '6'), 10) || 6));
+  }
+  readOpts();
+  try { var saved = localStorage.getItem(KEY); if (saved && MODES.some(function (x) { return x[0] === saved; })) mode = saved; } catch (e) {}
+
+  // 연휴는 하루씩 세지 않고 한 덩어리로 — "설날 연휴 · 설날 · 설날 연휴"는 사람에게 한 번의 설날이다
+  function rows() {
+    var out = [];
+    function push(map, kind) {
+      Object.keys(map).forEach(function (iso) {
+        var d = IDP.parseDate(iso);
+        if (d) out.push({ iso: iso, d: d, n: map[iso], kind: kind });
+      });
+    }
+    if (mode !== 'memorial') push(IDP_HOLIDAYS, 'holiday');
+    if (mode !== 'holiday') push(IDP_MEMORIAL, 'memorial');
+    out.sort(function (a, b) { return a.d - b.d; });
+
+    var merged = [];
+    out.forEach(function (r) {
+      var last = merged[merged.length - 1];
+      var base = r.n.replace(/\s*(연휴|대체공휴일)$/, '').trim();
+      var prev = last && last.base;
+      var gap = last ? Math.round((r.d - last.end) / 864e5) : 99;
+      // 같은 이름이 이어지거나 대체공휴일이 하루 안에 붙으면 한 줄로 묶는다
+      if (last && last.kind === r.kind && gap <= 1 && (base === prev || r.n === '대체공휴일' || base === '')) {
+        last.end = r.d; last.days++;
+        if (base && base !== prev && base !== '대체공휴일') last.base = base;
+        return;
+      }
+      merged.push({ start: r.d, end: r.d, days: 1, base: base || r.n, kind: r.kind });
+    });
+    // a 대체공휴일 that stands alone says nothing on its own — name the holiday it replaces
+    merged.forEach(function (r, i) {
+      if (r.base !== '대체공휴일') return;
+      for (var j = i - 1; j >= 0; j--) {
+        var gap = Math.round((r.start - merged[j].end) / 864e5);
+        if (gap > 3) break;
+        if (merged[j].base !== '대체공휴일') { r.base = '대체공휴일 · ' + merged[j].base; break; }
+      }
+    });
+    return merged;
+  }
+
+  function render() {
+    document.getElementById('badge').textContent = IDP.opt('holiday', 'label', 'HOLIDAYS');
+    var now = IDP.now();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var all = rows().filter(function (r) { return r.end >= today; }).slice(0, MAX);
+
+    document.getElementById('empty').hidden = !!all.length;
+    var soon = all[0];
+    var away = soon ? Math.round((soon.start - today) / 864e5) : null;
+    document.getElementById('next').textContent =
+      soon ? (away <= 0 ? '오늘 · ' + soon.base : 'D-' + away + ' · ' + soon.base) : '';
+
+    var list = document.getElementById('list');
+    list.innerHTML = '';
+    all.forEach(function (r) {
+      var k = Math.round((r.start - today) / 864e5);
+      var el = document.createElement('div');
+      el.className = 'it' + (k <= 0 && r.end >= today ? ' today' : r.kind === 'holiday' ? ' red' : '');
+      var tx = document.createElement('div'); tx.className = 'tx';
+      var n = document.createElement('div'); n.className = 'n'; n.textContent = r.base;
+      var d = document.createElement('div'); d.className = 'd';
+      d.textContent = IDP.plannerDate(r.start) + ' ' + IDP.DOW[r.start.getDay()] +
+        (r.days > 1 ? ' – ' + IDP.pad(r.end.getMonth() + 1) + '.' + IDP.pad(r.end.getDate()) : '');
+      tx.appendChild(n); tx.appendChild(d);
+      if (r.days > 1) {
+        var lg = document.createElement('span'); lg.className = 'long';
+        lg.textContent = r.days + '일';
+        tx.appendChild(lg);
+      }
+      var kk = document.createElement('div'); kk.className = 'k';
+      kk.textContent = k <= 0 ? '오늘' : 'D-' + k;
+      el.appendChild(tx); el.appendChild(kk);
+      list.appendChild(el);
+    });
+
+    var box = document.getElementById('modes');
+    box.innerHTML = '';
+    MODES.forEach(function (m) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = m[1];
+      if (m[0] === mode) b.className = 'on';
+      b.onclick = function () {
+        mode = m[0];
+        try { localStorage.setItem(KEY, mode); } catch (e) {}
+        render();
+      };
+      box.appendChild(b);
+    });
+  }
+
+  IDP.options('holiday', [
+    { k: 'label', label: '제목', ph: 'HOLIDAYS' },
+    { k: 'mode', label: '무엇을 (all · holiday · memorial)', ph: 'all' },
+    { k: 'count', label: '몇 개까지 (1–10)', ph: '6' }
+  ], function () { readOpts(); render(); });
+  render();
+  setInterval(render, 3600000);
+</script>
+</body>
+</html>
