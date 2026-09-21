@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Up Next</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 600px; }
+  .tabs { margin-top: 10px; display: flex; gap: 4px; }
+  .tabs button { padding: 5px 12px; font-size: 10.5px; letter-spacing: .08em; background: none;
+                 border-radius: 999px; text-transform: none; color: var(--sub); }
+  .tabs button.on { background: var(--tint); border-color: var(--soft); color: var(--ink); }
+  .head { margin-top: 14px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .head .d { font-family: var(--serif); font-size: clamp(17px, 5vw, 22px); line-height: 1.2; color: var(--ink); }
+  .head .w { font-size: 10px; letter-spacing: .16em; color: var(--sub); }
+  .head .w.sun { color: var(--red); } .head .w.sat { color: var(--blue); }
+  .head .hol { font-size: 10.5px; letter-spacing: .04em; color: var(--red); }
+  .list { margin-top: 12px; display: flex; flex-direction: column; gap: 5px; }
+  .it { display: flex; align-items: center; gap: 9px; padding: 8px 12px; border-radius: 11px; background: var(--tint); }
+  .it .tag { flex: none; font-size: 8.5px; letter-spacing: .12em; color: var(--sub); width: 52px; }
+  .it .n { flex: 1; min-width: 0; font-size: 12.5px; color: var(--ink);
+           overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .it .k { flex: none; font-size: 10px; letter-spacing: .06em; color: var(--sub); }
+  .it.red { background: color-mix(in srgb, var(--red) 12%, var(--tint)); }
+  .it.red .n { color: var(--red); }
+  /* 이번 주 — 하루 한 줄, 오늘만 진하게 */
+  .days { margin-top: 12px; display: flex; flex-direction: column; gap: 3px; }
+  .dy { display: flex; align-items: center; gap: 9px; padding: 6px 10px; border-radius: 10px; }
+  .dy.today { background: var(--tint); }
+  .dy .lb { flex: none; width: 62px; display: flex; align-items: baseline; gap: 5px; }
+  .dy .lb .ww { font-size: 9px; letter-spacing: .14em; color: var(--sub); }
+  .dy .lb .nn { font-family: var(--serif); font-size: 14px; line-height: 1; color: var(--ink); }
+  .dy.sun .ww, .dy.sun .nn, .dy.off .nn { color: var(--red); }
+  .dy.sat .ww, .dy.sat .nn { color: var(--blue); }
+  .dy .tx { flex: 1; min-width: 0; font-size: 11.5px; color: var(--ink);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dy .tx.none { color: var(--sub); }
+  .empty { margin-top: 18px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.9; }
+  .foot { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+          font-size: 10.5px; letter-spacing: .04em; color: var(--sub); }
+  .foot a { color: var(--sub); text-decoration: none; border-bottom: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">UP NEXT</div><span class="caps" id="when"></span></div>
+  <div class="grow"><div class="wrap">
+    <div class="tabs" id="tabs"></div>
+    <div id="one">
+      <div class="head">
+        <span class="d serif" id="date"></span><span class="w" id="dow"></span><span class="hol" id="hol"></span>
+      </div>
+      <div class="list" id="list"></div>
+      <div class="empty" id="empty" hidden></div>
+    </div>
+    <div class="days" id="week" hidden></div>
+  </div></div>
+  <div class="foot"><span id="note"></span><span id="link"></span></div>
+</div>
+<script src="assets/holidays.js"></script>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // 오늘 · 내일 · 이번 주를 한 장에 세워 둔 카드.
+  //
+  // 무엇을 읽는가 — 두 가지뿐이고, 둘 다 진짜로 읽을 수 있는 것이다.
+  //   1) 플래너가 들고 다니는 2027년 공휴일·기념일 (assets/holidays.js)
+  //   2) 이 기기의 다른 ID Archive 위젯에 적힌 것 — 주간 계획 · 알림 · D-DAY · 카운트다운
+  // 노션 표의 일정은 읽지 않는다. 읽을 수 없다 (api.notion.com 이 CORS 헤더를 주지 않는다 —
+  // docs/WIDGET_DATA_MODES.md 4절). 그래서 여기에 일정을 다시 적는 칸을 두지 않았고,
+  // 카드 아래에 노션 쪽 일정이 어디 있는지를 적어 두었다. 같은 것을 두 번 적게 하지 않는다.
+  var TABS = [['today', '오늘'], ['tomorrow', '내일'], ['week', '이번 주']];
+  var KEY = 'idarchive.upnext.' + (IDP.q.get('id') || 'v1');
+  var tab = 'today';
+  try { var s0 = localStorage.getItem(KEY); if (s0 && TABS.some(function (t) { return t[0] === s0; })) tab = s0; } catch (e) {}
+
+  function readJSON(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }
+  function keysWith(p) {
+    var out = [];
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf(p) === 0) out.push(k); } } catch (e) {}
+    return out;
+  }
+  function opts(w) {
+    try { return (JSON.parse(localStorage.getItem('idp-widget-opts') || '{}') || {})[w] || {}; } catch (e) { return {}; }
+  }
+  function midnight(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function addDays(d, n) { var x = new Date(d.getTime()); x.setDate(x.getDate() + n); return x; }
+  function weekStartOf(d) {
+    var shift = IDP.weekStart === 'sun' ? d.getDay() : (d.getDay() + 6) % 7;
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() - shift);
+  }
+  function weekKeyOf(mon) {
+    var first = new Date(mon.getFullYear(), 0, 1);
+    return mon.getFullYear() + '-W' + IDP.pad(Math.floor((mon - first) / 6048e5) + 1);
+  }
+
+  // 카탈로그·촬영용 씨앗. 주소에 적힌 일곱 줄은 이 기기에 저장되지 않고 화면에만 쓰인다.
+  var SEED = String(IDP.q.get('d') || '').split('|');
+  var SEED_MARKS = String(IDP.q.get('marks') || '').split(',').map(function (p) {
+    var at = p.lastIndexOf('|');
+    return at < 0 ? null : { n: p.slice(0, at).trim(), iso: p.slice(at + 1).trim() };
+  }).filter(function (x) { return x && x.n && x.iso; });
+
+  // 주간 계획 위젯의 그 요일 한 줄 — 요일 칸은 주 시작 설정을 그대로 따른다
+  function planLine(d) {
+    var mon = weekStartOf(d), wk = weekKeyOf(mon);
+    var idx = Math.round((midnight(d) - mon) / 864e5);
+    var found = '';
+    if (SEED[idx] && SEED[idx].trim()) return SEED[idx].trim();
+    keysWith('idarchive.weekplan.').forEach(function (k) {
+      if (k.indexOf(wk) < 0) return;
+      var v = readJSON(k);
+      if (v && v.lines && v.lines[idx] && v.lines[idx].trim() && !found) found = v.lines[idx].trim();
+    });
+    return found;
+  }
+  // 그날에 떨어지는 D-DAY · 카운트다운
+  function marks(d) {
+    var iso = IDP.iso(d), out = [];
+    SEED_MARKS.forEach(function (m) { if (m.iso === iso) out.push(m.n); });
+    String(opts('countdown').items || '').split(',').forEach(function (p) {
+      var at = p.lastIndexOf('|'); if (at < 0) return;
+      var n = p.slice(0, at).trim(), x = IDP.parseDate(p.slice(at + 1).trim());
+      if (n && x && IDP.iso(x) === iso) out.push(n);
+    });
+    var one = opts('dday');
+    if (one.date) { var y = IDP.parseDate(one.date); if (y && IDP.iso(y) === iso) out.push(one.title || 'D-DAY'); }
+    return out;
+  }
+  // 알림 위젯의 그날 알림 — 평일 반복은 토·일을 건너뛴다
+  function alarms(d) {
+    var w = d.getDay(), out = [];
+    keysWith('idarchive.alarm.').forEach(function (k) {
+      var v = readJSON(k); if (!v || !v.items) return;
+      v.items.forEach(function (it) {
+        if (it.on === false) return;
+        if (it.r === 'weekday' && (w === 0 || w === 6)) return;
+        out.push({ t: it.t, n: it.n || '알림' });
+      });
+    });
+    return out.sort(function (a, b) { return String(a.t).localeCompare(String(b.t)); });
+  }
+
+  function rowsFor(d) {
+    var iso = IDP.iso(d), out = [];
+    if (IDP_HOLIDAYS[iso]) out.push({ tag: '공휴일', n: IDP_HOLIDAYS[iso], red: true });
+    else if (IDP_MEMORIAL[iso]) out.push({ tag: '기념일', n: IDP_MEMORIAL[iso] });
+    marks(d).forEach(function (n) { out.push({ tag: 'D-DAY', n: n }); });
+    var p = planLine(d);
+    if (p) out.push({ tag: '주간 계획', n: p });
+    alarms(d).forEach(function (a) { out.push({ tag: '알림', n: a.n, k: a.t }); });
+    return out;
+  }
+
+  function renderOne(d) {
+    document.getElementById('one').hidden = false;
+    document.getElementById('week').hidden = true;
+    var w = d.getDay(), iso = IDP.iso(d);
+    document.getElementById('date').textContent = IDP.plannerDate(d);
+    var dow = document.getElementById('dow');
+    dow.textContent = IDP.DOW[w];
+    dow.className = 'w' + (w === 0 ? ' sun' : w === 6 ? ' sat' : '');
+    document.getElementById('hol').textContent = IDP_HOLIDAYS[iso] || IDP_MEMORIAL[iso] || '';
+
+    // 공휴일·기념일은 이미 제목 줄에 있으니 목록에서는 뺀다
+    var rows = rowsFor(d).filter(function (r) { return r.tag !== '공휴일' && r.tag !== '기념일'; });
+    var list = document.getElementById('list');
+    list.innerHTML = '';
+    rows.forEach(function (r) {
+      var el = document.createElement('div');
+      el.className = 'it' + (r.red ? ' red' : '');
+      var t = document.createElement('span'); t.className = 'tag'; t.textContent = r.tag;
+      var n = document.createElement('span'); n.className = 'n'; n.textContent = r.n;
+      el.appendChild(t); el.appendChild(n);
+      if (r.k) { var k = document.createElement('span'); k.className = 'k'; k.textContent = r.k; el.appendChild(k); }
+      list.appendChild(el);
+    });
+    var e = document.getElementById('empty');
+    e.hidden = !!rows.length;
+    e.innerHTML = tab === 'today'
+      ? '오늘 표시할 것이 아직 없어요.<br>주간 계획 · D-DAY · 알림 위젯에 적으면 여기 모입니다.'
+      : '내일은 비어 있어요.<br>하루 먼저 적어 두면 아침에 보입니다.';
+  }
+
+  function renderWeek() {
+    document.getElementById('one').hidden = true;
+    var box = document.getElementById('week');
+    box.hidden = false; box.innerHTML = '';
+    var today = midnight(IDP.now()), mon = weekStartOf(today);
+    for (var i = 0; i < 7; i++) {
+      var d = addDays(mon, i), w = d.getDay(), iso = IDP.iso(d);
+      var rows = rowsFor(d);
+      var el = document.createElement('div');
+      el.className = 'dy' + (w === 0 ? ' sun' : w === 6 ? ' sat' : '') +
+        (IDP_HOLIDAYS[iso] ? ' off' : '') + (+d === +today ? ' today' : '');
+      var lb = document.createElement('span'); lb.className = 'lb';
+      lb.innerHTML = '<span class="ww">' + IDP.DOW[w] + '</span><span class="nn">' + IDP.pad(d.getDate()) + '</span>';
+      var tx = document.createElement('span');
+      var say = rows.map(function (r) { return r.n; }).join(' · ');
+      tx.className = 'tx' + (say ? '' : ' none');
+      tx.textContent = say || '—';
+      el.appendChild(lb); el.appendChild(tx);
+      box.appendChild(el);
+    }
+  }
+
+  function render() {
+    document.getElementById('badge').textContent = IDP.opt('upnext', 'label', 'UP NEXT');
+    var now = IDP.now();
+    document.getElementById('when').textContent =
+      (now.getHours() % 12 || 12) + ':' + IDP.pad(now.getMinutes()) + (now.getHours() < 12 ? ' AM' : ' PM');
+
+    var box = document.getElementById('tabs');
+    box.innerHTML = '';
+    TABS.forEach(function (t) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = t[1];
+      if (t[0] === tab) b.className = 'on';
+      b.onclick = function () { tab = t[0]; try { localStorage.setItem(KEY, tab); } catch (e) {} render(); };
+      box.appendChild(b);
+    });
+
+    if (tab === 'week') renderWeek();
+    else renderOne(tab === 'today' ? midnight(now) : addDays(midnight(now), 1));
+
+    document.getElementById('note').textContent = '위젯에 적은 것만 모읍니다';
+    var link = IDP.opt('upnext', 'notion', '');
+    var el = document.getElementById('link');
+    el.innerHTML = '';
+    if (link) {
+      var a = document.createElement('a');
+      a.href = link; a.target = '_blank'; a.rel = 'noopener';
+      a.textContent = '플래너 일정 열기';
+      el.appendChild(a);
+    } else {
+      el.textContent = '플래너 일정은 노션 표에';
+    }
+  }
+
+  IDP.options('upnext', [
+    { k: 'label', label: '제목', ph: 'UP NEXT' },
+    { k: 'notion', label: '플래너 일정 페이지 주소 (선택)', ph: 'https://www.notion.so/' }
+  ], render);
+
+  render();
+  setInterval(render, 60000);
+</script>
+</body>
+</html>
