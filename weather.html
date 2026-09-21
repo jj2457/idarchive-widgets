@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Weather</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 560px; }
+  .now { margin-top: 12px; display: flex; align-items: center; gap: 14px; }
+  .now .ico { flex: none; width: 46px; height: 46px; color: var(--deep); }
+  .now .ico svg { width: 100%; height: 100%; display: block; }
+  .now .t { font-family: var(--serif); font-size: clamp(30px, 9vw, 40px); line-height: 1; color: var(--ink); }
+  .now .t sup { font-size: .45em; vertical-align: super; letter-spacing: 0; }
+  .now .m { min-width: 0; display: flex; flex-direction: column; }
+  .now .c { font-size: 12.5px; color: var(--ink); }
+  .now .s { margin-top: 3px; font-size: 10.5px; letter-spacing: .04em; color: var(--sub); }
+  .days { margin-top: 14px; display: flex; gap: 4px; }
+  .dy { flex: 1 1 0; min-width: 0; padding: 9px 4px 10px; border-radius: 12px; text-align: center; }
+  .dy.today { background: var(--tint); }
+  .dy .w { font-size: 9px; letter-spacing: .14em; color: var(--sub); }
+  .dy.sun .w { color: var(--red); } .dy.sat .w { color: var(--blue); }
+  .dy .i { margin: 6px auto 0; width: 20px; height: 20px; color: var(--deep); }
+  .dy .i svg { width: 100%; height: 100%; display: block; }
+  .dy .hi { margin-top: 6px; font-family: var(--serif); font-size: 14px; line-height: 1; color: var(--ink); }
+  .dy .lo { margin-top: 3px; font-size: 10.5px; color: var(--sub); }
+  .dy .p { margin-top: 4px; font-size: 9px; letter-spacing: .04em; color: var(--blue); min-height: 12px; }
+  .msg { margin-top: 22px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.9; }
+  .msg button { margin-top: 8px; padding: 5px 13px; font-size: 10.5px; letter-spacing: .08em;
+                border-radius: 999px; background: var(--tint); border-color: var(--soft); color: var(--ink); }
+  .foot { margin-top: 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+          font-size: 10px; letter-spacing: .04em; color: var(--sub); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">WEATHER</div><span class="caps" id="place"></span></div>
+  <div class="grow"><div class="wrap">
+    <div id="body" hidden>
+      <div class="now">
+        <span class="ico" id="nowIco"></span>
+        <span class="t" id="nowT"></span>
+        <span class="m"><span class="c" id="nowC"></span><span class="s" id="nowS"></span></span>
+      </div>
+      <div class="days" id="days"></div>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div></div>
+  <div class="foot"><span id="src"></span><span id="when"></span></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // 날씨 카드 — 지금 기온과 앞으로 며칠.
+  //
+  // 이 위젯만 유일하게 바깥 인터넷을 읽는다. 다른 위젯은 이 기기에 적은 것만 읽지만, 날씨는
+  // 이 기기 안에 있을 수 없는 값이다. 읽는 곳은 Open-Meteo 한 곳이고, 보내는 것은 구매자가
+  // ⚙ 에 적은 도시 이름뿐이다. 위치 권한을 쓰지 않는다 — 노션 임베드 안에서는 브라우저가
+  // 위치 권한을 주지 않는 경우가 많고, 받아 낼 수 있다 해도 사는 곳을 자동으로 읽어 가는
+  // 위젯을 플래너에 넣고 싶지 않았다.
+  //
+  // 노션 표는 여기서도 읽지 않는다(docs/WIDGET_DATA_MODES.md). 날씨는 애초에 노션에 없다.
+  var W = 'weather';
+  var CACHE = 'idarchive.weather.cache.';   // 도시별 20분 캐시 — 페이지를 열 때마다 같은 것을 묻지 않는다
+  var TTL = 20 * 60 * 1000;
+  var GEO = 'https://geocoding-api.open-meteo.com/v1/search';
+  var FC  = 'https://api.open-meteo.com/v1/forecast';
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---- 그림 ------------------------------------------------------------------------------
+  // 선 아이콘만 쓴다(제품 규칙 — 이모지 장식 없음). 스트로크 색은 currentColor 라 테마를 따라간다.
+  var P = {
+    sun:   '<circle cx="12" cy="12" r="4.4"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4L17 7M7 17l-1.6 1.6"/>',
+    part:  '<circle cx="9" cy="8.6" r="3.2"/><path d="M9 1.8v1.7M2.2 8.6h1.7M4.2 3.8l1.2 1.2M13.8 3.8l-1.2 1.2"/><path d="M8.2 19.8h8.6a3.6 3.6 0 0 0 .4-7.2 5 5 0 0 0-9.4 1 3.1 3.1 0 0 0 .4 6.2Z"/>',
+    cloud: '<path d="M7.4 19.4h9.4a4 4 0 0 0 .4-8 5.5 5.5 0 0 0-10.3 1.1 3.5 3.5 0 0 0 .5 6.9Z"/>',
+    fog:   '<path d="M7.4 14.6h9.4a4 4 0 0 0 .4-8A5.5 5.5 0 0 0 6.9 7.7a3.5 3.5 0 0 0 .5 6.9Z"/><path d="M4.5 18.2h15M7 21.4h10"/>',
+    driz:  '<path d="M7.4 14.8h9.4a4 4 0 0 0 .4-8A5.5 5.5 0 0 0 6.9 7.9a3.5 3.5 0 0 0 .5 6.9Z"/><path d="M9.4 17.8v1.8M14.6 17.8v1.8"/>',
+    rain:  '<path d="M7.4 14.4h9.4a4 4 0 0 0 .4-8A5.5 5.5 0 0 0 6.9 7.5a3.5 3.5 0 0 0 .5 6.9Z"/><path d="M8.6 17.2l-1 3.4M12 17.2l-1 3.4M15.4 17.2l-1 3.4"/>',
+    snow:  '<path d="M7.4 14.4h9.4a4 4 0 0 0 .4-8A5.5 5.5 0 0 0 6.9 7.5a3.5 3.5 0 0 0 .5 6.9Z"/><path d="M9.2 18.2h.02M12 20.2h.02M14.8 18.2h.02M12 17.4h.02"/>',
+    storm: '<path d="M7.4 13.8h9.4a4 4 0 0 0 .4-8A5.5 5.5 0 0 0 6.9 6.9a3.5 3.5 0 0 0 .5 6.9Z"/><path d="M12.8 16l-2.6 3.4h2.6l-1.4 2.6"/>'
+  };
+  function svg(k) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (P[k] || P.cloud) + '</svg>';
+  }
+  // WMO 코드 → 한국어 한 마디 + 그림. 코드 표는 Open-Meteo 문서를 따른다.
+  var CODES = [
+    [[0], '맑음', 'sun'],
+    [[1], '대체로 맑음', 'part'],
+    [[2], '구름 조금', 'part'],
+    [[3], '흐림', 'cloud'],
+    [[45, 48], '안개', 'fog'],
+    [[51, 53, 55], '이슬비', 'driz'],
+    [[56, 57], '어는 이슬비', 'driz'],
+    [[61, 63, 65], '비', 'rain'],
+    [[66, 67], '어는 비', 'rain'],
+    [[71, 73, 75, 77], '눈', 'snow'],
+    [[80, 81, 82], '소나기', 'rain'],
+    [[85, 86], '소낙눈', 'snow'],
+    [[95, 96, 99], '천둥번개', 'storm']
+  ];
+  function look(code) {
+    for (var i = 0; i < CODES.length; i++) if (CODES[i][0].indexOf(+code) >= 0) return CODES[i];
+    return [[], '흐림', 'cloud'];
+  }
+  function deg(v) { return (v == null || isNaN(v)) ? '–' : Math.round(v); }
+
+  // ---- 옵션 ------------------------------------------------------------------------------
+  IDP.options(W, [
+    { k: 'label', t: 'text', label: '제목', ph: 'WEATHER' },
+    { k: 'city',  t: 'text', label: '도시 이름', ph: '예) 서울 · 부산 · Tokyo' },
+    { k: 'days',  t: 'number', label: '며칠까지 (2–7)', ph: '5' }
+  ], function () { load(true); });
+
+  function city() { return String(IDP.opt(W, 'city', '서울')).trim() || '서울'; }
+  function days() { var n = parseInt(IDP.opt(W, 'days', 5), 10); return isNaN(n) ? 5 : Math.max(2, Math.min(7, n)); }
+
+  // ---- 씨앗 ------------------------------------------------------------------------------
+  // 카탈로그 사진과 상세페이지는 인터넷이 끊겨도 같은 그림이 나와야 한다. d= 가 있으면 그 값만 쓰고
+  // 바깥을 부르지 않는다. 형식: 지금(코드,기온,체감,습도) | 하루(코드,최고,최저,강수확률) × N
+  function seeded() {
+    var raw = IDP.q.get('d');
+    if (!raw) return null;
+    var g = String(raw).split('|').map(function (s) { return s.split(',').map(Number); });
+    if (g.length < 2) return null;
+    var base = IDP.now(), daily = [];
+    for (var i = 1; i < g.length; i++) {
+      var d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + (i - 1));
+      daily.push({ date: d, code: g[i][0], max: g[i][1], min: g[i][2], pop: g[i][3] });
+    }
+    return { code: g[0][0], temp: g[0][1], feels: g[0][2], hum: g[0][3], daily: daily, at: base, seed: true };
+  }
+
+  // ---- 바깥에서 읽기 -----------------------------------------------------------------------
+  function get(url) {
+    // 노션 임베드 안에서 멈춘 채로 남지 않게 8초에서 끊는다
+    var ctl = ('AbortController' in window) ? new AbortController() : null;
+    var timer = ctl ? setTimeout(function () { ctl.abort(); }, 8000) : null;
+    return fetch(url, ctl ? { signal: ctl.signal } : undefined).then(function (r) {
+      if (timer) clearTimeout(timer);
+      if (!r.ok) throw new Error('http ' + r.status);
+      return r.json();
+    });
+  }
+  function cacheGet(c) {
+    try {
+      var v = JSON.parse(localStorage.getItem(CACHE + c) || 'null');
+      return (v && Date.now() - v.t < TTL) ? v : null;
+    } catch (e) { return null; }
+  }
+  function cachePut(c, payload) {
+    try { localStorage.setItem(CACHE + c, JSON.stringify({ t: Date.now(), p: payload })); } catch (e) {}
+  }
+
+  function fetchCity(c) {
+    return get(GEO + '?name=' + encodeURIComponent(c) + '&count=1&language=ko&format=json')
+      .then(function (g) {
+        var hit = g && g.results && g.results[0];
+        if (!hit) throw new Error('no-city');
+        return get(FC + '?latitude=' + hit.latitude + '&longitude=' + hit.longitude +
+          '&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code' +
+          '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
+          '&timezone=auto&forecast_days=7')
+          .then(function (f) { return { name: hit.name, f: f }; });
+      });
+  }
+  function shape(payload) {
+    var f = payload.f, cur = f.current || {}, d = f.daily || {}, daily = [];
+    (d.time || []).forEach(function (s, i) {
+      var p = s.split('-');
+      daily.push({ date: new Date(+p[0], +p[1] - 1, +p[2]), code: d.weather_code[i],
+        max: d.temperature_2m_max[i], min: d.temperature_2m_min[i],
+        pop: d.precipitation_probability_max ? d.precipitation_probability_max[i] : null });
+    });
+    return { name: payload.name, code: cur.weather_code, temp: cur.temperature_2m,
+      feels: cur.apparent_temperature, hum: cur.relative_humidity_2m, daily: daily, at: new Date() };
+  }
+
+  // ---- 그리기 ----------------------------------------------------------------------------
+  function draw(v) {
+    var c = look(v.code);
+    $('nowIco').innerHTML = svg(c[2]);
+    $('nowT').innerHTML = deg(v.temp) + '<sup>°</sup>';
+    $('nowC').textContent = c[1];
+    var bits = [];
+    if (v.feels != null && !isNaN(v.feels)) bits.push('체감 ' + deg(v.feels) + '°');
+    if (v.hum != null && !isNaN(v.hum)) bits.push('습도 ' + Math.round(v.hum) + '%');
+    $('nowS').textContent = bits.join(' · ');
+
+    var box = $('days'); box.innerHTML = '';
+    var today = IDP.iso(v.seed ? v.at : new Date());
+    v.daily.slice(0, days()).forEach(function (d) {
+      var w = d.date.getDay(), cc = look(d.code);
+      var el = document.createElement('div');
+      el.className = 'dy' + (IDP.iso(d.date) === today ? ' today' : '') + (w === 0 ? ' sun' : w === 6 ? ' sat' : '');
+      el.innerHTML = '<div class="w">' + IDP.DOW[w] + '</div><div class="i">' + svg(cc[2]) + '</div>' +
+        '<div class="hi">' + deg(d.max) + '°</div><div class="lo">' + deg(d.min) + '°</div>' +
+        '<div class="p">' + (d.pop != null && d.pop >= 20 ? Math.round(d.pop) + '%' : '') + '</div>';
+      el.title = cc[1];
+      box.appendChild(el);
+    });
+
+    // 구매자가 ⚙ 에 적은 이름을 그대로 보여 준다. 위치 검색이 돌려주는 이름은 로마자일 때가 있어서
+    // (부산 → Pusan) 자기가 적은 도시가 맞는지 오히려 알아보기 어렵다.
+    $('place').textContent = city();
+    $('body').hidden = false;
+    $('msg').textContent = '';
+    $('src').textContent = v.seed ? '예시 화면' : '날씨 Open-Meteo';
+    $('when').textContent = v.seed ? '' : (IDP.pad(v.at.getHours()) + ':' + IDP.pad(v.at.getMinutes()) + ' 기준');
+  }
+  function say(text, retry) {
+    $('body').hidden = true;
+    $('src').textContent = ''; $('when').textContent = '';
+    var m = $('msg'); m.textContent = text;
+    if (retry) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = '다시 시도';
+      b.addEventListener('click', function () { load(true); });
+      m.appendChild(document.createElement('br')); m.appendChild(b);
+    }
+  }
+
+  function load(fresh) {
+    $('badge').textContent = IDP.opt(W, 'label', 'WEATHER');
+    var s = seeded();
+    if (s) { s.name = city(); draw(s); return; }
+
+    var c = city();
+    $('place').textContent = c;
+    var hit = !fresh && cacheGet(c);
+    if (hit) { draw(shape(hit.p)); return; }
+
+    say('날씨를 불러오는 중…');
+    fetchCity(c).then(function (payload) {
+      cachePut(c, payload);
+      draw(shape(payload));
+    }, function (err) {
+      var stale = cacheGet(c);
+      if (stale) { draw(shape(stale.p)); $('when').textContent = '지금은 새로 받지 못했어요'; return; }
+      say(String(err && err.message) === 'no-city'
+        ? '"' + c + '" 라는 도시를 찾지 못했어요. ⚙ 에서 도시 이름을 바꿔 보세요.'
+        : '날씨를 불러오지 못했어요. 인터넷이 끊겼거나 날씨 서비스가 잠시 멈춘 것일 수 있어요.', true);
+    });
+  }
+
+  load(false);
+  // 탭을 오래 열어 둔 채 돌아왔을 때만 새로 받는다
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && !seeded() && !cacheGet(city())) load(false);
+  });
+</script>
+</body>
+</html>
