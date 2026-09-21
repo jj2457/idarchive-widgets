@@ -24,7 +24,6 @@
   .dy .i svg { width: 100%; height: 100%; display: block; }
   .dy .hi { margin-top: 6px; font-family: var(--serif); font-size: 14px; line-height: 1; color: var(--ink); }
   .dy .lo { margin-top: 3px; font-size: 10.5px; color: var(--sub); }
-  .dy .p { margin-top: 4px; font-size: 9px; letter-spacing: .04em; color: var(--blue); min-height: 12px; }
   /* 해가 뜨고 지는 시각 — 얇은 선 하나로 예보와 나눈다 */
   .sunrow { margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--line);
             display: flex; flex-wrap: wrap; gap: 8px 22px; }
@@ -38,6 +37,7 @@
                 border-radius: 999px; background: var(--tint); border-color: var(--soft); color: var(--ink); }
   .foot { margin-top: 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
           font-size: 10px; letter-spacing: .04em; color: var(--sub); }
+  .foot a { color: var(--sub); text-decoration: none; border-bottom: 1px solid var(--line); }
 </style>
 </head>
 <body>
@@ -57,6 +57,7 @@
   </div></div>
   <div class="foot"><span id="src"></span><span id="when"></span></div>
 </div>
+<script src="assets/cities.js"></script>
 <script src="config/themes.js"></script>
 <script src="assets/core.js"></script>
 <script>
@@ -65,18 +66,25 @@
   // 이 위젯만 바깥 인터넷을 읽는다. 다른 위젯은 이 기기에 적은 것이나 플래너가 들고 다니는
   // 공휴일만 읽지만, 날씨는 이 기기 안에 있을 수 없는 값이다.
   //
-  // ── 판매 여부 (2026-09-22, 오너 지시) ────────────────────────────────────────────
-  // Open-Meteo 무료 API 는 약관상 **비상업 이용 전용**이다. 호출이 구매자 브라우저에서
-  // 일어나더라도 그 코드를 유료 제품에 실어 파는 것은 상업적 이용이다. 그래서 이 위젯은
-  // **판매 기본 제공 48종에 들어가지 않는다.** DEMO 와 개발에서만 쓰고, 상업적으로 쓸 수 있는
-  // 출처를 구하면 그때 판매본에 넣는다. 자세한 것은 docs/WIDGET_DATA_MODES.md §9.
+  // ── 출처를 고른 기준 (2026-09-22, 오너 지시) ───────────────────────────────────────
+  // "무료라는 이유만으로 쓰지 말고, 상업적 이용 · 재배포 · 유료 제품 포함 조건을 공식 약관에서
+  //  확인하고 기록해." 그래서 이 위젯이 부르는 곳은 **MET Norway** 한 곳이다 —
+  //  CC BY 4.0, 상업적 이용 허용, API 키 없음. 조사 과정과 탈락한 후보는
+  //  docs/WIDGET_DATA_MODES.md §9 에 있다.
   //
-  // 그래서 아래 PROVIDERS 구조가 있다. 출처를 갈아 끼울 때 고치는 곳은 그 안의 항목 하나뿐이고,
-  // 화면 코드는 손대지 않는다.
+  //  · 키가 없으므로 구매자마다 키를 넣을 일이 없고, 코드에 비밀값이 들어가지도 않는다.
+  //  · MET 는 요청이 누구 것인지 알 수 있어야 한다고 요구한다. 브라우저는 User-Agent 를
+  //    바꿀 수 없으므로 약관이 허용하는 대로 Origin/Referer 로 식별된다(우리 GitHub Pages 주소).
+  //    그래서 이 요청은 **단순 요청**이어야 한다 — 헤더를 하나도 붙이지 않는다. 붙이는 순간
+  //    사전 요청(preflight)이 생기고 MET 는 그것을 지원하지 않는다고 못박아 두었다.
+  //  · 출처 표기는 CC BY 4.0 의 조건이다. 카드 아래에 항상 보인다.
+  //
+  // 도시 → 좌표는 들고 다니는 표(assets/cities.js)로 푼다. 이름을 좌표로 바꿔 주는 공개
+  // 서비스는 상업적 재배포 조건이 까다로워서 유료 제품에 싣기에 맞지 않는다.
   //
   // 노션 표는 여기서도 읽지 않는다 — 날씨는 애초에 노션에 없다.
   var W = 'weather';
-  var CACHE = 'idarchive.weather.cache.';   // 출처·도시별 20분 캐시 — 열 때마다 같은 것을 묻지 않는다
+  var CACHE = 'idarchive.weather.cache.';   // 출처·지점별 20분 캐시 — 열 때마다 같은 것을 묻지 않는다
   var TTL = 20 * 60 * 1000;
 
   var $ = function (id) { return document.getElementById(id); };
@@ -100,46 +108,79 @@
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" ' +
       'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (P[k] || P.cloud) + '</svg>';
   }
-  // WMO 코드 → 한국어 한 마디 + 그림.
-  var CODES = [
-    [[0], '맑음', 'sun'],
-    [[1], '대체로 맑음', 'part'],
-    [[2], '구름 조금', 'part'],
-    [[3], '흐림', 'cloud'],
-    [[45, 48], '안개', 'fog'],
-    [[51, 53, 55], '이슬비', 'driz'],
-    [[56, 57], '어는 이슬비', 'driz'],
-    [[61, 63, 65], '비', 'rain'],
-    [[66, 67], '어는 비', 'rain'],
-    [[71, 73, 75, 77], '눈', 'snow'],
-    [[80, 81, 82], '소나기', 'rain'],
-    [[85, 86], '소낙눈', 'snow'],
-    [[95, 96, 99], '천둥번개', 'storm']
-  ];
-  function look(code) {
-    for (var i = 0; i < CODES.length; i++) if (CODES[i][0].indexOf(+code) >= 0) return CODES[i];
-    return [[], '흐림', 'cloud'];
-  }
   function deg(v) { return (v == null || isNaN(v)) ? '–' : Math.round(v); }
-  function hhmm(iso) { var m = /T(\d{2}:\d{2})/.exec(String(iso || '')); return m ? m[1] : ''; }
+
+  // ---- 시간대 ----------------------------------------------------------------------------
+  // 브라우저에 IANA 시간대 자료가 이미 들어 있다. 서머타임까지 Intl 이 알아서 맞춘다.
+  function tzDay(d, tz) {
+    try { return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d); }
+    catch (e) { return IDP.iso(d); }
+  }
+  function tzClock(d, tz) {
+    try { return new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(d); }
+    catch (e) { return IDP.pad(d.getHours()) + ':' + IDP.pad(d.getMinutes()); }
+  }
+  function dowOf(ymd) { var p = ymd.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]).getDay(); }
+
+  // ---- 해 뜨고 지는 시각은 계산한다 ----------------------------------------------------------
+  // 좌표와 날짜만 있으면 나오는 값이라 굳이 물어볼 필요가 없다. 호출이 하나 줄고, 날씨 출처를
+  // 바꿔도 이 값은 그대로다. 공식은 널리 쓰이는 천문 근사식(SunCalc 와 같은 유도)이다.
+  function sunTimes(lat, lon, date) {
+    var rad = Math.PI / 180, J1970 = 2440588, J2000 = 2451545, dayMs = 86400000;
+    var toJ = function (d) { return d.valueOf() / dayMs - 0.5 + J1970; };
+    var fromJ = function (j) { return new Date((j + 0.5 - J1970) * dayMs); };
+    var lw = rad * -lon, phi = rad * lat;
+    var n = Math.round(toJ(date) - J2000 - 0.0009 - lw / (2 * Math.PI));
+    var ds = 0.0009 + lw / (2 * Math.PI) + n;
+    var M = rad * (357.5291 + 0.98560028 * ds);
+    var C = rad * (1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M));
+    var L = M + C + rad * 102.9372 + Math.PI;
+    var Jtransit = J2000 + ds + 0.0053 * Math.sin(M) - 0.0069 * Math.sin(2 * L);
+    var dec = Math.asin(Math.sin(rad * 23.4397) * Math.sin(L));
+    var h0 = rad * -0.833;                                   // 해의 윗가장자리 + 대기 굴절
+    var cosH = (Math.sin(h0) - Math.sin(phi) * Math.sin(dec)) / (Math.cos(phi) * Math.cos(dec));
+    if (cosH > 1 || cosH < -1) return null;                  // 백야 · 극야 — 그런 날은 줄을 감춘다
+    var H = Math.acos(cosH) / (2 * Math.PI);
+    var Jset = J2000 + (0.0009 + (H + lw / (2 * Math.PI)) + n) + 0.0053 * Math.sin(M) - 0.0069 * Math.sin(2 * L);
+    return { rise: fromJ(Jtransit - (Jset - Jtransit)), set: fromJ(Jset) };
+  }
+
+  // ---- 도시 ------------------------------------------------------------------------------
+  // 표에서 찾고, 없으면 "37.5,127.0" 같은 좌표도 받는다.
+  function resolve(text) {
+    var q = String(text || '').trim();
+    if (!q) return null;
+    var ll = /^(-?\d{1,2}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)$/.exec(q);
+    if (ll) return { n: q, lat: +ll[1], lon: +ll[2], tz: (Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC') };
+    var low = q.toLowerCase(), list = window.IDP_CITIES || [];
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i];
+      if (c.n === q) return c;
+      if ((c.a || []).some(function (x) { return String(x).toLowerCase() === low; })) return c;
+    }
+    for (var j = 0; j < list.length; j++) {                  // 부분 일치는 마지막에 — "서울특별" 같은 입력
+      if (list[j].n.indexOf(q) === 0) return list[j];
+    }
+    return null;
+  }
 
   // ---- 출처 어댑터 -------------------------------------------------------------------------
-  // 어느 날씨 서비스를 쓰든 화면이 받는 모양은 하나다. 새 출처를 붙일 때 이 형태만 맞추면 된다.
+  // 어느 날씨 서비스를 쓰든 화면이 받는 모양은 하나다. 새 출처를 붙일 때 이 형태만 맞추면 되고,
+  // 화면 코드는 손대지 않는다.
   //
-  //   {
-  //     place, tz,                         // 서비스가 찾아 준 지점과 시간대 (확인용)
-  //     code,                              // WMO 기상 코드
-  //     temp, feels, hum,                  // 지금 기온 · 체감 · 습도
-  //     sunrise, sunset,                   // 'HH:MM' — 그 도시의 시간대로 이미 변환된 값
-  //     daily : [{ date, code, max, min, pop }, …],
-  //     at    : Date                       // 받아 온 시각
-  //   }
+  //   { code, temp, hum, wind,              // 지금: 날씨 갈래 · 기온 · 습도 · 바람
+  //     sunrise, sunset,                    // 'HH:MM' — 그 도시의 시간대. 출처가 안 주면 우리가 계산한다
+  //     daily: [{ ymd, dow, code, max, min }, …],
+  //     at: Date }
   //
-  // sunrise / sunset 을 처음부터 이 형태에 넣어 둔 이유: 상업용 출처로 갈아 끼울 때 화면을 다시
-  // 만들지 않기 위해서다. 그 서비스가 일출·일몰을 주지 않으면 그 칸만 비면 되고, 화면은 해 뜨는
-  // 줄을 조용히 감춘다 — 없는 시간을 지어내지 않는다.
+  // code 는 우리 갈래 이름이다: sun · part · cloud · fog · driz · rain · snow · storm.
+  // 서비스마다 다른 코드 체계를 shape() 에서 이 여덟 가지로 옮긴다.
+  var KO = { sun: '맑음', part: '구름 조금', cloud: '흐림', fog: '안개',
+             driz: '이슬비', rain: '비', snow: '눈', storm: '천둥번개' };
+
   function get(url) {
-    // 노션 임베드 안에서 멈춘 채로 남지 않게 8초에서 끊는다
+    // 헤더를 붙이지 않는다 — 단순 요청이어야 MET 가 받는다(맨 위 주석).
+    // 노션 임베드 안에서 멈춘 채로 남지 않게 8초에서 끊는다.
     var ctl = ('AbortController' in window) ? new AbortController() : null;
     var timer = ctl ? setTimeout(function () { ctl.abort(); }, 8000) : null;
     return fetch(url, ctl ? { signal: ctl.signal } : undefined).then(function (r) {
@@ -150,50 +191,78 @@
   }
 
   var PROVIDERS = {
-    // 키가 없어 브라우저에서 바로 부를 수 있다. 다만 무료 티어는 비상업 이용 전용이라
-    // 판매 기본 제공에는 들어가지 않는다(맨 위 주석).
-    'open-meteo': {
-      label: 'Open-Meteo',
-      attribution: '날씨 Open-Meteo',   // CC-BY 4.0 — 카드 아래에 항상 보인다
-      commercial: false,                 // 유료 제품의 기본 기능으로 쓸 수 없다
-      load: function (city) {
-        return get('https://geocoding-api.open-meteo.com/v1/search?name=' +
-            encodeURIComponent(city) + '&count=1&language=ko&format=json')
-          .then(function (g) {
-            var hit = g && g.results && g.results[0];
-            if (!hit) throw new Error('no-city');
-            return get('https://api.open-meteo.com/v1/forecast?latitude=' + hit.latitude +
-              '&longitude=' + hit.longitude +
-              '&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code' +
-              '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset' +
-              '&timezone=auto&forecast_days=7')
-              .then(function (f) { return { name: hit.name, f: f }; });
-          });
+    // MET Norway Locationforecast 2.0 — 노르웨이 기상청. 전 세계 예보.
+    // 약관: https://api.met.no/doc/TermsOfService — CC BY 4.0, 상업적 이용 허용, 키 없음.
+    'met-no': {
+      label: 'MET Norway',
+      attribution: '날씨 MET Norway',
+      licence: 'https://creativecommons.org/licenses/by/4.0/',
+      commercial: true,          // 유료 제품에 실을 수 있다 — 출처를 밝히는 조건
+      key: false,
+      load: function (spot) {
+        // 좌표는 소수점 넷째 자리까지만 — MET 가 그렇게 요구한다(캐시 효율)
+        var la = spot.lat.toFixed(4), lo = spot.lon.toFixed(4);
+        return get('https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=' + la + '&lon=' + lo)
+          .then(function (j) { return { lat: spot.lat, lon: spot.lon, tz: spot.tz, j: j }; });
       },
-      // 서비스가 돌려준 것을 공통 모양으로 옮긴다. 캐시에는 원본을 넣고 읽을 때마다 이것을 돌린다.
       shape: function (raw) {
-        var f = raw.f, cur = f.current || {}, d = f.daily || {}, daily = [];
-        (d.time || []).forEach(function (s, i) {
-          var p = s.split('-');
-          daily.push({ date: new Date(+p[0], +p[1] - 1, +p[2]), code: d.weather_code[i],
-            max: d.temperature_2m_max[i], min: d.temperature_2m_min[i],
-            pop: d.precipitation_probability_max ? d.precipitation_probability_max[i] : null });
+        var ts = (raw.j && raw.j.properties && raw.j.properties.timeseries) || [];
+        if (!ts.length) throw new Error('empty');
+        var tz = raw.tz, byDay = {}, order = [];
+        ts.forEach(function (e) {
+          var when = new Date(e.time), ymd = tzDay(when, tz);
+          var det = (e.data && e.data.instant && e.data.instant.details) || {};
+          var t = det.air_temperature;
+          if (!byDay[ymd]) { byDay[ymd] = { ymd: ymd, max: null, min: null, code: '', noonGap: 1e9 }; order.push(ymd); }
+          var b = byDay[ymd];
+          if (t != null) {
+            if (b.max == null || t > b.max) b.max = t;
+            if (b.min == null || t < b.min) b.min = t;
+          }
+          // 그날을 대표하는 그림은 정오에 가장 가까운 예보에서 고른다
+          var hour = +tzClock(when, tz).slice(0, 2), gap = Math.abs(hour - 12);
+          var sym = (e.data && ((e.data.next_6_hours && e.data.next_6_hours.summary) ||
+                                (e.data.next_1_hours && e.data.next_1_hours.summary) ||
+                                (e.data.next_12_hours && e.data.next_12_hours.summary)) || {}).symbol_code;
+          if (sym && gap < b.noonGap) { b.noonGap = gap; b.code = symbol(sym); }
         });
-        return { place: raw.name, tz: f.timezone || '', code: cur.weather_code,
-          temp: cur.temperature_2m, feels: cur.apparent_temperature, hum: cur.relative_humidity_2m,
-          sunrise: d.sunrise ? hhmm(d.sunrise[0]) : '', sunset: d.sunset ? hhmm(d.sunset[0]) : '',
+        var daily = order.map(function (k) {
+          var b = byDay[k];
+          return { ymd: b.ymd, dow: dowOf(b.ymd), code: b.code || 'cloud', max: b.max, min: b.min };
+        });
+        var first = ts[0], fd = (first.data && first.data.instant && first.data.instant.details) || {};
+        var nowSym = (first.data && ((first.data.next_1_hours && first.data.next_1_hours.summary) ||
+                                     (first.data.next_6_hours && first.data.next_6_hours.summary)) || {}).symbol_code;
+        var sun = sunTimes(raw.lat, raw.lon, new Date());
+        return { code: symbol(nowSym), temp: fd.air_temperature, hum: fd.relative_humidity,
+          wind: fd.wind_speed, tz: tz,
+          sunrise: sun ? tzClock(sun.rise, tz) : '', sunset: sun ? tzClock(sun.set, tz) : '',
           daily: daily, at: new Date() };
       }
     }
   };
-  // 출처를 바꿀 때 고치는 곳은 이 한 줄이다(그리고 위에 그 출처의 load/shape 를 더한다).
-  var PROVIDER_ID = 'open-meteo';
+  // MET 의 symbol_code → 우리 여덟 갈래. 접미사(_day · _night · _polartwilight)는 떼고 본다.
+  function symbol(code) {
+    var s = String(code || '').replace(/_(day|night|polartwilight)$/, '');
+    if (!s) return 'cloud';
+    if (s === 'clearsky') return 'sun';
+    if (s === 'fair' || s.indexOf('partlycloudy') === 0) return 'part';
+    if (s === 'cloudy') return 'cloud';
+    if (s === 'fog') return 'fog';
+    if (s.indexOf('thunder') >= 0) return 'storm';
+    if (s.indexOf('snow') >= 0 || s.indexOf('sleet') >= 0) return 'snow';
+    if (s.indexOf('drizzle') >= 0) return 'driz';
+    if (s.indexOf('rain') >= 0 || s.indexOf('showers') >= 0) return 'rain';
+    return 'cloud';
+  }
+  // 출처를 바꿀 때 고치는 곳은 이 한 줄과, 위에 더할 항목 하나뿐이다.
+  var PROVIDER_ID = 'met-no';
   function provider() { return PROVIDERS[PROVIDER_ID]; }
 
   // ---- 옵션 ------------------------------------------------------------------------------
   IDP.options(W, [
     { k: 'label', t: 'text', label: '제목', ph: 'WEATHER' },
-    { k: 'city',  t: 'text', label: '도시 이름', ph: '예) 서울 · 부산 · Tokyo' },
+    { k: 'city',  t: 'text', label: '도시 이름', ph: '예) 서울 · 부산 · 도쿄' },
     { k: 'days',  t: 'number', label: '며칠까지 (2–7)', ph: '5' }
   ], function () { load(true); });
 
@@ -202,61 +271,59 @@
 
   // ---- 씨앗 ------------------------------------------------------------------------------
   // 카탈로그 사진과 상세페이지는 인터넷이 끊겨도 같은 그림이 나와야 한다. d= 가 있으면 그 값만 쓰고
-  // 바깥을 부르지 않는다.  d   = 지금(코드,기온,체감,습도) | 하루(코드,최고,최저,강수확률) × N
+  // 바깥을 부르지 않는다.  d   = 지금(갈래,기온,습도) | 하루(갈래,최고,최저) × N
   //                       sun = 일출|일몰  (예: 06:32|18:41)
+  // 갈래는 위의 여덟 가지 이름 그대로 쓴다 — 예: d=part,11,45|part,13,3|cloud,12,4
   function seeded() {
     var raw = IDP.q.get('d');
     if (!raw) return null;
-    var g = String(raw).split('|').map(function (s) { return s.split(',').map(Number); });
+    var g = String(raw).split('|').map(function (s) { return s.split(','); });
     if (g.length < 2) return null;
     var base = IDP.now(), daily = [];
     for (var i = 1; i < g.length; i++) {
       var d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + (i - 1));
-      daily.push({ date: d, code: g[i][0], max: g[i][1], min: g[i][2], pop: g[i][3] });
+      daily.push({ ymd: IDP.iso(d), dow: d.getDay(), code: g[i][0], max: +g[i][1], min: +g[i][2] });
     }
     var sun = String(IDP.q.get('sun') || '').split('|');
     var ok = function (s) { return /^\d{1,2}:\d{2}$/.test(s || '') ? s : ''; };
-    return { place: city(), code: g[0][0], temp: g[0][1], feels: g[0][2], hum: g[0][3],
+    return { code: g[0][0], temp: +g[0][1], hum: +g[0][2],
       sunrise: ok(sun[0]), sunset: ok(sun[1]), daily: daily, at: base, seed: true };
   }
 
   // ---- 캐시 ------------------------------------------------------------------------------
-  function key(c) { return CACHE + PROVIDER_ID + '.' + c; }
-  function cacheGet(c) {
+  function key(spot) { return CACHE + PROVIDER_ID + '.' + spot.lat.toFixed(3) + ',' + spot.lon.toFixed(3); }
+  function cacheGet(spot) {
     try {
-      var v = JSON.parse(localStorage.getItem(key(c)) || 'null');
+      var v = JSON.parse(localStorage.getItem(key(spot)) || 'null');
       return (v && Date.now() - v.t < TTL) ? v : null;
     } catch (e) { return null; }
   }
-  function cachePut(c, raw) {
-    try { localStorage.setItem(key(c), JSON.stringify({ t: Date.now(), p: raw })); } catch (e) {}
+  function cachePut(spot, raw) {
+    try { localStorage.setItem(key(spot), JSON.stringify({ t: Date.now(), p: raw })); } catch (e) {}
   }
 
   // ---- 그리기 ----------------------------------------------------------------------------
   function draw(v) {
-    var c = look(v.code);
-    $('nowIco').innerHTML = svg(c[2]);
+    $('nowIco').innerHTML = svg(v.code);
     $('nowT').innerHTML = deg(v.temp) + '<sup>°</sup>';
-    $('nowC').textContent = c[1];
+    $('nowC').textContent = KO[v.code] || KO.cloud;
     var bits = [];
-    if (v.feels != null && !isNaN(v.feels)) bits.push('체감 ' + deg(v.feels) + '°');
     if (v.hum != null && !isNaN(v.hum)) bits.push('습도 ' + Math.round(v.hum) + '%');
+    if (v.wind != null && !isNaN(v.wind)) bits.push('바람 ' + v.wind.toFixed(1) + 'm/s');
     $('nowS').textContent = bits.join(' · ');
 
     var box = $('days'); box.innerHTML = '';
-    var today = IDP.iso(v.seed ? v.at : new Date());
+    var today = v.daily.length ? v.daily[0].ymd : '';
     v.daily.slice(0, days()).forEach(function (d) {
-      var w = d.date.getDay(), cc = look(d.code);
       var el = document.createElement('div');
-      el.className = 'dy' + (IDP.iso(d.date) === today ? ' today' : '') + (w === 0 ? ' sun' : w === 6 ? ' sat' : '');
-      el.innerHTML = '<div class="w">' + IDP.DOW[w] + '</div><div class="i">' + svg(cc[2]) + '</div>' +
-        '<div class="hi">' + deg(d.max) + '°</div><div class="lo">' + deg(d.min) + '°</div>' +
-        '<div class="p">' + (d.pop != null && d.pop >= 20 ? Math.round(d.pop) + '%' : '') + '</div>';
-      el.title = cc[1];
+      el.className = 'dy' + (d.ymd === today ? ' today' : '') + (d.dow === 0 ? ' sun' : d.dow === 6 ? ' sat' : '');
+      el.innerHTML = '<div class="w">' + IDP.DOW[d.dow] + '</div><div class="i">' + svg(d.code) + '</div>' +
+        '<div class="hi">' + deg(d.max) + '°</div><div class="lo">' + deg(d.min) + '°</div>';
+      el.title = KO[d.code] || '';
       box.appendChild(el);
     });
 
-    // 해가 뜨고 지는 시각. 받지 못했으면 줄 자체를 감춘다.
+    // 해가 뜨고 지는 시각. 없으면(백야·극야) 줄 자체를 감춘다 — 없는 시간을 지어내지 않는다.
     var sr = $('sunrow'), row = '';
     if (v.sunrise) row += '<span class="it"><span class="i">' + svg('up') + '</span>' +
       '<span class="k">SUNRISE</span><span class="v">' + v.sunrise + '</span></span>';
@@ -264,13 +331,14 @@
       '<span class="k">SUNSET</span><span class="v">' + v.sunset + '</span></span>';
     sr.innerHTML = row; sr.hidden = !row;
 
-    // 구매자가 ⚙ 에 적은 이름을 그대로 보여 준다. 위치 검색이 돌려주는 이름은 로마자일 때가 있어서
-    // (부산 → Pusan) 자기가 적은 도시가 맞는지 오히려 알아보기 어렵다.
     $('place').textContent = city();
     $('body').hidden = false;
     $('msg').textContent = '';
-    $('src').textContent = v.seed ? '예시 화면' : provider().attribution;
-    $('when').textContent = v.seed ? '' : (IDP.pad(v.at.getHours()) + ':' + IDP.pad(v.at.getMinutes()) + ' 기준');
+    var pv = provider();
+    $('src').innerHTML = v.seed ? '예시 화면'
+      : '<a href="' + pv.licence + '" target="_blank" rel="noopener">' + pv.attribution + '</a>';
+    $('when').textContent = v.seed ? ''
+      : (v.tz ? tzClock(v.at, v.tz) : IDP.pad(v.at.getHours()) + ':' + IDP.pad(v.at.getMinutes())) + ' 기준';
   }
   function say(text, retry) {
     $('body').hidden = true;
@@ -289,28 +357,32 @@
     var s = seeded();
     if (s) { draw(s); return; }
 
-    var c = city(), pv = provider();
+    var c = city(), spot = resolve(c), pv = provider();
     $('place').textContent = c;
-    var hit = !fresh && cacheGet(c);
-    if (hit) { draw(pv.shape(hit.p)); return; }
+    if (!spot) {
+      say('"' + c + '" 는 도시 목록에 없어요. ⚙ 에서 가까운 도시 이름을 적거나, ' +
+          '위도와 경도를 "37.5665, 126.978" 처럼 적어 주세요.');
+      return;
+    }
+    var hit = !fresh && cacheGet(spot);
+    if (hit) { try { draw(pv.shape(hit.p)); return; } catch (e) { /* 모양이 바뀐 캐시는 버린다 */ } }
 
     say('날씨를 불러오는 중…');
-    pv.load(c).then(function (raw) {
-      cachePut(c, raw);
+    pv.load(spot).then(function (raw) {
+      cachePut(spot, raw);
       draw(pv.shape(raw));
-    }, function (err) {
-      var stale = cacheGet(c);
-      if (stale) { draw(pv.shape(stale.p)); $('when').textContent = '지금은 새로 받지 못했어요'; return; }
-      say(String(err && err.message) === 'no-city'
-        ? '"' + c + '" 라는 도시를 찾지 못했어요. ⚙ 에서 도시 이름을 바꿔 보세요.'
-        : '날씨를 불러오지 못했어요. 인터넷이 끊겼거나 날씨 서비스가 잠시 멈춘 것일 수 있어요.', true);
+    }, function () {
+      var stale = cacheGet(spot);
+      if (stale) { try { draw(pv.shape(stale.p)); $('when').textContent = '지금은 새로 받지 못했어요'; return; } catch (e) {} }
+      say('날씨를 불러오지 못했어요. 인터넷이 끊겼거나 날씨 서비스가 잠시 멈춘 것일 수 있어요.', true);
     });
   }
 
   load(false);
   // 탭을 오래 열어 둔 채 돌아왔을 때만 새로 받는다
   document.addEventListener('visibilitychange', function () {
-    if (!document.hidden && !seeded() && !cacheGet(city())) load(false);
+    var spot = seeded() ? null : resolve(city());
+    if (!document.hidden && spot && !cacheGet(spot)) load(false);
   });
 </script>
 </body>
