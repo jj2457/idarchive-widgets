@@ -185,10 +185,6 @@
     { id: 'upnext',   g: '오늘', name: 'UP NEXT (오늘 · 내일 · 이번 주)', h: 360, opts: [
         { k: 'label', t: 'text', label: '제목', ph: 'UP NEXT' },
         { k: 'notion', t: 'text', label: '플래너 일정 페이지 주소 (선택)', ph: 'https://www.notion.so/' }] },
-    { id: 'weather',  g: '오늘', name: '날씨 (지금 · 앞으로 며칠)', h: 300, opts: [
-        { k: 'label', t: 'text', label: '제목', ph: 'WEATHER' },
-        { k: 'city', t: 'text', label: '도시 이름', ph: '예) 서울 · 부산 · Tokyo' },
-        { k: 'days', t: 'number', label: '며칠까지 (2–7)', ph: '5' }] },
 
     { id: 'todo',     g: '오늘', name: '투두리스트',        h: 360, opts: [
         { k: 'label', t: 'text', label: '제목', ph: 'TO DO' },
@@ -272,6 +268,23 @@
     { id: 'mood',     g: '건강', name: '기분 · 에너지',     h: 330, opts: [] }
   ];
 
+  // 판매 기본 제공이 아닌 위젯. 여기 있는 것은 개수(위젯 N종)에 들어가지 않고,
+  // 스튜디오에서도 따로 묶여 왜 기본 제공이 아닌지가 붙는다.
+  //
+  // weather — Open-Meteo 무료 API 는 약관상 비상업 이용 전용이다. 호출이 구매자 브라우저에서
+  // 일어나더라도 그 코드를 유료 제품에 실어 파는 것은 상업적 이용이라, 상업적으로 쓸 수 있는
+  // 출처를 구하기 전까지는 판매본에 넣지 않는다 (오너 지시 2026-09-22).
+  var EXPERIMENTAL = [
+    { id: 'weather', x: '실험 중 · 기본 제공 아님', name: '날씨 (지금 · 며칠 · 일출/일몰)', h: 330,
+      why: '날씨 데이터 출처를 상업용으로 바꾼 뒤에 기본 제공에 들어갑니다. 지금은 시험용이에요.',
+      opts: [
+        { k: 'label', t: 'text', label: '제목', ph: 'WEATHER' },
+        { k: 'city', t: 'text', label: '도시 이름', ph: '예) 서울 · 부산 · Tokyo' },
+        { k: 'days', t: 'number', label: '며칠까지 (2–7)', ph: '5' }] }
+  ];
+  // 찾아볼 때는 둘을 합쳐 본다. 개수를 셀 때는 WIDGETS 만 센다.
+  var ALL = WIDGETS.concat(EXPERIMENTAL);
+
   // Ready-made dashboards, for buyers who would rather start from something than from nothing.
   var PRESETS = [
     { id: 'minimal', name: 'MINIMAL', desc: '시계 · 이번 주 · 한 문장', list: ['clock', 'week', 'quote'] },
@@ -304,11 +317,19 @@
     var box = document.getElementById('widgets');
     box.innerHTML = '';
     var groups = [];
-    WIDGETS.forEach(function (w) { if (groups.indexOf(w.g) < 0) groups.push(w.g); });
+    ALL.forEach(function (w) { var g = w.g || w.x; if (groups.indexOf(g) < 0) groups.push(g); });
     groups.forEach(function (g) {
       var h = document.createElement('h3'); h.textContent = g; box.appendChild(h);
+      // 기본 제공이 아닌 묶음에는 왜 아닌지를 한 줄로 붙인다. 구매자가 개수를 셀 때 헷갈리지 않게.
+      var why = (ALL.filter(function (w) { return (w.g || w.x) === g && w.why; })[0] || {}).why;
+      if (why) {
+        var n = document.createElement('p');
+        n.textContent = why;
+        n.style.cssText = 'margin:-2px 0 8px;font-size:12px;line-height:1.7;color:var(--sub)';
+        box.appendChild(n);
+      }
       var row = document.createElement('div'); row.className = 'chips';
-      WIDGETS.filter(function (w) { return w.g === g; }).forEach(function (w) {
+      ALL.filter(function (w) { return (w.g || w.x) === g; }).forEach(function (w) {
         var b = document.createElement('button');
         b.className = 'chip'; b.textContent = w.name;
         b.setAttribute('aria-pressed', String(state.widget === w.id));
@@ -337,7 +358,7 @@
     var p = PRESETS.filter(function (x) { return x.id === state.preset; })[0];
     plan.hidden = !p;
     if (!p) return;
-    var names = p.list.map(function (id) { return WIDGETS.filter(function (w) { return w.id === id; })[0].name; });
+    var names = p.list.map(function (id) { return ALL.filter(function (w) { return w.id === id; })[0].name; });
     plan.innerHTML = '<b>' + p.name + '</b> — 위에서 아래로 이 순서로 넣으면 한 화면이 됩니다.' +
       '<ol>' + names.map(function (n) { return '<li>' + n + '</li>'; }).join('') + '</ol>' +
       '<div class="act"><button class="copy" id="copyAll">링크 ' + p.list.length + '개 한 번에 복사</button>' +
@@ -351,7 +372,7 @@
   }
 
   function drawOpts() {
-    var w = WIDGETS.filter(function (x) { return x.id === state.widget; })[0], box = document.getElementById('opts');
+    var w = ALL.filter(function (x) { return x.id === state.widget; })[0], box = document.getElementById('opts');
     box.innerHTML = '';
     document.getElementById('optSection').hidden = !w.opts.length;
     w.opts.forEach(function (o) {
@@ -403,7 +424,7 @@
   // It is never added to the link the reader copies.
   function previewNow() { return (new URLSearchParams(location.search).get('now') ? '&now=' + encodeURIComponent(new URLSearchParams(location.search).get('now')) : ''); }
 
-    var w = WIDGETS.filter(function (x) { return x.id === state.widget; })[0], url = urlFor(state.widget);
+    var w = ALL.filter(function (x) { return x.id === state.widget; })[0], url = urlFor(state.widget);
     var f = document.getElementById('frameEl');
     f.style.height = w.h + 'px'; f.src = url + (url.indexOf('?') < 0 ? '?' : '&') + 'lock=1&settings=0' + previewNow(); // preview shows exactly the chosen settings
     document.getElementById('url').value = url;

@@ -25,6 +25,14 @@
   .dy .hi { margin-top: 6px; font-family: var(--serif); font-size: 14px; line-height: 1; color: var(--ink); }
   .dy .lo { margin-top: 3px; font-size: 10.5px; color: var(--sub); }
   .dy .p { margin-top: 4px; font-size: 9px; letter-spacing: .04em; color: var(--blue); min-height: 12px; }
+  /* 해가 뜨고 지는 시각 — 얇은 선 하나로 예보와 나눈다 */
+  .sunrow { margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--line);
+            display: flex; flex-wrap: wrap; gap: 8px 22px; }
+  .sunrow .it { display: flex; align-items: center; gap: 7px; min-width: 0; }
+  .sunrow .i { flex: none; width: 17px; height: 17px; color: var(--deep); }
+  .sunrow .i svg { width: 100%; height: 100%; display: block; }
+  .sunrow .k { font-size: 9px; letter-spacing: .16em; color: var(--sub); }
+  .sunrow .v { font-family: var(--serif); font-size: 14px; line-height: 1; color: var(--ink); letter-spacing: .02em; }
   .msg { margin-top: 22px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.9; }
   .msg button { margin-top: 8px; padding: 5px 13px; font-size: 10.5px; letter-spacing: .08em;
                 border-radius: 999px; background: var(--tint); border-color: var(--soft); color: var(--ink); }
@@ -43,6 +51,7 @@
         <span class="m"><span class="c" id="nowC"></span><span class="s" id="nowS"></span></span>
       </div>
       <div class="days" id="days"></div>
+      <div class="sunrow" id="sunrow" hidden></div>
     </div>
     <div class="msg" id="msg"></div>
   </div></div>
@@ -51,25 +60,29 @@
 <script src="config/themes.js"></script>
 <script src="assets/core.js"></script>
 <script>
-  // 날씨 카드 — 지금 기온과 앞으로 며칠.
+  // 날씨 카드 — 지금 기온, 앞으로 며칠, 그리고 해가 뜨고 지는 시각.
   //
-  // 이 위젯만 유일하게 바깥 인터넷을 읽는다. 다른 위젯은 이 기기에 적은 것만 읽지만, 날씨는
-  // 이 기기 안에 있을 수 없는 값이다. 읽는 곳은 Open-Meteo 한 곳이고, 보내는 것은 구매자가
-  // ⚙ 에 적은 도시 이름뿐이다. 위치 권한을 쓰지 않는다 — 노션 임베드 안에서는 브라우저가
-  // 위치 권한을 주지 않는 경우가 많고, 받아 낼 수 있다 해도 사는 곳을 자동으로 읽어 가는
-  // 위젯을 플래너에 넣고 싶지 않았다.
+  // 이 위젯만 바깥 인터넷을 읽는다. 다른 위젯은 이 기기에 적은 것이나 플래너가 들고 다니는
+  // 공휴일만 읽지만, 날씨는 이 기기 안에 있을 수 없는 값이다.
   //
-  // 노션 표는 여기서도 읽지 않는다(docs/WIDGET_DATA_MODES.md). 날씨는 애초에 노션에 없다.
+  // ── 판매 여부 (2026-09-22, 오너 지시) ────────────────────────────────────────────
+  // Open-Meteo 무료 API 는 약관상 **비상업 이용 전용**이다. 호출이 구매자 브라우저에서
+  // 일어나더라도 그 코드를 유료 제품에 실어 파는 것은 상업적 이용이다. 그래서 이 위젯은
+  // **판매 기본 제공 48종에 들어가지 않는다.** DEMO 와 개발에서만 쓰고, 상업적으로 쓸 수 있는
+  // 출처를 구하면 그때 판매본에 넣는다. 자세한 것은 docs/WIDGET_DATA_MODES.md §9.
+  //
+  // 그래서 아래 PROVIDERS 구조가 있다. 출처를 갈아 끼울 때 고치는 곳은 그 안의 항목 하나뿐이고,
+  // 화면 코드는 손대지 않는다.
+  //
+  // 노션 표는 여기서도 읽지 않는다 — 날씨는 애초에 노션에 없다.
   var W = 'weather';
-  var CACHE = 'idarchive.weather.cache.';   // 도시별 20분 캐시 — 페이지를 열 때마다 같은 것을 묻지 않는다
+  var CACHE = 'idarchive.weather.cache.';   // 출처·도시별 20분 캐시 — 열 때마다 같은 것을 묻지 않는다
   var TTL = 20 * 60 * 1000;
-  var GEO = 'https://geocoding-api.open-meteo.com/v1/search';
-  var FC  = 'https://api.open-meteo.com/v1/forecast';
 
   var $ = function (id) { return document.getElementById(id); };
 
   // ---- 그림 ------------------------------------------------------------------------------
-  // 선 아이콘만 쓴다(제품 규칙 — 이모지 장식 없음). 스트로크 색은 currentColor 라 테마를 따라간다.
+  // 선 아이콘만 쓴다(제품 규칙 — 이모지 장식 없음). 스트로크는 currentColor 라 테마를 따라간다.
   var P = {
     sun:   '<circle cx="12" cy="12" r="4.4"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4L17 7M7 17l-1.6 1.6"/>',
     part:  '<circle cx="9" cy="8.6" r="3.2"/><path d="M9 1.8v1.7M2.2 8.6h1.7M4.2 3.8l1.2 1.2M13.8 3.8l-1.2 1.2"/><path d="M8.2 19.8h8.6a3.6 3.6 0 0 0 .4-7.2 5 5 0 0 0-9.4 1 3.1 3.1 0 0 0 .4 6.2Z"/>',
@@ -78,13 +91,16 @@
     driz:  '<path d="M7.4 14.8h9.4a4 4 0 0 0 .4-8A5.5 5.5 0 0 0 6.9 7.9a3.5 3.5 0 0 0 .5 6.9Z"/><path d="M9.4 17.8v1.8M14.6 17.8v1.8"/>',
     rain:  '<path d="M7.4 14.4h9.4a4 4 0 0 0 .4-8A5.5 5.5 0 0 0 6.9 7.5a3.5 3.5 0 0 0 .5 6.9Z"/><path d="M8.6 17.2l-1 3.4M12 17.2l-1 3.4M15.4 17.2l-1 3.4"/>',
     snow:  '<path d="M7.4 14.4h9.4a4 4 0 0 0 .4-8A5.5 5.5 0 0 0 6.9 7.5a3.5 3.5 0 0 0 .5 6.9Z"/><path d="M9.2 18.2h.02M12 20.2h.02M14.8 18.2h.02M12 17.4h.02"/>',
-    storm: '<path d="M7.4 13.8h9.4a4 4 0 0 0 .4-8A5.5 5.5 0 0 0 6.9 6.9a3.5 3.5 0 0 0 .5 6.9Z"/><path d="M12.8 16l-2.6 3.4h2.6l-1.4 2.6"/>'
+    storm: '<path d="M7.4 13.8h9.4a4 4 0 0 0 .4-8A5.5 5.5 0 0 0 6.9 6.9a3.5 3.5 0 0 0 .5 6.9Z"/><path d="M12.8 16l-2.6 3.4h2.6l-1.4 2.6"/>',
+    // 지평선 위의 반쪽 해 + 오르내리는 화살표. 이모지 없이 뜨고 짐을 구분하는 방법이다.
+    up:    '<path d="M3.2 19.4h17.6"/><path d="M7.4 15.6a4.6 4.6 0 0 1 9.2 0"/><path d="M12 2.8v5.4M9.4 5.4L12 2.8l2.6 2.6"/>',
+    down:  '<path d="M3.2 19.4h17.6"/><path d="M7.4 15.6a4.6 4.6 0 0 1 9.2 0"/><path d="M12 8.2V2.8M9.4 5.6L12 8.2l2.6-2.6"/>'
   };
   function svg(k) {
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" ' +
       'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (P[k] || P.cloud) + '</svg>';
   }
-  // WMO 코드 → 한국어 한 마디 + 그림. 코드 표는 Open-Meteo 문서를 따른다.
+  // WMO 코드 → 한국어 한 마디 + 그림.
   var CODES = [
     [[0], '맑음', 'sun'],
     [[1], '대체로 맑음', 'part'],
@@ -105,6 +121,74 @@
     return [[], '흐림', 'cloud'];
   }
   function deg(v) { return (v == null || isNaN(v)) ? '–' : Math.round(v); }
+  function hhmm(iso) { var m = /T(\d{2}:\d{2})/.exec(String(iso || '')); return m ? m[1] : ''; }
+
+  // ---- 출처 어댑터 -------------------------------------------------------------------------
+  // 어느 날씨 서비스를 쓰든 화면이 받는 모양은 하나다. 새 출처를 붙일 때 이 형태만 맞추면 된다.
+  //
+  //   {
+  //     place, tz,                         // 서비스가 찾아 준 지점과 시간대 (확인용)
+  //     code,                              // WMO 기상 코드
+  //     temp, feels, hum,                  // 지금 기온 · 체감 · 습도
+  //     sunrise, sunset,                   // 'HH:MM' — 그 도시의 시간대로 이미 변환된 값
+  //     daily : [{ date, code, max, min, pop }, …],
+  //     at    : Date                       // 받아 온 시각
+  //   }
+  //
+  // sunrise / sunset 을 처음부터 이 형태에 넣어 둔 이유: 상업용 출처로 갈아 끼울 때 화면을 다시
+  // 만들지 않기 위해서다. 그 서비스가 일출·일몰을 주지 않으면 그 칸만 비면 되고, 화면은 해 뜨는
+  // 줄을 조용히 감춘다 — 없는 시간을 지어내지 않는다.
+  function get(url) {
+    // 노션 임베드 안에서 멈춘 채로 남지 않게 8초에서 끊는다
+    var ctl = ('AbortController' in window) ? new AbortController() : null;
+    var timer = ctl ? setTimeout(function () { ctl.abort(); }, 8000) : null;
+    return fetch(url, ctl ? { signal: ctl.signal } : undefined).then(function (r) {
+      if (timer) clearTimeout(timer);
+      if (!r.ok) throw new Error('http ' + r.status);
+      return r.json();
+    });
+  }
+
+  var PROVIDERS = {
+    // 키가 없어 브라우저에서 바로 부를 수 있다. 다만 무료 티어는 비상업 이용 전용이라
+    // 판매 기본 제공에는 들어가지 않는다(맨 위 주석).
+    'open-meteo': {
+      label: 'Open-Meteo',
+      attribution: '날씨 Open-Meteo',   // CC-BY 4.0 — 카드 아래에 항상 보인다
+      commercial: false,                 // 유료 제품의 기본 기능으로 쓸 수 없다
+      load: function (city) {
+        return get('https://geocoding-api.open-meteo.com/v1/search?name=' +
+            encodeURIComponent(city) + '&count=1&language=ko&format=json')
+          .then(function (g) {
+            var hit = g && g.results && g.results[0];
+            if (!hit) throw new Error('no-city');
+            return get('https://api.open-meteo.com/v1/forecast?latitude=' + hit.latitude +
+              '&longitude=' + hit.longitude +
+              '&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code' +
+              '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset' +
+              '&timezone=auto&forecast_days=7')
+              .then(function (f) { return { name: hit.name, f: f }; });
+          });
+      },
+      // 서비스가 돌려준 것을 공통 모양으로 옮긴다. 캐시에는 원본을 넣고 읽을 때마다 이것을 돌린다.
+      shape: function (raw) {
+        var f = raw.f, cur = f.current || {}, d = f.daily || {}, daily = [];
+        (d.time || []).forEach(function (s, i) {
+          var p = s.split('-');
+          daily.push({ date: new Date(+p[0], +p[1] - 1, +p[2]), code: d.weather_code[i],
+            max: d.temperature_2m_max[i], min: d.temperature_2m_min[i],
+            pop: d.precipitation_probability_max ? d.precipitation_probability_max[i] : null });
+        });
+        return { place: raw.name, tz: f.timezone || '', code: cur.weather_code,
+          temp: cur.temperature_2m, feels: cur.apparent_temperature, hum: cur.relative_humidity_2m,
+          sunrise: d.sunrise ? hhmm(d.sunrise[0]) : '', sunset: d.sunset ? hhmm(d.sunset[0]) : '',
+          daily: daily, at: new Date() };
+      }
+    }
+  };
+  // 출처를 바꿀 때 고치는 곳은 이 한 줄이다(그리고 위에 그 출처의 load/shape 를 더한다).
+  var PROVIDER_ID = 'open-meteo';
+  function provider() { return PROVIDERS[PROVIDER_ID]; }
 
   // ---- 옵션 ------------------------------------------------------------------------------
   IDP.options(W, [
@@ -118,7 +202,8 @@
 
   // ---- 씨앗 ------------------------------------------------------------------------------
   // 카탈로그 사진과 상세페이지는 인터넷이 끊겨도 같은 그림이 나와야 한다. d= 가 있으면 그 값만 쓰고
-  // 바깥을 부르지 않는다. 형식: 지금(코드,기온,체감,습도) | 하루(코드,최고,최저,강수확률) × N
+  // 바깥을 부르지 않는다.  d   = 지금(코드,기온,체감,습도) | 하루(코드,최고,최저,강수확률) × N
+  //                       sun = 일출|일몰  (예: 06:32|18:41)
   function seeded() {
     var raw = IDP.q.get('d');
     if (!raw) return null;
@@ -129,52 +214,22 @@
       var d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + (i - 1));
       daily.push({ date: d, code: g[i][0], max: g[i][1], min: g[i][2], pop: g[i][3] });
     }
-    return { code: g[0][0], temp: g[0][1], feels: g[0][2], hum: g[0][3], daily: daily, at: base, seed: true };
+    var sun = String(IDP.q.get('sun') || '').split('|');
+    var ok = function (s) { return /^\d{1,2}:\d{2}$/.test(s || '') ? s : ''; };
+    return { place: city(), code: g[0][0], temp: g[0][1], feels: g[0][2], hum: g[0][3],
+      sunrise: ok(sun[0]), sunset: ok(sun[1]), daily: daily, at: base, seed: true };
   }
 
-  // ---- 바깥에서 읽기 -----------------------------------------------------------------------
-  function get(url) {
-    // 노션 임베드 안에서 멈춘 채로 남지 않게 8초에서 끊는다
-    var ctl = ('AbortController' in window) ? new AbortController() : null;
-    var timer = ctl ? setTimeout(function () { ctl.abort(); }, 8000) : null;
-    return fetch(url, ctl ? { signal: ctl.signal } : undefined).then(function (r) {
-      if (timer) clearTimeout(timer);
-      if (!r.ok) throw new Error('http ' + r.status);
-      return r.json();
-    });
-  }
+  // ---- 캐시 ------------------------------------------------------------------------------
+  function key(c) { return CACHE + PROVIDER_ID + '.' + c; }
   function cacheGet(c) {
     try {
-      var v = JSON.parse(localStorage.getItem(CACHE + c) || 'null');
+      var v = JSON.parse(localStorage.getItem(key(c)) || 'null');
       return (v && Date.now() - v.t < TTL) ? v : null;
     } catch (e) { return null; }
   }
-  function cachePut(c, payload) {
-    try { localStorage.setItem(CACHE + c, JSON.stringify({ t: Date.now(), p: payload })); } catch (e) {}
-  }
-
-  function fetchCity(c) {
-    return get(GEO + '?name=' + encodeURIComponent(c) + '&count=1&language=ko&format=json')
-      .then(function (g) {
-        var hit = g && g.results && g.results[0];
-        if (!hit) throw new Error('no-city');
-        return get(FC + '?latitude=' + hit.latitude + '&longitude=' + hit.longitude +
-          '&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code' +
-          '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
-          '&timezone=auto&forecast_days=7')
-          .then(function (f) { return { name: hit.name, f: f }; });
-      });
-  }
-  function shape(payload) {
-    var f = payload.f, cur = f.current || {}, d = f.daily || {}, daily = [];
-    (d.time || []).forEach(function (s, i) {
-      var p = s.split('-');
-      daily.push({ date: new Date(+p[0], +p[1] - 1, +p[2]), code: d.weather_code[i],
-        max: d.temperature_2m_max[i], min: d.temperature_2m_min[i],
-        pop: d.precipitation_probability_max ? d.precipitation_probability_max[i] : null });
-    });
-    return { name: payload.name, code: cur.weather_code, temp: cur.temperature_2m,
-      feels: cur.apparent_temperature, hum: cur.relative_humidity_2m, daily: daily, at: new Date() };
+  function cachePut(c, raw) {
+    try { localStorage.setItem(key(c), JSON.stringify({ t: Date.now(), p: raw })); } catch (e) {}
   }
 
   // ---- 그리기 ----------------------------------------------------------------------------
@@ -201,12 +256,20 @@
       box.appendChild(el);
     });
 
+    // 해가 뜨고 지는 시각. 받지 못했으면 줄 자체를 감춘다.
+    var sr = $('sunrow'), row = '';
+    if (v.sunrise) row += '<span class="it"><span class="i">' + svg('up') + '</span>' +
+      '<span class="k">SUNRISE</span><span class="v">' + v.sunrise + '</span></span>';
+    if (v.sunset) row += '<span class="it"><span class="i">' + svg('down') + '</span>' +
+      '<span class="k">SUNSET</span><span class="v">' + v.sunset + '</span></span>';
+    sr.innerHTML = row; sr.hidden = !row;
+
     // 구매자가 ⚙ 에 적은 이름을 그대로 보여 준다. 위치 검색이 돌려주는 이름은 로마자일 때가 있어서
     // (부산 → Pusan) 자기가 적은 도시가 맞는지 오히려 알아보기 어렵다.
     $('place').textContent = city();
     $('body').hidden = false;
     $('msg').textContent = '';
-    $('src').textContent = v.seed ? '예시 화면' : '날씨 Open-Meteo';
+    $('src').textContent = v.seed ? '예시 화면' : provider().attribution;
     $('when').textContent = v.seed ? '' : (IDP.pad(v.at.getHours()) + ':' + IDP.pad(v.at.getMinutes()) + ' 기준');
   }
   function say(text, retry) {
@@ -224,20 +287,20 @@
   function load(fresh) {
     $('badge').textContent = IDP.opt(W, 'label', 'WEATHER');
     var s = seeded();
-    if (s) { s.name = city(); draw(s); return; }
+    if (s) { draw(s); return; }
 
-    var c = city();
+    var c = city(), pv = provider();
     $('place').textContent = c;
     var hit = !fresh && cacheGet(c);
-    if (hit) { draw(shape(hit.p)); return; }
+    if (hit) { draw(pv.shape(hit.p)); return; }
 
     say('날씨를 불러오는 중…');
-    fetchCity(c).then(function (payload) {
-      cachePut(c, payload);
-      draw(shape(payload));
+    pv.load(c).then(function (raw) {
+      cachePut(c, raw);
+      draw(pv.shape(raw));
     }, function (err) {
       var stale = cacheGet(c);
-      if (stale) { draw(shape(stale.p)); $('when').textContent = '지금은 새로 받지 못했어요'; return; }
+      if (stale) { draw(pv.shape(stale.p)); $('when').textContent = '지금은 새로 받지 못했어요'; return; }
       say(String(err && err.message) === 'no-city'
         ? '"' + c + '" 라는 도시를 찾지 못했어요. ⚙ 에서 도시 이름을 바꿔 보세요.'
         : '날씨를 불러오지 못했어요. 인터넷이 끊겼거나 날씨 서비스가 잠시 멈춘 것일 수 있어요.', true);
