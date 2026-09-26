@@ -273,7 +273,8 @@
   // 카탈로그 사진과 상세페이지는 인터넷이 끊겨도 같은 그림이 나와야 한다. d= 가 있으면 그 값만 쓰고
   // 바깥을 부르지 않는다.  d   = 지금(갈래,기온,습도) | 하루(갈래,최고,최저) × N
   //                       sun = 일출|일몰  (예: 06:32|18:41)
-  // 갈래는 위의 여덟 가지 이름 그대로 쓴다 — 예: d=part,11,45|part,13,3|cloud,12,4
+  // 지금 묶음의 네 번째 값은 바람(m/s)이고 없어도 된다 — 살아 있는 화면과 같은 줄이 나오게 하려고 둔다.
+  // 갈래는 위의 여덟 가지 이름 그대로 쓴다 — 예: d=part,11,45,1.4|part,13,3|cloud,12,4
   function seeded() {
     var raw = IDP.q.get('d');
     if (!raw) return null;
@@ -287,6 +288,7 @@
     var sun = String(IDP.q.get('sun') || '').split('|');
     var ok = function (s) { return /^\d{1,2}:\d{2}$/.test(s || '') ? s : ''; };
     return { code: g[0][0], temp: +g[0][1], hum: +g[0][2],
+      wind: g[0].length > 3 ? +g[0][3] : null,
       sunrise: ok(sun[0]), sunset: ok(sun[1]), daily: daily, at: base, seed: true };
   }
 
