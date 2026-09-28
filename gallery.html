@@ -20,7 +20,29 @@
   .bar .back { background: #2f2f2f; border-color: #2f2f2f; color: #fff; }
   .bar .t { margin-left: auto; font: 12px sans-serif; color: #999; }
   body.dark .bar a, body.dark .bar button:not(.back) { background: #252525; border-color: #333; color: #ccc; }
+  /* WIDGET STATION(REQ-074) — 종류별로 나눠 보고 · 전체 색을 한 번에 · 위젯마다 색을 따로 · 링크 복사 */
+  h1 { font: 700 22px/1.2 sans-serif; letter-spacing: .02em; margin: 6px 0 4px; color: #2f2f2f; }
+  .lead { font: 13px/1.6 sans-serif; color: #888; margin: 0 0 14px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 12px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+  .tabs button { font: 600 15px sans-serif; border: 0; background: none; color: #aaa; padding: 4px 0; cursor: pointer; }
+  .tabs button[aria-pressed=true] { color: #2f2f2f; border-bottom: 2px solid #2f2f2f; }
+  .tabs .n { font: 11px sans-serif; color: #bbb; margin-left: 3px; }
+  .tone { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 16px; font: 12px sans-serif; color: #888; }
+  .dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ddd; padding: 0; cursor: pointer; }
+  .dot[aria-pressed=true] { box-shadow: 0 0 0 2px #2f2f2f; }
+  .mode { font: 12px sans-serif; padding: 5px 12px; border-radius: 999px; border: 1px solid #e4e1dc; background: #fff; color: #555; cursor: pointer; }
+  .mode[aria-pressed=true] { background: #2f2f2f; color: #fff; border-color: #2f2f2f; }
+  .cell { border: 1px solid #eee; border-radius: 16px; overflow: hidden; background: #fff; }
+  .cell iframe { display: block; }
+  .foot { display: flex; align-items: center; gap: 6px; padding: 8px 10px 10px; border-top: 1px solid #f1f1f1; }
+  .foot .nm { flex: 1; min-width: 0; font: 12.5px sans-serif; color: #444; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .foot .dot { width: 14px; height: 14px; border-width: 1px; }
+  .foot .cp { font: 11px sans-serif; padding: 5px 10px; border-radius: 999px; border: 1px solid #e4e1dc; background: #fff; color: #555; cursor: pointer; white-space: nowrap; }
+  @media (max-width: 420px) { .foot .dot { display: none; } }
+  body.dark h1 { color: #eee; } body.dark .cell { background: #202020; border-color: #333; } body.dark .foot { border-color: #2a2a2a; }
+  body.dark .foot .nm { color: #ccc; } body.dark .tabs button[aria-pressed=true] { color: #eee; border-color: #eee; }
 </style>
+<script src="config/themes.js"></script>
 </head>
 <body>
 <nav class="bar" aria-label="스튜디오로 돌아가기">
@@ -42,6 +64,10 @@
     };
   })();
 </script>
+<h1>WIDGET STATION</h1>
+<p class="lead">종류별로 골라 보고, 색을 한 번에 바꾸거나 위젯마다 따로 바꾼 뒤 「링크 복사」 → 노션에서 /임베드 에 붙여 넣으면 끝이에요.</p>
+<div class="tabs" id="tabs"></div>
+<div class="tone" id="tone"></div>
 <div class="grid" id="grid"></div>
 <script>
   // gallery.html?theme=pink&mode=dark — every widget in one colour, for checking a theme at a glance
@@ -92,14 +118,88 @@
     vision: '&year=2027&line=%EC%98%AC%ED%95%B4%20%EB%82%98%EB%8A%94%20%EC%9D%B4%EB%9F%B0%20%EB%AA%A8%EC%8A%B5%EC%9C%BC%EB%A1%9C%20%EC%A7%80%EB%82%B4%EA%B3%A0%20%EC%8B%B6%EB%8B%A4&words=%EB%8B%AC%EB%A6%AC%EA%B8%B0%2C%EA%B8%B0%EB%A1%9D%2C%EC%97%AC%ED%96%89%2C%EB%B0%B0%EC%9B%80%2C%EA%B4%80%EA%B3%84%2C%EC%89%BC'
   };
   // ID ARCHIVE first: the widgets that exist nowhere else are what the catalogue is for.
-  ['goal5', 'goalchain', 'mandal', 'mandalfull', 'vision', 'roadmap', 'bucket', 'habityear', 'habitdots',
+  var ORDER = ['goal5', 'goalchain', 'mandal', 'mandalfull', 'vision', 'roadmap', 'bucket', 'habityear', 'habitdots',
    'clock', 'week', 'calendar', 'timeline', 'top3', 'routine', 'water', 'checkin', 'streak', 'mood', 'journal', 'memo',
    'focus', 'timer', 'progress', 'dday', 'year', 'focusnote', 'goalprogress', 'reading', 'review', 'quote', 'moodboard',
-   'worklog', 'career', 'focuslog', 'todo', 'calc', 'board', 'chart', 'links', 'playlist', 'mp3', 'countdown', 'weekplan', 'analog', 'alarm', 'summary', 'upnext', 'weather', 'worldclock', 'holiday'].forEach(function (w) {
-    var f = document.createElement('iframe');
-    f.src = w + '.html' + q + (extra[w] || ''); f.title = w;
-    document.getElementById('grid').appendChild(f);
-  });
+   'worklog', 'career', 'focuslog', 'todo', 'calc', 'board', 'chart', 'links', 'playlist', 'mp3', 'countdown', 'weekplan', 'analog', 'alarm', 'summary', 'upnext', 'weather', 'worldclock', 'holiday'];
+  var NAMES = {"goal5":["ID ARCHIVE","5-STEP GOAL"],"goalchain":["ID ARCHIVE","GOAL CHAIN (10년 → 오늘)"],"mandal":["ID ARCHIVE","미니 만다라트 (3×3)"],"mandalfull":["ID ARCHIVE","만다라트 전체 (9×9)"],"vision":["ID ARCHIVE","VISION BOARD"],"roadmap":["ID ARCHIVE","LIFE ROADMAP"],"bucket":["ID ARCHIVE","BUCKET LIST"],"habityear":["ID ARCHIVE","YEAR TRACKER (습관 1년)"],"habitdots":["ID ARCHIVE","HABIT DOTS (습관 4개 · 1년)"],"clock":["오늘","시계 · 오늘 날짜"],"analog":["오늘","아날로그 시계"],"worldclock":["오늘","세계 시계 (도시 4곳)"],"alarm":["오늘","알람 · 리마인더"],"week":["오늘","이번 주 7일"],"weekplan":["오늘","주간 계획 (요일별 한 줄)"],"calendar":["오늘","미니 캘린더"],"timeline":["오늘","타임로그 바"],"top3":["오늘","오늘의 Top 3"],"summary":["오늘","오늘 요약 (위젯 모아보기)"],"upnext":["오늘","UP NEXT (오늘 · 내일 · 이번 주)"],"weather":["오늘","날씨 (지금 · 며칠 · 일출/일몰)"],"todo":["오늘","투두리스트"],"goalprogress":["목표","목표 · 프로젝트 진행률"],"focusnote":["목표","이번 주 · 이번 달 포커스"],"quote":["목표","나의 한 문장"],"board":["목표","비주얼 보드 (배치 4종)"],"moodboard":["목표","무드보드 (사진)"],"focus":["시간","집중 타이머"],"focuslog":["시간","집중 기록 (습관별 누적)"],"timer":["시간","타이머 · 스톱워치"],"progress":["시간","진행률 (일·주·월·연)"],"dday":["시간","D-Day · 기념일"],"countdown":["시간","카운트다운 (여러 날)"],"holiday":["시간","공휴일 · 기념일 카운트다운"],"year":["시간","올해 365일 점"],"worklog":["업무","주간 업무일지"],"memo":["업무","메모지"],"career":["커리어","CAREER SUMMARY"],"calc":["도구","스마트 계산기"],"links":["도구","바로가기"],"playlist":["도구","플레이리스트"],"mp3":["도구","MP3 플레이어 (사진 · 링크)"],"journal":["기록","한 줄 일기"],"chart":["기록","미니 차트 (막대·도넛·선)"],"review":["기록","주간 · 월간 리뷰"],"reading":["기록","독서 진행률"],"checkin":["건강","데일리 체크인"],"routine":["건강","루틴 체크"],"water":["건강","물 마시기"],"streak":["건강","습관 스트릭"],"mood":["건강","기분 · 에너지"]};
+  // 겹치는 위젯은 두 곳 모두에(오너: "겹치는 위젯은 항목 둘 다 중복되게 있어도 돼")
+  var CATS = [
+    ['all', 'All'],
+    ['idarchive', 'ID ARCHIVE 전용', ['goal5', 'goalchain', 'mandal', 'mandalfull', 'vision', 'roadmap', 'bucket', 'habityear', 'habitdots']],
+    ['time', '시간 & 일정', ['clock', 'analog', 'worldclock', 'alarm', 'week', 'weekplan', 'calendar', 'timeline', 'upnext', 'weather', 'focus', 'timer', 'progress', 'dday', 'countdown', 'holiday', 'year']],
+    ['goal', '목표 & 습관', ['goal5', 'goalchain', 'mandal', 'mandalfull', 'vision', 'roadmap', 'bucket', 'habityear', 'habitdots', 'goalprogress', 'focusnote', 'top3', 'routine', 'water', 'streak']],
+    ['record', '기록 & 독서', ['journal', 'memo', 'review', 'reading', 'checkin', 'mood', 'chart', 'focuslog', 'worklog', 'career', 'playlist', 'mp3']],
+    ['tool', '생산성 & 도구', ['todo', 'top3', 'summary', 'weekplan', 'worklog', 'memo', 'calc', 'links', 'timer', 'focus']],
+    ['deco', '데코 & 힐링', ['quote', 'board', 'moodboard', 'vision', 'playlist', 'mp3', 'analog', 'clock', 'weather']]
+  ];
+  var P = new URLSearchParams(q);
+  var TH = (window.IDP_CONFIG || {}).themes || { lavender: { soft: '#d9d5f5' } };
+  var THEMES = Object.keys(TH);
+  var st = { cat: 'all', theme: P.get('theme') || 'lavender', dark: P.get('mode') === 'dark', own: {} };
+  var BASE = location.href.replace(/[?#].*$/, '').replace(/[^/]*$/, '');
+  function nameOf(w) { return (NAMES[w] && NAMES[w][1]) || w; }
+  function params(w) { return '?theme=' + (st.own[w] || st.theme) + (st.dark ? '&mode=dark' : ''); }
+  function dot(t, small) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'dot'; b.title = t;
+    b.style.background = (TH[t] || {}).soft || '#ddd';
+    return b;
+  }
+  function tabs() {
+    var el = document.getElementById('tabs'); el.innerHTML = '';
+    CATS.forEach(function (c) {
+      var b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-pressed', String(st.cat === c[0]));
+      b.textContent = c[1];
+      var n = document.createElement('span'); n.className = 'n'; n.textContent = (c[2] || ORDER).length; b.appendChild(n);
+      b.onclick = function () { st.cat = c[0]; tabs(); grid(); };
+      el.appendChild(b);
+    });
+  }
+  function tone() {
+    var el = document.getElementById('tone'); el.innerHTML = '전체 색 ';
+    THEMES.forEach(function (t) {
+      var b = dot(t); b.setAttribute('aria-pressed', String(st.theme === t));
+      b.onclick = function () { st.theme = t; st.own = {}; tone(); grid(); };
+      el.appendChild(b);
+    });
+    var m = document.createElement('button'); m.type = 'button'; m.className = 'mode'; m.textContent = '다크'; m.setAttribute('aria-pressed', String(st.dark));
+    m.onclick = function () { st.dark = !st.dark; document.body.className = st.dark ? 'dark' : ''; tone(); grid(); };
+    el.appendChild(m);
+  }
+  function card(w) {
+    var cell = document.createElement('div'); cell.className = 'cell';
+    var f = document.createElement('iframe'); f.loading = 'lazy'; f.title = nameOf(w);
+    f.src = w + '.html' + params(w) + (extra[w] || '');
+    var foot = document.createElement('div'); foot.className = 'foot';
+    var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = nameOf(w);
+    foot.appendChild(nm);
+    THEMES.forEach(function (t) {   // 이 위젯만 따로 바꾸기
+      var d = dot(t); d.title = t + ' — 이 위젯만';
+      d.setAttribute('aria-pressed', String((st.own[w] || st.theme) === t));
+      d.onclick = function () {
+        st.own[w] = t; f.src = w + '.html' + params(w) + (extra[w] || '');
+        [].forEach.call(foot.querySelectorAll('.dot'), function (x) { x.setAttribute('aria-pressed', String(x === d)); });
+      };
+      foot.appendChild(d);
+    });
+    var cp = document.createElement('button'); cp.type = 'button'; cp.className = 'cp'; cp.textContent = '링크 복사';
+    cp.onclick = function () {   // 견본 내용 없이 빈 위젯 — 구매자가 자기 내용을 적는다
+      var url = BASE + w + '.html' + params(w);
+      var done = function () { cp.textContent = '복사됨 ✓'; setTimeout(function () { cp.textContent = '링크 복사'; }, 1600); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { prompt('이 주소를 복사해 노션 /임베드 에 붙여 넣으세요', url); });
+      else prompt('이 주소를 복사해 노션 /임베드 에 붙여 넣으세요', url);
+    };
+    foot.appendChild(cp);
+    cell.appendChild(f); cell.appendChild(foot);
+    return cell;
+  }
+  function grid() {
+    var g = document.getElementById('grid'); g.innerHTML = '';
+    var c = CATS.filter(function (x) { return x[0] === st.cat; })[0];
+    (c && c[2] ? c[2] : ORDER).forEach(function (w) { g.appendChild(card(w)); });
+  }
+  if (st.dark) document.body.className = 'dark';
+  tabs(); tone(); grid();
 </script>
 </body>
 </html>
