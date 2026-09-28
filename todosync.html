@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · To-Do (Notion)</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 520px; margin: 0 auto; }
+  [hidden] { display: none !important; }
+  .nav { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 2px; }
+  .nav button { width: 26px; height: 26px; padding: 0; border-radius: 50%; font-size: 12px; line-height: 24px; letter-spacing: 0; }
+  .nav .d { font-size: 12.5px; color: var(--ink); min-width: 104px; text-align: center; cursor: pointer; }
+  .head { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 12px; }
+  .head h2 { margin: 0; font-size: 22px; letter-spacing: .02em; color: color-mix(in srgb, var(--deep) 75%, #2a2a2a); font-weight: 700; }
+  .pill { font-size: 10.5px; padding: 3px 10px; border-radius: 999px; background: var(--tint); color: color-mix(in srgb, var(--deep) 70%, #2a2a2a); }
+  .bar { margin-top: 10px; height: 4px; border-radius: 999px; background: var(--tint); overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--deep); border-radius: 999px; transition: width .25s; }
+  .cnt { text-align: right; font-size: 9.5px; color: var(--sub); margin-top: 4px; letter-spacing: .04em; }
+  .list { margin-top: 6px; display: flex; flex-direction: column; gap: 2px; min-height: 60px; }
+  .it { display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 10px; }
+  .it:hover { background: var(--tint); }
+  .chk { flex: none; width: 18px; height: 18px; border-radius: 50%; padding: 0; border: 1.5px solid color-mix(in srgb, var(--deep) 55%, transparent);
+         background: var(--paper); color: #fff; font-size: 10px; line-height: 15px; letter-spacing: 0; }
+  .it.done .chk { background: var(--deep); border-color: var(--deep); }
+  .t { flex: 1; min-width: 0; font-size: 13px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .it.done .t { color: var(--sub); text-decoration: line-through; }
+  .ic { flex: none; border: 0; background: none; padding: 2px; color: var(--sub); font-size: 13px; line-height: 1; letter-spacing: 0; opacity: .55; }
+  .ic:hover { background: none; opacity: 1; }
+  .ic.star.on { color: color-mix(in srgb, var(--deep) 80%, #c9a100); opacity: 1; }
+  .add { margin-top: 10px; display: flex; gap: 8px; align-items: center; background: var(--tint); border-radius: 999px; padding: 5px 5px 5px 14px; }
+  .add input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; font-size: 13px; color: var(--ink); }
+  .add input:focus { outline: none; }
+  .add button { flex: none; width: 30px; height: 30px; border-radius: 50%; padding: 0; background: var(--deep); color: #fff; border: 0; font-size: 18px; line-height: 28px; letter-spacing: 0; }
+  .gate { margin-top: 16px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
+  .gate button { margin-top: 10px; padding: 9px 18px; border-radius: 999px; background: var(--deep); color: #fff; border: 0; font-size: 12px; letter-spacing: .04em; text-transform: none; }
+  .state { font-size: 9.5px; color: var(--sub); text-align: center; margin-top: 8px; letter-spacing: .04em; min-height: 12px; }
+  .popup { text-align: center; padding: 30px 16px; font-size: 13px; color: var(--ink); line-height: 1.8; }
+  .popup code { display: block; margin: 10px auto; padding: 8px; background: var(--tint); border-radius: 8px; font-size: 12px; word-break: break-all; max-width: 360px; }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="grow"><div class="wrap">
+    <div class="nav"><button id="prev" aria-label="전날">‹</button><span class="d" id="day" title="오늘로"></span><button id="next" aria-label="다음 날">›</button></div>
+    <div class="head"><h2 id="title">TO-DO</h2><span class="pill" id="left"></span></div>
+    <div class="bar"><i id="barI"></i></div>
+    <div class="cnt" id="cnt"></div>
+    <div class="list" id="list"></div>
+    <div class="gate" id="gate" hidden></div>
+    <form class="add" id="add"><input id="inp" placeholder="할 일 추가…" maxlength="200" autocomplete="off"><button aria-label="추가">+</button></form>
+    <div class="state" id="state"></div>
+  </div></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // 노션 TASKS 와 양방향으로 이어지는 할 일 위젯 — 적은 것은 이 브라우저가 아니라 구매자의 노션 표에 저장된다.
+  // 서버(sync/worker.mjs)가 켜져 있어야 한다: IDP_CONFIG.syncBase. 연결 전에는 무엇도 저장하지 않는다.
+  // ?demo=1 은 갤러리 · 상세페이지용 견본(저장 없음, 새로고침하면 처음으로).
+  var SYNC = (location.hostname === 'localhost' && IDP.q.get('sync')) || (window.IDP_CONFIG && IDP_CONFIG.syncBase) || '';   // localhost 에서만 시험 서버
+  var DEMO = IDP.q.get('demo') === '1';
+  var KEY = 'idarchive.sync.wid';
+  function $(id) { return document.getElementById(id); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  var W = ['일', '월', '화', '수', '목', '금', '토'];
+  var day = IDP.now(); day.setHours(0, 0, 0, 0);
+  var items = [], busy = 0;
+
+  // ── 연결 창(팝업): 노션에서 돌아오면 위젯 번호를 위젯에게 건네고 닫힌다 ──
+  var m = /#sync=([A-Za-z0-9_-]+)/.exec(location.hash);
+  if (m) {
+    var v = m[1];
+    var msg = { cancelled: '연결을 취소했어요.', failed: '연결하지 못했어요. 잠시 뒤 다시 눌러 주세요.', 'no-planner': '플래너 페이지를 찾지 못했어요. 노션 연결 화면에서 「ID ARCHIVE PLANNER」 페이지를 골라 주세요.' }[v];
+    document.body.innerHTML = '<div class="popup" id="pp"></div>';
+    var pp = $('pp');
+    if (msg) pp.textContent = msg;
+    else if (window.opener) {
+      try { window.opener.postMessage({ idpSync: v }, location.origin); } catch (e) {}
+      pp.textContent = '노션과 연결됐어요. 이 창은 닫아도 돼요.';
+      setTimeout(function () { window.close(); }, 1500);
+    } else {
+      // 같은 브라우저 저장소면 바로 쓰이고, 노션 휴대폰 앱처럼 저장소가 다르면 번호를 붙여 넣는다
+      try { localStorage.setItem(KEY, v); } catch (e) {}
+      pp.innerHTML = '노션과 연결됐어요.<br>위젯에 할 일이 보이지 않으면 위젯의 ⚙ → 「연결 번호」에 아래 번호를 붙여 넣어 주세요.<code></code><a href="' + location.pathname + location.search + '">위젯으로 돌아가기</a>';
+      pp.querySelector('code').textContent = v;
+    }
+    throw new Error('popup');   // 위젯 화면은 그리지 않는다
+  }
+
+  function wid() { var o = IDP.opt('todosync', 'code', ''); if (o) return o; try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+  window.addEventListener('message', function (e) {
+    if (e.origin !== location.origin || !e.data || !e.data.idpSync) return;
+    try { localStorage.setItem(KEY, e.data.idpSync); } catch (err) {}
+    load();
+  });
+
+  function api(method, path, body) {
+    busy++; state('');
+    return fetch(SYNC + path, { method: method, headers: { Authorization: 'Widget ' + wid(), 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) { var e = new Error(d.message || '오류'); e.code = d.error; throw e; } return d; }); })
+      .finally(function () { busy--; });
+  }
+  function state(t) { $('state').textContent = t; }
+  function gate(html, btn) {
+    $('gate').hidden = false; $('list').innerHTML = ''; $('add').hidden = true;
+    $('gate').innerHTML = html + (btn ? '<br><button type="button" id="go">' + btn + '</button>' : '');
+    if (btn) $('go').onclick = connect;
+    render(true);
+  }
+  function connect() {
+    var ret = location.origin + location.pathname + '?theme=' + encodeURIComponent(IDP.q.get('theme') || '');
+    window.open(SYNC + (/localhost/.test(SYNC) ? '/dev-connect' : '/connect') + '?return=' + encodeURIComponent(ret), 'idp-sync', 'width=520,height=720');
+  }
+
+  function render(skipList) {
+    $('title').textContent = IDP.opt('todosync', 'label', 'TO-DO');
+    $('day').textContent = (day.getMonth() + 1) + '월 ' + day.getDate() + '일 (' + W[day.getDay()] + ')';
+    var done = items.filter(function (i) { return i.done; }).length, n = items.length;
+    $('left').textContent = (n - done) + ' left';
+    $('barI').style.width = n ? Math.round(done / n * 100) + '%' : '0';
+    $('cnt').textContent = n ? done + '/' + n + ' 완료' : '';
+    if (skipList) return;
+    var L = $('list'); L.innerHTML = '';
+    items.slice().sort(function (a, b) { return (a.done - b.done) || (b.important - a.important); }).forEach(function (it) {
+      var row = document.createElement('div'); row.className = 'it' + (it.done ? ' done' : '');
+      var c = document.createElement('button'); c.className = 'chk'; c.type = 'button'; c.textContent = it.done ? '✓' : ''; c.setAttribute('aria-label', '완료');
+      c.onclick = function () { patch(it, { done: !it.done }); };
+      var t = document.createElement('span'); t.className = 't'; t.textContent = it.title;
+      var s = document.createElement('button'); s.className = 'ic star' + (it.important ? ' on' : ''); s.type = 'button'; s.textContent = it.important ? '★' : '☆'; s.setAttribute('aria-label', '중요');
+      s.onclick = function () { patch(it, { important: !it.important }); };
+      var x = document.createElement('button'); x.className = 'ic'; x.type = 'button'; x.textContent = '✕'; x.setAttribute('aria-label', '지우기');
+      x.onclick = function () { remove(it); };
+      row.appendChild(c); row.appendChild(t); row.appendChild(s); row.appendChild(x);
+      L.appendChild(row);
+    });
+    if (!n) L.innerHTML = '<div class="gate">이 날은 할 일이 없어요.</div>';
+  }
+
+  function load() {
+    $('gate').hidden = true; $('add').hidden = false;
+    if (DEMO) { if (!items.length) items = [{ id: 'a', title: '할 일 추가하기', done: true, important: false }, { id: 'b', title: '상세페이지 초안 한 장', done: false, important: true }, { id: 'c', title: '저녁 30분 걷기', done: false, important: false }]; render(); state('견본 · 노션과 연결하면 내 할 일이 보여요'); return; }
+    if (!SYNC) return gate('노션 연결 준비 중이에요.');
+    if (!wid()) return gate('노션의 할 일 표(TASKS)와 이어지는 위젯이에요.<br>여기서 적고 체크하면 노션에도, 노션에서 고치면 여기에도 보여요.', '노션과 연결하기');
+    return api('GET', '/v1/todo?date=' + iso(day)).then(function (d) { items = d.items; render(); })
+      .catch(function (e) {
+        if (e.code === 'not_connected' || e.code === 'notion_revoked') { try { localStorage.removeItem(KEY); } catch (err) {} return gate('노션 연결이 끊겼어요.', '다시 연결하기'); }
+        if (e.code === 'not_shared') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
+        state(e.message);
+      });
+  }
+  function patch(it, change) {
+    var before = Object.assign({}, it); Object.assign(it, change); render();
+    if (DEMO) return;
+    api('PATCH', '/v1/todo/' + it.id, change).then(function (d) { Object.assign(it, d); render(); })
+      .catch(function (e) { Object.assign(it, before); render(); state(e.message); });
+  }
+  function remove(it) {
+    var i = items.indexOf(it); items.splice(i, 1); render();
+    if (DEMO) return;
+    api('DELETE', '/v1/todo/' + it.id).catch(function (e) { items.splice(i, 0, it); render(); state(e.message); });
+  }
+  $('add').onsubmit = function (e) {
+    e.preventDefault();
+    var t = $('inp').value.trim(); if (!t) return;
+    $('inp').value = '';
+    var tmp = { id: 'tmp' + Date.now(), title: t, done: false, important: false }; items.push(tmp); render();
+    if (DEMO) return;
+    api('POST', '/v1/todo', { date: iso(day), title: t }).then(function (d) { Object.assign(tmp, d); render(); })
+      .catch(function (err) { items.splice(items.indexOf(tmp), 1); render(); state(err.message); });
+  };
+  function move(n) { day.setDate(day.getDate() + n); items = DEMO ? items : []; render(); load(); }
+  $('prev').onclick = function () { move(-1); };
+  $('next').onclick = function () { move(1); };
+  $('day').onclick = function () { day = IDP.now(); day.setHours(0, 0, 0, 0); move(0); };
+  // 노션에서 고친 것도 곧 보이게 — 보이는 동안 30초마다 · 다시 볼 때 바로
+  setInterval(function () { if (!document.hidden && !busy && !DEMO && wid() && SYNC) load(); }, 30000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && !DEMO && wid() && SYNC) load(); });
+  IDP.options('todosync', [
+    { k: 'label', label: '제목', ph: 'TO-DO' },
+    { k: 'code', label: '연결 번호(휴대폰 앱에서 연결했을 때만)', ph: '', secret: true }
+  ], function () { render(); load(); });
+  render(); load();
+</script>
+</body>
+</html>

@@ -109,7 +109,10 @@
         if (k && k.indexOf(pre) === 0) keys[k] = localStorage.getItem(k);
       }
     } catch (e) {}
-    return { t: Date.now(), o: optsFor(w), k: keys };
+    // secret 표시가 있는 설정(예: 노션 연결 번호)은 공유 링크에 절대 담지 않는다 — 링크를 본 사람이 내 노션을 고칠 수 있게 되므로
+    var o = Object.assign({}, optsFor(w));
+    optDefs.forEach(function (d) { if (d.secret) delete o[d.k]; });
+    return { t: Date.now(), o: o, k: keys };
   }
   function lenOf(pay) {
     return (location.origin + location.pathname).length + 4 +
