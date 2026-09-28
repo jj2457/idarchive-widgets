@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · MP3 Player</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .device [hidden] { display: none !important; }
+  .stage { display: flex; justify-content: center; align-items: flex-start; padding-top: 8px; }
+  .device { width: 216px; border-radius: 30px; padding: 14px 14px 18px;
+            background: linear-gradient(160deg, color-mix(in srgb, var(--soft) 70%, #fff) 0%, var(--soft) 55%, color-mix(in srgb, var(--soft) 80%, var(--deep)) 100%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 6px color-mix(in srgb, var(--deep) 18%, transparent), 0 10px 26px color-mix(in srgb, var(--deep) 22%, transparent); }
+  .screen { position: relative; aspect-ratio: 4 / 3.3; border-radius: 12px; overflow: hidden; cursor: pointer;
+            background: var(--paper); box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--deep) 30%, #222), inset 0 0 0 4px rgba(255,255,255,.35); }
+  .screen img { position: absolute; inset: 3px; width: calc(100% - 6px); height: calc(100% - 6px); object-fit: cover; border-radius: 9px; }
+  .art { position: absolute; inset: 3px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+         background: repeating-linear-gradient(135deg, var(--tint) 0 10px, var(--paper) 10px 20px); color: var(--deep); }
+  .shade { position: absolute; left: 3px; right: 3px; bottom: 3px; padding: 22px 10px 8px; border-radius: 0 0 9px 9px;
+           background: linear-gradient(transparent, rgba(0,0,0,.55)); color: #fff; }
+  .shade .t { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+  .shade .h { display: flex; justify-content: space-between; font-size: 9.5px; opacity: .85; margin-top: 2px; letter-spacing: .04em; }
+  .top { position: absolute; left: 3px; right: 3px; top: 3px; display: flex; justify-content: space-between; padding: 5px 8px;
+         font-size: 8.5px; letter-spacing: .18em; color: #fff; background: linear-gradient(rgba(0,0,0,.35), transparent); border-radius: 9px 9px 0 0; }
+  .dots { display: flex; justify-content: center; gap: 5px; margin: 9px 0 2px; min-height: 5px; }
+  .dots i { width: 5px; height: 5px; border-radius: 50%; background: color-mix(in srgb, var(--deep) 25%, transparent); }
+  .dots i.on { background: var(--deep); }
+  .wheel { position: relative; width: 150px; height: 150px; margin: 10px auto 0; border-radius: 50%;
+           background: color-mix(in srgb, var(--paper) 88%, var(--soft));
+           box-shadow: inset 0 2px 5px color-mix(in srgb, var(--deep) 16%, transparent), 0 1px 0 rgba(255,255,255,.8); }
+  .wheel button { position: absolute; border: 0; background: transparent; padding: 6px; color: color-mix(in srgb, var(--deep) 70%, #2a2a2a); cursor: pointer; line-height: 0; }
+  .wheel button:hover { background: transparent; opacity: .7; }
+  .wheel .menu { top: 8px; left: 50%; transform: translateX(-50%); font-size: 9px; letter-spacing: .2em; line-height: 1; font-weight: 600; }
+  .wheel .prev { left: 8px; top: 50%; transform: translateY(-50%); }
+  .wheel .next { right: 8px; top: 50%; transform: translateY(-50%); }
+  .wheel .pp { bottom: 8px; left: 50%; transform: translateX(-50%); }
+  .wheel .center { width: 56px; height: 56px; left: 47px; top: 47px; border-radius: 50%; padding: 0;
+                   background: var(--deep); color: #fff; box-shadow: 0 2px 6px color-mix(in srgb, var(--deep) 40%, transparent);
+                   display: flex; align-items: center; justify-content: center; }
+  .wheel .center:hover { background: var(--deep); opacity: .9; }
+  .list { position: absolute; inset: 3px; border-radius: 9px; background: var(--paper); overflow: auto; padding: 6px 0; }
+  .list div { display: flex; gap: 8px; align-items: center; padding: 6px 10px; font-size: 11px; cursor: pointer; }
+  .list div.on { background: var(--deep); color: #fff; }
+  .list div b { font-weight: 400; font-size: 9px; opacity: .7; width: 14px; }
+  .list div span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .empty { position: absolute; inset: 3px; display: flex; align-items: center; justify-content: center; text-align: center;
+           font-size: 10.5px; line-height: 1.7; color: var(--sub); background: var(--paper); border-radius: 9px; padding: 8px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">MY PLAYER</div><span class="caps" id="count"></span></div>
+  <div class="grow"><div class="stage">
+    <div class="device">
+      <div class="screen" id="screen" role="button" tabindex="0" aria-label="지금 곡 열기">
+        <div class="art" id="art"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+        <img id="pic" alt="" hidden>
+        <div class="top"><span id="topL">NOW PLAYING</span><span id="topR"></span></div>
+        <div class="shade"><div class="t" id="nowT"></div><div class="h"><span id="nowH"></span><span id="nowN"></span></div></div>
+        <div class="list" id="list" hidden></div>
+        <div class="empty" id="empty" hidden>⚙ 에서 제목 · 링크 · 사진을<br>하나씩 넣으면 나만의 MP3 가 돼요.</div>
+      </div>
+      <div class="dots" id="dots"></div>
+      <div class="wheel">
+        <button class="menu" id="menu" aria-label="목록 보기">MENU</button>
+        <button class="prev" id="prev" aria-label="이전"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11 6 3 12l8 6zM21 6l-8 6 8 6z"/></svg></button>
+        <button class="next" id="next" aria-label="다음"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m13 6 8 6-8 6zM3 6l8 6-8 6z"/></svg></button>
+        <button class="pp" id="pp" aria-label="열기"><svg width="18" height="12" viewBox="0 0 30 20" fill="currentColor"><path d="M2 2v16l11-8z"/><path d="M18 2h3.5v16H18zM25 2h3.5v16H25z"/></svg></button>
+        <button class="center" id="play" aria-label="지금 곡 열기"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+      </div>
+    </div>
+  </div></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // A decoratable MP3 player of links. Each item is a title, a link (YouTube, Spotify, Melon …) and a photo.
+  // Nothing is played or recorded here — ▶ opens the link in a new tab. ◀◀ ▶▶ turn to the previous / next photo and link.
+  // A photo picked from the device stays in this browser; a photo address travels with the widget's link.
+  var LIST = [], cur = 0, listOpen = false;
+  function readOpts() {
+    LIST = IDP.listParse(IDP.opt('mp3', 'items', ''), 3).map(function (f) {
+      return /^https?:\/\//.test(f[1]) ? { n: f[0] || '플레이리스트', u: f[1], img: f[2] } : null;
+    }).filter(Boolean).slice(0, 12);
+    if (cur >= LIST.length) cur = 0;
+  }
+  function host(u) { try { return new URL(u).hostname.replace(/^www\.|^m\./, ''); } catch (e) { return ''; } }
+  function open(i) { var l = LIST[i]; if (l) window.open(l.u, '_blank', 'noopener,noreferrer'); }
+  function $(id) { return document.getElementById(id); }
+  function render() {
+    $('badge').textContent = IDP.opt('mp3', 'label', 'MY PLAYER');
+    var has = !!LIST.length;
+    $('empty').hidden = has;
+    $('count').textContent = has ? LIST.length + '곡' : '';
+    $('topR').textContent = has ? (cur + 1) + ' / ' + LIST.length : '';
+    var l = LIST[cur] || {}, src = has ? IDP.photo(l.img) : '';
+    $('pic').hidden = !src; if (src) $('pic').src = src; else $('pic').removeAttribute('src');
+    $('art').hidden = !!src;
+    $('nowT').textContent = l.n || '';
+    $('nowH').textContent = l.u ? host(l.u) : '';
+    $('nowN').textContent = has ? '▶ 눌러서 열기' : '';
+    var dots = $('dots'); dots.innerHTML = '';
+    LIST.forEach(function (_, i) { var d = document.createElement('i'); if (i === cur) d.className = 'on'; dots.appendChild(d); });
+    var box = $('list'); box.hidden = !listOpen || !has; box.innerHTML = '';
+    LIST.forEach(function (it, i) {
+      var row = document.createElement('div'); if (i === cur) row.className = 'on';
+      var b = document.createElement('b'); b.textContent = String(i + 1).padStart(2, '0');
+      var s = document.createElement('span'); s.textContent = it.n;
+      row.appendChild(b); row.appendChild(s);
+      row.onclick = function (e) { e.stopPropagation(); cur = i; listOpen = false; render(); };
+      box.appendChild(row);
+    });
+    $('topL').textContent = listOpen ? 'PLAYLIST' : 'NOW PLAYING';
+  }
+  function step(d) { if (LIST.length) { cur = (cur + d + LIST.length) % LIST.length; listOpen = false; render(); } }
+  $('prev').onclick = function () { step(-1); };
+  $('next').onclick = function () { step(1); };
+  $('menu').onclick = function () { listOpen = !listOpen; render(); };
+  $('play').onclick = $('pp').onclick = function () { open(cur); };
+  $('screen').onclick = function () { if (!listOpen) open(cur); };
+  $('screen').onkeydown = function (e) { if (e.key === 'Enter') open(cur); if (e.key === 'ArrowRight') step(1); if (e.key === 'ArrowLeft') step(-1); };
+  var sx = null;
+  $('screen').addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, { passive: true });
+  $('screen').addEventListener('touchend', function (e) { if (sx == null) return; var dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) > 40) { e.preventDefault(); step(dx < 0 ? 1 : -1); } });
+  IDP.options('mp3', [
+    { k: 'label', label: '제목', ph: 'MY PLAYER' },
+    { k: 'items', t: 'list', label: '곡 · 플레이리스트 (최대 12개)', max: 12,
+      fields: [{ label: '제목', ph: '책 읽을 때 피아노' }, { label: '링크 — 유튜브 · 스포티파이 · 멜론 주소', url: true, ph: 'https://youtube.com/…' },
+               { label: '사진 — 고르거나 사진 주소(https://…)', url: true, photo: true, ph: 'https://…jpg' }],
+      note: '기기에서 고른 사진은 이 기기에서만 보여요. 다른 기기에서도 같은 사진을 보려면 사진 주소를 넣어 주세요.' }
+  ], function () { readOpts(); render(); });
+  readOpts();
+  render();
+</script>
+</body>
+</html>

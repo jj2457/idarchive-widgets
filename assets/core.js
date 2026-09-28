@@ -297,6 +297,96 @@
       b.className = b.getAttribute('data-style') === now ? 'on' : '';
     });
   }
+  // ---- A list setting (playlist items, links …) edited one card per item ----------------------
+  // Stored exactly like the old one-line field — items joined by ",", fields by "|" — so every link
+  // already pasted into a Notion block keeps working. Typing "," or "|" inside a name is swapped for its
+  // full-width twin, and inside an address for its %-code, so it can never split an item.
+  function listParse(v, n) {
+    return String(v || '').split(',').map(function (p) { var f = p.split('|'); while (f.length < n) f.push(''); return f.slice(0, n).map(function (x) { return x.trim(); }); })
+      .filter(function (f) { return f.some(Boolean); });
+  }
+  function listJoin(rows, fields) {
+    return rows.map(function (r) {
+      return fields.map(function (fd, i) {
+        var s = String(r[i] || '').trim();
+        return fd.url ? s.replace(/,/g, '%2C').replace(/\|/g, '%7C') : s.replace(/,/g, '，').replace(/\|/g, '｜');
+      }).join('|').replace(/\|+$/, '');
+    }).filter(Boolean).join(',');
+  }
+  // A photo picked on this device is shrunk and kept in this browser only ("local:<id>"); a web address
+  // travels with the link. IDP.photo() turns either into something an <img> can show.
+  var PHOTO = 'idarchive.photo.';
+  function photo(v) {
+    v = String(v || '');
+    if (v.indexOf('local:') === 0) { try { return localStorage.getItem(PHOTO + v.slice(6)) || ''; } catch (e) { return ''; } }
+    return /^https:\/\//.test(v) || /^assets\/mp3\/[a-z0-9-]+\.jpg$/.test(v) ? v : '';   // 웹 사진 주소 · 위젯에 들어 있는 견본 그림
+  }
+  function pickPhoto(done) {
+    var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = function () {
+      var f = inp.files && inp.files[0]; if (!f) return;
+      var img = new Image(), url = URL.createObjectURL(f);
+      img.onload = function () {
+        var side = 480, s = Math.min(1, side / Math.max(img.width, img.height));
+        var c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+        var id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        try { localStorage.setItem(PHOTO + id, c.toDataURL('image/jpeg', 0.82)); done('local:' + id); }
+        catch (e) { alert('사진을 저장할 공간이 부족해요. 다른 사진을 지우거나 사진 주소를 넣어 주세요.'); }
+      };
+      img.src = url;
+    };
+    inp.click();
+  }
+  function listEditor(d, value) {
+    var fields = d.fields, max = d.max || 12, rows = listParse(value, fields.length);
+    var wrap = document.createElement('div'); wrap.className = 'idp-list';
+    wrap.innerHTML = '<div class="idp-list-head">' + d.label + '</div>';
+    var holder = document.createElement('div'); wrap.appendChild(holder);
+    var add = document.createElement('button'); add.type = 'button'; add.className = 'idp-list-add'; add.textContent = '+ 하나 더';
+    wrap.appendChild(add);
+    if (d.note) { var nt = document.createElement('div'); nt.className = 'idp-note'; nt.textContent = d.note; wrap.appendChild(nt); }
+    function commit() { optSave(optWidget, d.k, listJoin(rows, fields)); if (optHandler) optHandler(); }
+    function draw() {
+      holder.innerHTML = '';
+      if (!rows.length) rows.push(fields.map(function () { return ''; }));
+      rows.forEach(function (r, ri) {
+        var card = document.createElement('div'); card.className = 'idp-list-item';
+        var top = document.createElement('div'); top.className = 'idp-list-top';
+        top.innerHTML = '<span>' + String(ri + 1).padStart(2, '0') + '</span>';
+        [['↑', -1], ['↓', 1]].forEach(function (mv) {
+          var b = document.createElement('button'); b.type = 'button'; b.textContent = mv[0]; b.setAttribute('aria-label', mv[1] < 0 ? '위로' : '아래로');
+          b.disabled = ri + mv[1] < 0 || ri + mv[1] >= rows.length;
+          b.onclick = function () { var t = rows[ri]; rows[ri] = rows[ri + mv[1]]; rows[ri + mv[1]] = t; draw(); commit(); };
+          top.appendChild(b);
+        });
+        var del = document.createElement('button'); del.type = 'button'; del.textContent = '지우기';
+        del.onclick = function () { rows.splice(ri, 1); draw(); commit(); };
+        top.appendChild(del); card.appendChild(top);
+        fields.forEach(function (fd, fi) {
+          var lab = document.createElement('label'); lab.className = 'idp-list-field';
+          lab.innerHTML = '<span>' + fd.label + '</span>';
+          var inp = document.createElement('input'); inp.type = 'text'; inp.value = /^local:/.test(r[fi]) ? '' : (r[fi] || '');
+          if (/^local:/.test(r[fi])) inp.placeholder = '이 기기에서 고른 사진'; else if (fd.ph) inp.placeholder = fd.ph;
+          if (fd.url) { inp.inputMode = 'url'; inp.autocapitalize = 'off'; inp.spellcheck = false; }
+          inp.addEventListener('input', function (e) { e.stopPropagation(); r[fi] = inp.value; commit(); });
+          lab.appendChild(inp);
+          if (fd.photo) {
+            var pb = document.createElement('button'); pb.type = 'button'; pb.textContent = '사진 고르기';
+            pb.onclick = function () { pickPhoto(function (v) { r[fi] = v; draw(); commit(); }); };
+            lab.appendChild(pb);
+          }
+          card.appendChild(lab);
+        });
+        holder.appendChild(card);
+      });
+      add.disabled = rows.length >= max;
+    }
+    add.onclick = function () { rows.push(fields.map(function () { return ''; })); draw(); var ins = holder.querySelectorAll('.idp-list-item:last-child input'); if (ins[0]) ins[0].focus(); };
+    draw();
+    return wrap;
+  }
+
   function renderOptions() {
     if (!panelEl || !optDefs.length || panelEl.querySelector('.idp-opts')) return;
     var box = document.createElement('div');
@@ -304,6 +394,7 @@
     box.innerHTML = '<div class="idp-panel-title" style="margin-top:14px">이 위젯</div>';
     var cur = optsFor(optWidget);
     optDefs.forEach(function (d) {
+      if (d.t === 'list') { box.appendChild(listEditor(d, cur[d.k] != null ? cur[d.k] : (q.get(d.k) || ''))); panelEl.classList.add('wide'); return; }
       var row = document.createElement('label');
       row.className = 'idp-row';
       var val = cur[d.k] != null ? cur[d.k] : (q.get(d.k) || '');
@@ -318,7 +409,9 @@
       optSave(optWidget, k, e.target.value);
       if (optHandler) optHandler();
     });
-    panelEl.insertBefore(box, panelEl.querySelector('.idp-tail'));
+    // 목록을 적는 위젯은 내용이 먼저 — 색 · 모양 설정은 그 아래
+    if (panelEl.classList.contains('wide')) { box.firstChild.style.marginTop = '0'; panelEl.insertBefore(box, panelEl.firstChild); }
+    else panelEl.insertBefore(box, panelEl.querySelector('.idp-tail'));
   }
   if (document.body) settingsPanel(); else document.addEventListener('DOMContentLoaded', settingsPanel);
 
@@ -469,7 +562,7 @@
 
   window.IDP = { q: q, CFG: CFG, THEMES: THEMES, applyTheme: applyTheme, weekStart: weekStart === 'sun' ? 'sun' : 'mon',
     DOW: DOW, MONTHS: MONTHS, pad: pad, iso: iso, plannerDate: plannerDate, parseDate: parseDate,
-    options: options, opt: opt, seed: seed, seedDone: seedDone, now: now,
+    options: options, opt: opt, photo: photo, listParse: listParse, seed: seed, seedDone: seedDone, now: now,
     STYLES: STYLES, share: share, shareLink: shareLink,
     chime: chime, banner: banner, notify: notify, askNotify: askNotify, canNotify: canNotify, alert: alertNow };
 })();

@@ -50,7 +50,7 @@
       </div>
     </div>
     <ol id="list"></ol>
-    <div class="empty" id="empty" hidden>⚙ 에서 <b>이름|주소</b> 로 적으면 플레이리스트가 됩니다.<br>예) 비 오는 날 재즈|https://youtube.com/…</div>
+    <div class="empty" id="empty" hidden>⚙ 에서 이름과 링크를 하나씩 넣으면<br>플레이리스트가 됩니다.</div>
   </div></div>
 </div>
 <script src="config/themes.js"></script>
@@ -60,14 +60,9 @@
   // in a new tab. The list lives in the widget's own settings (⚙ / the embed link), like LINKS.
   var LIST = [], cur = 0;
   function readOpts() {
-    LIST = String(IDP.opt('playlist', 'items', ''))
-      .split(',').map(function (p) {
-        var at = p.indexOf('|');
-        if (at < 0) return null;
-        var n = p.slice(0, at).trim(), u = p.slice(at + 1).trim();
-        if (!n || !/^https?:\/\//.test(u)) return null;
-        return { n: n, u: u };
-      }).filter(Boolean).slice(0, 12);
+    LIST = IDP.listParse(IDP.opt('playlist', 'items', ''), 2).map(function (f) {
+      return f[0] && /^https?:\/\//.test(f[1]) ? { n: f[0], u: f[1] } : null;
+    }).filter(Boolean).slice(0, 12);
     if (cur >= LIST.length) cur = 0;
   }
   function host(u) { try { return new URL(u).hostname.replace(/^www\.|^m\./, ''); } catch (e) { return ''; } }
@@ -99,7 +94,8 @@
   document.getElementById('next').onclick = function () { if (LIST.length) { cur = (cur + 1) % LIST.length; render(); } };
   IDP.options('playlist', [
     { k: 'label', label: '제목', ph: 'READING PLAYLIST' },
-    { k: 'items', label: '곡 · 플레이리스트 (이름|주소, 쉼표로 구분, 최대 12개)', ph: '비 오는 날 재즈|https://youtube.com/…' }
+    { k: 'items', t: 'list', label: '곡 · 플레이리스트 (최대 12개)', max: 12,
+      fields: [{ label: '이름', ph: '비 오는 날 재즈' }, { label: '링크 — 유튜브 · 스포티파이 · 멜론 주소', url: true, ph: 'https://youtube.com/…' }] }
   ], function () { readOpts(); render(); });
   readOpts();
   render();

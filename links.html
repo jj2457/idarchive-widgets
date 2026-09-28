@@ -28,7 +28,7 @@
   <div class="row"><div class="badge" id="badge">LINKS</div><span class="caps" id="count"></span></div>
   <div class="grow"><div class="wrap">
     <div class="grid" id="grid"></div>
-    <div class="empty" id="empty" hidden>⚙ 에서 <b>이름|주소</b> 로 적으면 버튼이 됩니다.<br>예) 노션|https://notion.so, 메일|https://mail.google.com</div>
+    <div class="empty" id="empty" hidden>⚙ 에서 이름과 주소를 하나씩 넣으면<br>바로가기 버튼이 됩니다.</div>
   </div></div>
   <div class="foot"><span id="hint">자주 여는 곳을 한 자리에</span><span>새 탭에서 열립니다</span></div>
 </div>
@@ -39,13 +39,8 @@
   // the buyer's browser, so the tile shows the first letter of the name instead.
   var LINKS = [];
   function readOpts() {
-    LINKS = String(IDP.opt('links', 'items', ''))
-      .split(',').map(function (p) {
-        var at = p.indexOf('|');
-        if (at < 0) return null;
-        var n = p.slice(0, at).trim(), u = p.slice(at + 1).trim();
-        if (!n || !/^https?:\/\//.test(u)) return null;
-        return { n: n, u: u };
+    LINKS = IDP.listParse(IDP.opt('links', 'items', ''), 2).map(function (f) {
+      return f[0] && /^https?:\/\//.test(f[1]) ? { n: f[0], u: f[1] } : null;
       }).filter(Boolean).slice(0, 10);
   }
   readOpts();
@@ -75,7 +70,8 @@
   }
   IDP.options('links', [
     { k: 'label', label: '제목', ph: 'LINKS' },
-    { k: 'items', label: '바로가기 (이름|주소, 쉼표로 구분, 최대 10개)', ph: '노션|https://notion.so' },
+    { k: 'items', t: 'list', label: '바로가기 (최대 10개)', max: 10,
+      fields: [{ label: '이름', ph: '노션' }, { label: '주소', url: true, ph: 'https://notion.so' }] },
     { k: 'cols', label: '한 줄에 몇 개 (1 또는 2)', ph: '2' }
   ], function () { readOpts(); render(); });
   render();
