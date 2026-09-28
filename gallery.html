@@ -13,9 +13,35 @@
   /* 440 clears the tallest card at this width (the month calendar at 386px, the weekly
      review and vision board once their example lines wrap) with room to spare. */
   iframe { width: 100%; height: 440px; border: 0; }
+  /* 위 막대 — 스튜디오에서 「전체 위젯 보기」로 들어오면 돌아갈 길이 없었다(오너 2026-09-28) */
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 16px; }
+  .bar a, .bar button { font: 12px/1 sans-serif; letter-spacing: .04em; padding: 8px 14px; border-radius: 999px;
+    border: 1px solid #e4e1dc; background: #fff; color: #555; text-decoration: none; cursor: pointer; }
+  .bar .back { background: #2f2f2f; border-color: #2f2f2f; color: #fff; }
+  .bar .t { margin-left: auto; font: 12px sans-serif; color: #999; }
+  body.dark .bar a, body.dark .bar button:not(.back) { background: #252525; border-color: #333; color: #ccc; }
 </style>
 </head>
 <body>
+<nav class="bar" aria-label="스튜디오로 돌아가기">
+  <button class="back" id="back" type="button">← 돌아가기</button>
+  <a id="toTheme" href="theme.html">Theme Studio</a>
+  <a id="toDash" href="index.html">Dashboard Studio</a>
+  <a id="toCover" href="cover.html">Cover Studio</a>
+  <span class="t">전체 위젯 보기</span>
+</nav>
+<script>
+  // 돌아가기: 스튜디오에서 왔으면 그 화면으로(고른 색 그대로), 아니면 Theme Studio 로
+  (function () {
+    var qs = location.search || '';
+    ['toTheme', 'toDash', 'toCover'].forEach(function (id) { var a = document.getElementById(id); a.href = a.getAttribute('href') + qs; });
+    document.getElementById('back').onclick = function () {
+      var ref = document.referrer || '';
+      if (ref && ref.indexOf(location.origin) === 0 && history.length > 1) history.back();
+      else location.href = 'theme.html' + qs;
+    };
+  })();
+</script>
 <div class="grid" id="grid"></div>
 <script>
   // gallery.html?theme=pink&mode=dark — every widget in one colour, for checking a theme at a glance
