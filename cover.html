@@ -52,6 +52,7 @@
     <div>
       <h2>1 · 배경</h2>
       <div class="chips" id="bg"></div>
+      <div class="row" id="gmRow" hidden style="font-size:12px;color:var(--sub)">그라데이션 색 <select id="gm"><option value="0">고른 테마 색</option><option value="1">1월</option><option value="2">2월</option><option value="3">3월</option><option value="4">4월</option><option value="5">5월</option><option value="6">6월</option><option value="7">7월</option><option value="8">8월</option><option value="9">9월</option><option value="10">10월</option><option value="11">11월</option><option value="12">12월</option></select></div>
       <h2>2 · 색</h2>
       <div class="chips" id="colours"></div>
       <div class="row" style="font-size:12px;color:var(--sub)">직접 고르기 <input type="color" id="own" value="#b3a2c2"></div>
@@ -87,10 +88,10 @@
   var cv = document.getElementById('cv'), g = cv.getContext('2d');
   var THEMES = (window.IDP_CONFIG && window.IDP_CONFIG.themes) || { lavender: { soft: '#d9d5f5', deep: '#b3a2c2', tint: '#f2eff9' } };
   var BGS = [
-    ['spring', '봄'], ['summer', '여름'], ['autumn', '가을'], ['winter', '겨울'],
+    ['gradient', '그라데이션'], ['spring', '봄'], ['summer', '여름'], ['autumn', '가을'], ['winter', '겨울'],
     ['grid', '플래너 모눈'], ['dots', '플래너 점'], ['lines', '줄 노트'], ['plain', '단색']
   ];
-  var st = { bg: 'spring', colour: 'lavender', own: null, align: 'left', seed: 7 };
+  var st = { bg: 'gradient', colour: 'lavender', own: null, align: 'left', seed: 7 };
 
   function rnd() { st._s = (st._s * 16807) % 2147483647; return (st._s - 1) / 2147483646; }
   function hex(h) { h = h.replace('#', ''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
@@ -100,6 +101,16 @@
     return THEMES[st.colour] || THEMES.lavender;
   }
   // season palettes lean on the chosen colour so the cover still matches the planner
+  // 그라데이션(REQ-080) — scripts/build-gradient-covers.py 와 같은 색 · 같은 흐름(파스텔 → 흰색 → 두 번째 색)
+  var GMONTH = { 1: ['#bcd0f2', '#dcd8f3'], 2: ['#f5bfd0', '#dcc9f0'], 3: ['#dcefc2', '#f8cfdc'], 4: ['#f8c4d4', '#cfeac2'], 5: ['#bfe8cf', '#c4dff2'], 6: ['#b6def0', '#cdebc0'],
+    7: ['#aed6f5', '#fbe3b0'], 8: ['#fbcfa6', '#bfe0f2'], 9: ['#eed9b0', '#d6dfb6'], 10: ['#efc2a0', '#e6c6b6'], 11: ['#dccbb4', '#c9c3de'], 12: ['#c6d3ea', '#eabfc6'] };
+  function gradient(p) {
+    var m = +document.getElementById('gm').value, a = m ? GMONTH[m][0] : p.soft, b = m ? GMONTH[m][1] : mix(p.deep, '#fcfcfd', .3);
+    var gr = g.createLinearGradient(0, 0, W, H * 0.45);
+    [0, .12, .3, .48, .6].forEach(function (t, i) { var k = [0, .1, .45, .85, 1][i]; gr.addColorStop(t, mix(a, '#fcfcfd', k)); });
+    [.72, .86, 1].forEach(function (t, i) { gr.addColorStop(t, mix('#fcfcfd', mix(b, '#fcfcfd', .3).replace(/rgb\((\d+),(\d+),(\d+)\)/, function (_, r, gg, bb) { return '#' + [r, gg, bb].map(function (v) { return (+v).toString(16).padStart(2, '0'); }).join(''); }), [.3, .75, 1][i])); });
+    g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  }
   var SEASON = {
     spring: ['#f7d9df', '#e8f1dc'], summer: ['#d7eaf5', '#fdf3d6'],
     autumn: ['#f3dcc4', '#efe4d2'], winter: ['#eef0f4', '#ffffff']
@@ -133,7 +144,9 @@
     st._s = st.seed * 9973 + 1;
     var p = pal(), i;
     g.clearRect(0, 0, W, H);
-    if (SEASON[st.bg]) {
+    document.getElementById('gmRow').hidden = st.bg !== 'gradient';
+    if (st.bg === 'gradient') gradient(p);
+    else if (SEASON[st.bg]) {
       var s = SEASON[st.bg];
       wash(mix(s[0], p.tint, .35), mix(s[1], p.tint, .35));
       for (i = 0; i < 5; i++) blob(W * (0.55 + rnd() * 0.5), H * rnd(), 120 + rnd() * 180, p.soft, 0.35);
@@ -189,6 +202,7 @@
   });
   document.getElementById('own').oninput = function (e) { st.own = e.target.value; [].forEach.call(cs.children, function (c) { c.setAttribute('aria-pressed', 'false'); }); draw(); };
   document.getElementById('title').oninput = draw;
+  document.getElementById('gm').onchange = draw;
   document.getElementById('sub').oninput = draw;
   [].forEach.call(document.querySelectorAll('[data-align]'), function (b) {
     b.onclick = function () { st.align = b.dataset.align; [].forEach.call(document.querySelectorAll('[data-align]'), function (c) { c.setAttribute('aria-pressed', 'false'); }); b.setAttribute('aria-pressed', 'true'); draw(); };
