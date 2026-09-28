@@ -94,7 +94,8 @@
   var st = { bg: 'gradient', colour: 'lavender', own: null, align: 'left', seed: 7 };
 
   function rnd() { st._s = (st._s * 16807) % 2147483647; return (st._s - 1) / 2147483646; }
-  function hex(h) { h = h.replace('#', ''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
+  // mix() 는 rgb(…) 를 돌려주고 그 값이 다시 mix() 로 들어온다(그라데이션 기본 = 「고른 테마 색」) — 둘 다 읽는다
+  function hex(h) { var m = /^rgb\((\d+),(\d+),(\d+)\)$/.exec(String(h).replace(/\s/g, '')); if (m) return [+m[1], +m[2], +m[3]]; h = h.replace('#', ''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
   function mix(a, b, t) { var A = hex(a), B = hex(b); return 'rgb(' + A.map(function (v, i) { return Math.round(v + (B[i] - v) * t); }).join(',') + ')'; }
   function pal() {
     if (st.own) return { soft: mix(st.own, '#ffffff', .55), deep: st.own, tint: mix(st.own, '#ffffff', .85) };
