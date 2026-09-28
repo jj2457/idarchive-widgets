@@ -34,11 +34,11 @@
   .mode[aria-pressed=true] { background: #2f2f2f; color: #fff; border-color: #2f2f2f; }
   .cell { border: 1px solid #eee; border-radius: 16px; overflow: hidden; background: #fff; }
   .cell iframe { display: block; }
-  .foot { display: flex; align-items: center; gap: 6px; padding: 8px 10px 10px; border-top: 1px solid #f1f1f1; }
+  .foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px 10px; border-top: 1px solid #f1f1f1; }
+  .foot .dots { flex-basis: 100%; order: 3; display: flex; gap: 6px; align-items: center; font: 10.5px sans-serif; color: #aaa; }
   .foot .nm { flex: 1; min-width: 0; font: 12.5px sans-serif; color: #444; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .foot .dot { width: 14px; height: 14px; border-width: 1px; }
   .foot .cp { font: 11px sans-serif; padding: 5px 10px; border-radius: 999px; border: 1px solid #e4e1dc; background: #fff; color: #555; cursor: pointer; white-space: nowrap; }
-  @media (max-width: 420px) { .foot .dot { display: none; } }
   body.dark h1 { color: #eee; } body.dark .cell { background: #202020; border-color: #333; } body.dark .foot { border-color: #2a2a2a; }
   body.dark .foot .nm { color: #ccc; } body.dark .tabs button[aria-pressed=true] { color: #eee; border-color: #eee; }
 </style>
@@ -173,15 +173,17 @@
     var foot = document.createElement('div'); foot.className = 'foot';
     var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = nameOf(w);
     foot.appendChild(nm);
+    var dots = document.createElement('span'); dots.className = 'dots'; dots.textContent = '이 위젯만 ';
     THEMES.forEach(function (t) {   // 이 위젯만 따로 바꾸기
       var d = dot(t); d.title = t + ' — 이 위젯만';
       d.setAttribute('aria-pressed', String((st.own[w] || st.theme) === t));
       d.onclick = function () {
         st.own[w] = t; f.src = w + '.html' + params(w) + (extra[w] || '');
-        [].forEach.call(foot.querySelectorAll('.dot'), function (x) { x.setAttribute('aria-pressed', String(x === d)); });
+        [].forEach.call(dots.querySelectorAll('.dot'), function (x) { x.setAttribute('aria-pressed', String(x === d)); });
       };
-      foot.appendChild(d);
+      dots.appendChild(d);
     });
+    foot.appendChild(dots);
     var cp = document.createElement('button'); cp.type = 'button'; cp.className = 'cp'; cp.textContent = '링크 복사';
     cp.onclick = function () {   // 견본 내용 없이 빈 위젯 — 구매자가 자기 내용을 적는다
       var url = BASE + w + '.html' + params(w);
