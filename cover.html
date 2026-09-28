@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Cover Studio</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  html, body { height: auto; }
+  body { display: block; padding: 0; background: var(--paper); font-weight: 400; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 36px 20px 70px; }
+  header h1 { font-family: 'Playfair Display', serif; font-weight: 400; font-size: 30px; letter-spacing: .08em; margin-top: 14px; }
+  header p { color: var(--sub); margin-top: 8px; font-size: 14px; line-height: 1.6; }
+  .nav { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .nav a { font-size: 12px; letter-spacing: .06em; padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px; color: var(--sub); text-decoration: none; background: #fff; }
+  .nav a.on { background: var(--soft); border-color: var(--soft); color: color-mix(in srgb, var(--deep) 55%, #2a2a2a); }
+  h2 { font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--sub); font-weight: 500; margin: 26px 0 10px; }
+  .grid { display: grid; grid-template-columns: minmax(260px, 340px) 1fr; gap: 28px; align-items: start; margin-top: 10px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip[aria-pressed="true"] { background: var(--soft); border-color: var(--soft); }
+  .sw { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); padding: 0; }
+  .sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--ink); }
+  label.f { display: block; font-size: 12px; color: var(--sub); margin-top: 12px; }
+  input[type=text] { width: 100%; margin-top: 6px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; font: inherit; font-size: 14px; background: #fff; }
+  input[type=color] { width: 46px; height: 34px; border: 1px solid var(--line); border-radius: 8px; background: #fff; padding: 2px; }
+  .preview { position: sticky; top: 16px; }
+  canvas { width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--line); background: #fff; display: block; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+  .go { background: var(--deep); color: #fff; border-color: var(--deep); }
+  .how { margin-top: 16px; font-size: 13px; line-height: 1.9; color: var(--ink); background: var(--tint); border-radius: 14px; padding: 16px 18px; }
+  .how b { font-weight: 500; }
+  .note { font-size: 12px; color: var(--sub); margin-top: 10px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="badge" style="display:inline-block">Cover Studio</div>
+    <h1>MAKE YOUR OWN COVER</h1>
+    <p>배경 · 색 · 글자를 고르면 페이지 맨 위 커버 그림이 바로 만들어집니다.<br>
+       저장한 그림을 노션 페이지 커버로 올리면 끝 — 페이지마다 다르게 만들어도 좋아요.</p>
+    <nav class="nav">
+      <a href="index.html">Dashboard Studio</a>
+      <a href="theme.html">Theme Studio</a>
+      <a href="cover.html" class="on">Cover Studio</a>
+      <a href="gallery.html">전체 위젯 보기</a>
+    </nav>
+  </header>
+
+  <div class="grid">
+    <div>
+      <h2>1 · 배경</h2>
+      <div class="chips" id="bg"></div>
+      <h2>2 · 색</h2>
+      <div class="chips" id="colours"></div>
+      <div class="row" style="font-size:12px;color:var(--sub)">직접 고르기 <input type="color" id="own" value="#b3a2c2"></div>
+      <h2>3 · 글자</h2>
+      <label class="f">큰 글자 <input type="text" id="title" value="2027 ID PLANNER" maxlength="40"></label>
+      <label class="f">작은 글자 <input type="text" id="sub" value="ONE YEAR, ONE PAGE AT A TIME" maxlength="60"></label>
+      <div class="row">
+        <button class="chip" data-align="left" aria-pressed="true">왼쪽</button>
+        <button class="chip" data-align="center">가운데</button>
+        <button class="chip" data-align="none">글자 없이</button>
+      </div>
+      <h2>4 · 다른 모양 보기</h2>
+      <div class="row"><button class="chip" id="shuffle">모양 섞기</button></div>
+    </div>
+    <div class="preview">
+      <canvas id="cv" width="1500" height="600" aria-label="커버 미리보기"></canvas>
+      <div class="row">
+        <button class="chip go" id="save">그림 저장하기</button>
+      </div>
+      <div class="how">
+        ① <b>그림 저장하기</b> → ② 노션에서 페이지를 열고 제목 위 <b>커버 추가</b>(이미 있으면 <b>커버 변경</b>) → ③ <b>업로드</b> 탭에서 저장한 그림을 고르면 끝.<br>
+        위치가 어색하면 커버의 <b>위치 변경</b>으로 위아래를 맞춰요.
+      </div>
+      <p class="note">그림은 이 화면에서 바로 만들어져 기기에 저장됩니다. 어디에도 올라가지 않아요.</p>
+    </div>
+  </div>
+</div>
+
+<script src="config/themes.js"></script>
+<script>
+  // Cover Studio — a no-record tool: draws a cover on a canvas and downloads it. Nothing is stored.
+  var W = 1500, H = 600;
+  var cv = document.getElementById('cv'), g = cv.getContext('2d');
+  var THEMES = (window.IDP_CONFIG && window.IDP_CONFIG.themes) || { lavender: { soft: '#d9d5f5', deep: '#b3a2c2', tint: '#f2eff9' } };
+  var BGS = [
+    ['spring', '봄'], ['summer', '여름'], ['autumn', '가을'], ['winter', '겨울'],
+    ['grid', '플래너 모눈'], ['dots', '플래너 점'], ['lines', '줄 노트'], ['plain', '단색']
+  ];
+  var st = { bg: 'spring', colour: 'lavender', own: null, align: 'left', seed: 7 };
+
+  function rnd() { st._s = (st._s * 16807) % 2147483647; return (st._s - 1) / 2147483646; }
+  function hex(h) { h = h.replace('#', ''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
+  function mix(a, b, t) { var A = hex(a), B = hex(b); return 'rgb(' + A.map(function (v, i) { return Math.round(v + (B[i] - v) * t); }).join(',') + ')'; }
+  function pal() {
+    if (st.own) return { soft: mix(st.own, '#ffffff', .55), deep: st.own, tint: mix(st.own, '#ffffff', .85) };
+    return THEMES[st.colour] || THEMES.lavender;
+  }
+  // season palettes lean on the chosen colour so the cover still matches the planner
+  var SEASON = {
+    spring: ['#f7d9df', '#e8f1dc'], summer: ['#d7eaf5', '#fdf3d6'],
+    autumn: ['#f3dcc4', '#efe4d2'], winter: ['#eef0f4', '#ffffff']
+  };
+
+  function wash(a, b) {
+    var gr = g.createLinearGradient(0, 0, W, H);
+    gr.addColorStop(0, a); gr.addColorStop(1, b);
+    g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  }
+  function blob(x, y, r, c, a) {
+    g.save(); g.globalAlpha = a; g.fillStyle = c; g.beginPath();
+    for (var i = 0; i <= 24; i++) {
+      var t = i / 24 * Math.PI * 2, rr = r * (0.86 + rnd() * 0.28);
+      g[i ? 'lineTo' : 'moveTo'](x + Math.cos(t) * rr, y + Math.sin(t) * rr);
+    }
+    g.closePath(); g.fill(); g.restore();
+  }
+  function petal(x, y, s, rot, c, a) {
+    g.save(); g.translate(x, y); g.rotate(rot); g.globalAlpha = a; g.fillStyle = c;
+    g.beginPath(); g.ellipse(0, 0, s, s * 0.52, 0, 0, Math.PI * 2); g.fill(); g.restore();
+  }
+  function leaf(x, y, s, rot, c, a) {
+    g.save(); g.translate(x, y); g.rotate(rot); g.globalAlpha = a; g.fillStyle = c;
+    g.beginPath(); g.moveTo(0, -s); g.quadraticCurveTo(s * 0.7, 0, 0, s); g.quadraticCurveTo(-s * 0.7, 0, 0, -s); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, -s * 0.8); g.lineTo(0, s * 0.8); g.stroke();
+    g.restore();
+  }
+
+  function draw() {
+    st._s = st.seed * 9973 + 1;
+    var p = pal(), i;
+    g.clearRect(0, 0, W, H);
+    if (SEASON[st.bg]) {
+      var s = SEASON[st.bg];
+      wash(mix(s[0], p.tint, .35), mix(s[1], p.tint, .35));
+      for (i = 0; i < 5; i++) blob(W * (0.55 + rnd() * 0.5), H * rnd(), 120 + rnd() * 180, p.soft, 0.35);
+      for (i = 0; i < 46; i++) {
+        var x = W * (0.45 + rnd() * 0.57), y = H * rnd(), z = 10 + rnd() * 26, r = rnd() * Math.PI;
+        if (st.bg === 'spring') petal(x, y, z, r, i % 3 ? '#f4b9c6' : p.deep, 0.55);
+        else if (st.bg === 'summer') { g.save(); g.globalAlpha = 0.5; g.strokeStyle = i % 2 ? '#9fc9e6' : p.deep; g.lineWidth = 2; g.beginPath(); g.arc(x, y, z, 0, Math.PI); g.stroke(); g.restore(); }
+        else if (st.bg === 'autumn') leaf(x, y, z * 1.3, r * 2, i % 3 ? '#d9a27a' : p.deep, 0.55);
+        else { g.save(); g.globalAlpha = 0.8; g.fillStyle = i % 4 ? '#ffffff' : p.soft; g.beginPath(); g.arc(x, y, z * 0.3, 0, Math.PI * 2); g.fill(); g.restore(); }
+      }
+    } else {
+      g.fillStyle = p.tint; g.fillRect(0, 0, W, H);
+      g.strokeStyle = mix(p.deep, '#ffffff', .45); g.fillStyle = mix(p.deep, '#ffffff', .35); g.lineWidth = 1;
+      if (st.bg === 'grid') { for (i = 0; i <= W; i += 30) { g.beginPath(); g.moveTo(i + .5, 0); g.lineTo(i + .5, H); g.stroke(); } for (i = 0; i <= H; i += 30) { g.beginPath(); g.moveTo(0, i + .5); g.lineTo(W, i + .5); g.stroke(); } }
+      if (st.bg === 'dots') { for (var yy = 15; yy < H; yy += 30) for (var xx = 15; xx < W; xx += 30) { g.beginPath(); g.arc(xx, yy, 1.8, 0, Math.PI * 2); g.fill(); } }
+      if (st.bg === 'lines') { for (i = 60; i < H; i += 36) { g.beginPath(); g.moveTo(0, i + .5); g.lineTo(W, i + .5); g.stroke(); } g.strokeStyle = p.deep; g.beginPath(); g.moveTo(120.5, 0); g.lineTo(120.5, H); g.stroke(); }
+      if (st.bg !== 'plain') { g.fillStyle = p.soft; g.globalAlpha = .9; g.fillRect(W - 360, 0, 360, H); g.globalAlpha = 1; }
+      else blob(W * 0.82, H * 0.5, 230, p.soft, .7);
+    }
+    // text
+    if (st.align !== 'none') {
+      var t = document.getElementById('title').value.trim(), sub = document.getElementById('sub').value.trim();
+      var cx = st.align === 'center' ? W / 2 : 150;
+      g.textAlign = st.align === 'center' ? 'center' : 'left';
+      if (st.align === 'center') { g.save(); g.globalAlpha = .72; g.fillStyle = '#ffffff'; g.fillRect(W / 2 - 470, H / 2 - 105, 940, 200); g.restore(); }
+      g.fillStyle = '#2f2f2f';
+      g.font = '400 76px "Playfair Display", Georgia, serif';
+      g.fillText(t, cx, H / 2 + 12);
+      g.fillStyle = mix(p.deep, '#2f2f2f', .45);
+      g.font = '500 20px "Pretendard", "Apple SD Gothic Neo", sans-serif';
+      if (g.letterSpacing !== undefined) g.letterSpacing = '6px';
+      g.fillText(sub, cx, H / 2 + 62);
+      if (g.letterSpacing !== undefined) g.letterSpacing = '0px';
+    }
+  }
+
+  function chips(el, list, key, onpick) {
+    el.innerHTML = '';
+    list.forEach(function (it) {
+      var b = document.createElement('button');
+      b.className = 'chip'; b.textContent = it[1]; b.setAttribute('aria-pressed', String(st[key] === it[0]));
+      b.onclick = function () { st[key] = it[0]; if (onpick) onpick(); [].forEach.call(el.children, function (c) { c.setAttribute('aria-pressed', 'false'); }); b.setAttribute('aria-pressed', 'true'); draw(); };
+      el.appendChild(b);
+    });
+  }
+  chips(document.getElementById('bg'), BGS, 'bg');
+  var cs = document.getElementById('colours');
+  Object.keys(THEMES).forEach(function (k) {
+    var b = document.createElement('button'); b.className = 'sw'; b.title = k; b.style.background = THEMES[k].soft;
+    b.setAttribute('aria-pressed', String(k === st.colour));
+    b.onclick = function () { st.colour = k; st.own = null; [].forEach.call(cs.children, function (c) { c.setAttribute('aria-pressed', 'false'); }); b.setAttribute('aria-pressed', 'true'); draw(); };
+    cs.appendChild(b);
+  });
+  document.getElementById('own').oninput = function (e) { st.own = e.target.value; [].forEach.call(cs.children, function (c) { c.setAttribute('aria-pressed', 'false'); }); draw(); };
+  document.getElementById('title').oninput = draw;
+  document.getElementById('sub').oninput = draw;
+  [].forEach.call(document.querySelectorAll('[data-align]'), function (b) {
+    b.onclick = function () { st.align = b.dataset.align; [].forEach.call(document.querySelectorAll('[data-align]'), function (c) { c.setAttribute('aria-pressed', 'false'); }); b.setAttribute('aria-pressed', 'true'); draw(); };
+  });
+  document.getElementById('shuffle').onclick = function () { st.seed = 1 + Math.floor(Math.random() * 9999); draw(); };
+  document.getElementById('save').onclick = function () {
+    var a = document.createElement('a');
+    a.download = 'cover-' + st.bg + '.png';
+    a.href = cv.toDataURL('image/png');
+    a.click();
+  };
+  // the first draw waits for the display font so the preview and the saved PNG match
+  (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(draw);
+  draw();
+</script>
+</body>
+</html>
