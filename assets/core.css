@@ -234,3 +234,7 @@ button:focus-visible { outline: 2px solid var(--deep); outline-offset: 2px; }
 .idp-list-add { width: 100%; margin-top: 8px; padding: 8px 0; font-size: 11.5px; letter-spacing: .04em; text-transform: none; }
 .idp-panel.wide .idp-opts { padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--line); }
 .idp-panel.wide .idp-row input[type=text] { font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); }
+/* 테마 3단계 — ⚙ 의 「모든 위젯 / 이 위젯만」 */
+.idp-scope button.on { background: var(--soft); border-color: var(--soft); }
+.idp-scope-note { margin: 6px 0 8px; line-height: 1.6; }
+.idp-link-btn { background: none; border: 0; padding: 0; font-size: 10px; color: var(--ink); text-decoration: underline; cursor: pointer; }

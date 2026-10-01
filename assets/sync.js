@@ -90,5 +90,38 @@
   }
   function seen(theme) { try { localStorage.setItem('idarchive.sync.themeSeen', theme); } catch (e) {} }
 
-  IDP.sync = { base: BASE, on: !!BASE, popup: popup, wid: wid, forget: forget, onConnect: onConnect, connect: connect, api: api, disconnect: disconnect, follow: follow, seen: seen, notice: notice };
+  // 테마 설정 3단계(페이지 · 위젯 개별 색)를 서버와 맞춘다 — 정본은 서버. 이 기기의 ⚙ 로 바꾼 위젯(dirty)만 먼저 올리고, 그다음 서버 것을 받아 둔다.
+  // 끝나면 서버의 설정(config)을 돌려준다. 연결이 없으면 아무것도 안 한다(이 기기 설정 그대로)
+  function syncLayers() {
+    if (!BASE || !wid() || !IDP.layers) return Promise.resolve(null);
+    var sent = [];
+    return api('GET', '/v1/theme').then(function (d) {
+      var L = IDP.layers.get();
+      var cfg = d.config || { global: d.custom ? { custom: d.custom } : { theme: d.theme || 'green' }, pages: {}, widgets: {} };
+      sent = Object.keys(L.dirty);
+      if (!sent.length) return cfg;
+      cfg.widgets = cfg.widgets || {};
+      sent.forEach(function (k) { if (L.widgets[k]) cfg.widgets[k] = L.widgets[k]; else delete cfg.widgets[k]; });
+      return api('PUT', '/v1/theme/config', { config: cfg }).then(function (r) { return r.config; });
+    }).then(function (cfg) {
+      if (!cfg) return cfg;
+      // 올리는 사이에 ⚙ 로 또 바꾼 위젯은 지우지 않는다(다음 번에 올린다)
+      var now = IDP.layers.get(), widgets = Object.assign({}, cfg.widgets || {});
+      sent.forEach(function (k) { delete now.dirty[k]; });
+      Object.keys(now.dirty).forEach(function (k) { if (now.widgets[k]) widgets[k] = now.widgets[k]; else delete widgets[k]; });
+      IDP.layers.set({ pages: cfg.pages || {}, widgets: widgets, dirty: now.dirty });
+      return cfg;
+    });
+  }
+
+  IDP.sync = { base: BASE, on: !!BASE, popup: popup, wid: wid, forget: forget, onConnect: onConnect, connect: connect, api: api, disconnect: disconnect, follow: follow, seen: seen, notice: notice, syncLayers: syncLayers };
+
+  // 연결된 위젯을 열면 저절로 — 올릴 것이 있으면 바로, 아니면 10분에 한 번(서버를 두드리지 않게)
+  if (BASE && wid() && IDP.layers && IDP.q.get('lock') !== '1') {
+    var at = 0; try { at = +localStorage.getItem('idarchive.sync.layersAt') || 0; } catch (e) {}
+    if (Object.keys(IDP.layers.get().dirty).length || Date.now() - at > 10 * 60 * 1000) {
+      try { localStorage.setItem('idarchive.sync.layersAt', String(Date.now())); } catch (e) {}
+      syncLayers().catch(function () {});
+    }
+  }
 })();

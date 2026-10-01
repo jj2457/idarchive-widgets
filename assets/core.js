@@ -196,13 +196,38 @@
   }
 
   var optWidget = null, optDefs = [], optHandler = null, panelEl = null;
+  // ── 테마 설정 3단계(오너 2026-10-01): 전체(위 STORE) → 페이지(링크의 page=GOALS …) → 위젯(이 위젯 이름), 아래가 위를 이긴다.
+  // 정본은 노션 연결 서버(/v1/theme 의 config) — 여기 LAYERS 는 그 사본(연결하지 않았으면 이 기기의 설정). 색만 나눈다(스타일 · 모서리는 전체).
+  // spec = { theme } | { custom: { soft: '#..', deep: '#..' } } — 서버와 같은 모양. dirty = ⚙ 로 바꿨지만 아직 서버에 올리지 않은 위젯
+  var LAYERS = 'idarchive.theme.layers.v1';
+  var WKEY = (location.pathname.split('/').pop() || '').replace(/\.html$/, '').toLowerCase();
+  function layers() {
+    var L = null; try { L = JSON.parse(localStorage.getItem(LAYERS) || 'null'); } catch (e) {}
+    L = L && typeof L === 'object' ? L : {};
+    return { pages: L.pages || {}, widgets: L.widgets || {}, dirty: L.dirty || {} };
+  }
+  function setLayers(L) { try { localStorage.setItem(LAYERS, JSON.stringify(L)); } catch (e) { return false; } applyTheme(effective()); return true; }
+  function specInto(s, p) {
+    if (!s) return;
+    if (s.theme && THEMES[s.theme]) { p.set('theme', s.theme); p.delete('soft'); p.delete('deep'); }
+    else if (s.custom && hex(String(s.custom.soft || '').slice(1))) { p.set('soft', s.custom.soft.slice(1)); p.set('deep', String(s.custom.deep || s.custom.soft).slice(1)); }
+  }
+  function layered(p) { var L = layers(); specInto(L.pages[q.get('page')], p); specInto(L.widgets[WKEY], p); return p; }
+  // 이 위젯만 따로(⚙ 「이 위젯만」) — null 이면 「전체 테마 따르기」(따로 정한 것을 지운다)
+  function setWidget(spec) {
+    var L = layers();
+    if (spec) L.widgets[WKEY] = spec; else delete L.widgets[WKEY];
+    L.dirty[WKEY] = 1;
+    return setLayers(L);
+  }
   function effective() {
     var p = new URLSearchParams(q.toString()), s = saved();
-    if (s && q.get('lock') !== '1') Object.keys(s).forEach(function (k) { if (s[k] === '') p.delete(k); else p.set(k, s[k]); });
-    return p;
+    if (q.get('lock') === '1') return p;
+    if (s) Object.keys(s).forEach(function (k) { if (s[k] === '') p.delete(k); else p.set(k, s[k]); });
+    return layered(p);
   }
   applyTheme(effective());
-  window.addEventListener('storage', function (e) { if (e.key === STORE) applyTheme(effective()); });
+  window.addEventListener('storage', function (e) { if (e.key === STORE || e.key === LAYERS) applyTheme(effective()); });
   // Theme Studio 「저장」 · 노션 연결의 테마 — ⚙ 와 같은 저장소라 이 기기의 모든 위젯이 따른다
   function saveTheme(patch) {
     var cur = saved() || {};
@@ -219,12 +244,16 @@
     var panel = document.createElement('div');
     panel.className = 'idp-panel'; panel.hidden = true;
     var s = saved() || {};
+    // 색을 「모든 위젯」에 줄지 「이 위젯만」 줄지 — 처음엔 모든 위젯(이 위젯을 따로 정해 두었으면 이 위젯만)
+    var scope = layers().widgets[WKEY] ? 'one' : 'all';
     var html = '<div class="idp-panel-title">STYLE</div><div class="idp-styles">';
     STYLES.forEach(function (st) {
       html += '<button type="button" data-style="' + st[0] + '">' + st[1] + '</button>';
     });
     html += '<button type="button" data-style="">기본</button></div>' +
-      '<div class="idp-panel-title" style="margin-top:14px">THEME</div><div class="idp-swatches">';
+      '<div class="idp-panel-title" style="margin-top:14px">THEME</div>' +
+      '<div class="idp-row idp-scope"><button type="button" data-scope="all">모든 위젯</button><button type="button" data-scope="one">이 위젯만</button></div>' +
+      '<div class="idp-note idp-scope-note"></div><div class="idp-swatches">';
     Object.keys(THEMES).forEach(function (name) {
       html += '<button type="button" data-theme="' + name + '" title="' + name + '" aria-label="' + name + '" style="background:linear-gradient(135deg,' +
         THEMES[name].soft + ' 50%,' + THEMES[name].deep + ' 50%)"></button>';
@@ -242,25 +271,40 @@
       try { localStorage.setItem(STORE, JSON.stringify(cur)); } catch (e) { /* storage blocked: apply for this view only */ }
       var p = new URLSearchParams(q.toString());
       Object.keys(cur).forEach(function (k) { if (cur[k] === '') p.delete(k); else p.set(k, cur[k]); });
-      applyTheme(p);
+      applyTheme(layered(p));
+    }
+    function markScope() {
+      Array.prototype.forEach.call(panel.querySelectorAll('[data-scope]'), function (b) { b.className = b.dataset.scope === scope ? 'on' : ''; });
+      var own = layers().widgets[WKEY], note = panel.querySelector('.idp-scope-note');
+      note.innerHTML = '';
+      note.appendChild(document.createTextNode(scope === 'all' ? '고른 색이 이 기기의 모든 위젯에 적용돼요'
+        : own ? '이 위젯만 ' + (own.theme ? own.theme.toUpperCase() : own.custom.soft.toUpperCase()) + ' · ' : '이 위젯만 다른 색으로 — 지금은 전체 테마를 따라요'));
+      if (scope === 'one' && own) {
+        var b = document.createElement('button'); b.type = 'button'; b.setAttribute('data-inherit', ''); b.className = 'idp-link-btn'; b.textContent = '전체 테마 따르기';
+        note.appendChild(b);
+      }
     }
     panel.addEventListener('click', function (e) {
       var t = e.target;
-      if (t.hasAttribute('data-style')) { save({ style: t.dataset.style }); markStyle(panel); }
+      if (t.dataset.scope) { scope = t.dataset.scope; markScope(); }
+      else if (t.hasAttribute('data-inherit')) { setWidget(null); markScope(); }
+      else if (t.dataset.theme && scope === 'one') { setWidget({ theme: t.dataset.theme }); markScope(); }
+      else if (t.hasAttribute('data-style')) { save({ style: t.dataset.style }); markStyle(panel); }
       else if (t.dataset.theme) save({ theme: t.dataset.theme, soft: '', deep: '' });
       else if (t.dataset.mode) save({ mode: t.dataset.mode });
       else if (t.dataset.border) save({ border: t.dataset.border, frame: '' });
-      else if (t.hasAttribute('data-reset')) { try { localStorage.removeItem(STORE); } catch (err) {} applyTheme(q); }
+      else if (t.hasAttribute('data-reset')) { try { localStorage.removeItem(STORE); } catch (err) {} applyTheme(effective()); }
       else if (t.hasAttribute('data-close')) panel.hidden = true;
     });
     panel.querySelector('[data-k="soft"]').addEventListener('input', function (e) {
       var v = e.target.value.slice(1);
-      save({ soft: v, deep: v });
+      if (scope === 'one') { setWidget({ custom: { soft: '#' + v, deep: '#' + v } }); markScope(); }
+      else save({ soft: v, deep: v });
     });
     var range = panel.querySelector('[data-k="radius"]');
     range.value = s.radius || D.radius;
     range.addEventListener('input', function (e) { save({ radius: e.target.value }); });
-    markStyle(panel);
+    markStyle(panel); markScope();
     btn.addEventListener('click', function () { panel.hidden = !panel.hidden; });
     document.body.appendChild(btn); document.body.appendChild(panel);
     panelEl = panel;
@@ -571,7 +615,7 @@
     return new Date();
   }
 
-  window.IDP = { q: q, CFG: CFG, THEMES: THEMES, applyTheme: applyTheme, savedTheme: saved, saveTheme: saveTheme, weekStart: weekStart === 'sun' ? 'sun' : 'mon',
+  window.IDP = { layers: { get: layers, set: setLayers, setWidget: setWidget, key: WKEY }, q: q, CFG: CFG, THEMES: THEMES, applyTheme: applyTheme, savedTheme: saved, saveTheme: saveTheme, weekStart: weekStart === 'sun' ? 'sun' : 'mon',
     DOW: DOW, MONTHS: MONTHS, pad: pad, iso: iso, plannerDate: plannerDate, parseDate: parseDate,
     options: options, opt: opt, photo: photo, listParse: listParse, seed: seed, seedDone: seedDone, now: now,
     STYLES: STYLES, share: share, shareLink: shareLink,
