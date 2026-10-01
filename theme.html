@@ -402,10 +402,14 @@
     no_planner: '플래너 첫 페이지를 찾지 못했어요. 다시 연결하면서 「ID ARCHIVE PLANNER」 페이지를 골라 주세요.',
     choose_planner: '연결된 플래너가 여러 개예요. 위에서 색을 바꿀 플래너를 먼저 골라 주세요.',
     protected_planner: '이 플래너에는 적용할 수 없어요. 내 플래너 페이지로 다시 연결해 주세요.',
-    not_shared: '플래너 일부 페이지에 연결 권한이 없어요. 다시 연결하면서 「ID ARCHIVE PLANNER」 페이지 전체를 골라 주세요.'
+    not_shared: '플래너 일부 페이지에 연결 권한이 없어요. 다시 연결하면서 「ID ARCHIVE PLANNER」 페이지 전체를 골라 주세요.',
+    // 플래너 단위 적용 잠금(서버) — 같은 플래너에서 다른 기기 · 탭이 적용 중
+    apply_busy: '다른 기기에서 테마를 적용 중이에요. 완료되면 다시 시도해 주세요.'
   };
   function fail(e) {
     // 끊긴 연결 · 권한 문제는 처음부터 다시, 잠깐의 오류는 받은 작업(lastJob)으로 멈춘 곳부터 이어서
+    // 다른 기기가 적용 중(apply_busy)이면 이 기기의 멈춘 작업은 그대로 둔다 — 그쪽이 끝나면 「이어서 적용」 할 수 있게
+    if (e.code === 'apply_busy') { running = false; drawSave(); bar(null); msg(ERR.apply_busy, true); return; }
     if (!(e.code === 'offline' || e.code === 'timeout' || e.code === 'notion_error' || /^http_5/.test(e.code || ''))) { lastJob = null; keepJob(null); }
     if (e.code === 'choose_planner') loadPlanner();
     running = false; drawSave(); bar(null);
@@ -513,6 +517,8 @@
     // 전체 색만 바꾼다 — 페이지 · 위젯 개별 설정은 그대로(서버 기본). 지우고 적용은 keepOverrides=false 일 때만
     var body = state.soft ? { custom: pick().custom } : { theme: state.theme };
     if (keepOverrides === false) body.keepOverrides = false;
+    // 이 기기에서 멈춰 둔 작업이 있으면(새로고침 뒤 다른 색을 고름) 그 작업의 잠금을 넘겨받는다 — 다른 기기의 것은 넘겨받지 못한다
+    var sj = savedJob(); if (sj && sj.job) body.takeover = sj.job;
     startWith(body);
   }
   // 이어서 적용 중에 색을 다른 것으로 고르면 멈춘 작업은 버리고 새 색으로 처음부터
