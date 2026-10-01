@@ -363,7 +363,8 @@
       bar(d.done ? 1 : Math.min(.95, .05 + d.pages / Math.max(d.pages + d.left, 24)));
       msg('노션 플래너를 바꾸는 중… 페이지 ' + d.pages + '개 확인 · ' + n + '곳 바꿈');
       // 단계 사이에 잠깐 쉰다 — 노션에 한꺼번에 몰리지 않게
-      if (!d.done) return new Promise(function (r) { setTimeout(r, 700); }).then(function () { return stepLoop(d.job, theme, custom); });
+      // 다른 탭으로 가 있으면(document.hidden) 브라우저가 타이머를 1분에 한 번으로 늦춘다(실제 E2E 2026-10-01) — 그때는 쉬지 않고 바로 다음 단계(단계마다 서버가 이미 천천히 부른다)
+      if (!d.done) return (document.hidden ? Promise.resolve() : new Promise(function (r) { setTimeout(r, 700); })).then(function () { return stepLoop(d.job, theme, custom); });
       lastJob = null; running = false; S.seen(custom ? 'custom:' + state.soft : theme); drawSave();
       showResult(d.result || { status: 'SUCCESS', ok: n, fail: 0, readFailed: 0 }, nameOf(theme, custom));
       loadConfig();
