@@ -406,31 +406,54 @@
   };
   function fail(e) {
     // 끊긴 연결 · 권한 문제는 처음부터 다시, 잠깐의 오류는 받은 작업(lastJob)으로 멈춘 곳부터 이어서
-    if (!(e.code === 'offline' || e.code === 'notion_error' || /^http_5/.test(e.code || ''))) lastJob = null;
+    if (!(e.code === 'offline' || e.code === 'timeout' || e.code === 'notion_error' || /^http_5/.test(e.code || ''))) { lastJob = null; keepJob(null); }
     if (e.code === 'choose_planner') loadPlanner();
     running = false; drawSave(); bar(null);
     msg((ERR[e.code] || '노션에 적용하지 못했어요.') + (lastJob ? ' 「이어서 적용」을 누르면 멈춘 곳부터 이어서 바꿔요.' : ERR[e.code] && e.code !== 'offline' ? '' : ' 잠시 뒤 다시 저장해 주세요.'), true);
   }
   // 노션이 잠깐 응답하지 않는 일은 실제로 있다(2026-10-01 실제 적용 중 한 번) — 같은 단계를 두 번까지 저절로 다시 부른다
+  // 적용 중인 작업(봉인된 작업 표)을 이 기기에 잠깐 둔다 — 새로고침 · 탭을 닫았다 다시 열어도 「이어서 적용」(임시 진행 상태만, 설정의 정본은 서버)
+  var JOBKEY = 'idarchive.theme.job';
+  function keepJob(job, theme, custom) {
+    try { if (job) localStorage.setItem(JOBKEY, JSON.stringify({ job: job, theme: theme, custom: !!custom, at: Date.now() })); else localStorage.removeItem(JOBKEY); } catch (e) {}
+  }
+  function savedJob() {
+    try { var v = JSON.parse(localStorage.getItem(JOBKEY) || 'null'); return v && v.job && Date.now() - v.at < 24 * 3600 * 1000 ? v : null; } catch (e) { return null; }
+  }
+  // 한 단계 — 노션이 늦으면 30초부터 「조금 느려요」, 90초가 넘으면 그 요청은 두고 같은 단계를 다시(이미 바뀐 곳은 다시 고치지 않는다)
+  var slowTimer = null;
   function stepOnce(job, tries) {
-    return S.api('POST', '/v1/theme/step', { job: job }).catch(function (e) {
-      var transient = e.code === 'offline' || e.code === 'notion_error' || /^http_5/.test(e.code || '');
+    var settled = false;
+    clearTimeout(slowTimer);
+    slowTimer = setTimeout(function () { if (!settled) msg('노션이 조금 느려요 — 멈춘 게 아니라 기다리는 중이에요…'); }, 30000);
+    var req = S.api('POST', '/v1/theme/step', { job: job });
+    var cap = new Promise(function (_, no) { setTimeout(function () { var e = new Error('timeout'); e.code = 'timeout'; no(e); }, 90000); });
+    return Promise.race([req, cap]).then(function (d) { settled = true; clearTimeout(slowTimer); return d; }, function (e) {
+      settled = true; clearTimeout(slowTimer);
+      var transient = e.code === 'offline' || e.code === 'timeout' || e.code === 'notion_error' || /^http_5/.test(e.code || '');
       if (!transient || tries >= 2) throw e;
       msg('노션이 잠깐 늦어요 — 다시 시도하는 중…');
       return new Promise(function (r) { setTimeout(r, 3000 * (tries + 1)); }).then(function () { return stepOnce(job, tries + 1); });
     });
   }
   function nameOf(theme, custom) { return custom ? '나만의 색' : String(theme || '').toUpperCase() + ' 색'; }
+  function placeName(k) { return !k ? '' : (PAGE_LABEL[k] || k); }
+  // 구매자가 보는 진행: 「적용 중 · 페이지 23 / 41 · GOALS · 184곳 바꿈」 — 막대는 끝나기 전엔 95% 까지
+  function showProgress(d) {
+    var p = d.progress || { pagesDone: d.pages, pagesTotal: Math.max(d.pages + d.left, 1), place: null, changed: d.changed.blocks + d.changed.pages };
+    bar(d.done ? 1 : Math.min(.95, .05 + .9 * p.pagesDone / Math.max(p.pagesTotal, 1)));
+    if (!d.done) msg('적용 중 · 페이지 ' + p.pagesDone + ' / ' + p.pagesTotal + (p.place ? ' · ' + placeName(p.place) : '') + ' · ' + p.changed + '곳 바꿈');
+  }
   function stepLoop(job, theme, custom) {
     lastJob = job; $('retryRow').hidden = true;
+    keepJob(job, theme, custom);
     return stepOnce(job, 0).then(function (d) {
       var n = d.changed.blocks + d.changed.pages;
-      bar(d.done ? 1 : Math.min(.95, .05 + d.pages / Math.max(d.pages + d.left, 24)));
-      msg('노션 플래너를 바꾸는 중… 페이지 ' + d.pages + '개 확인 · ' + n + '곳 바꿈');
+      showProgress(d);
       // 단계 사이에 잠깐 쉰다 — 노션에 한꺼번에 몰리지 않게
       // 다른 탭으로 가 있으면(document.hidden) 브라우저가 타이머를 1분에 한 번으로 늦춘다(실제 E2E 2026-10-01) — 그때는 쉬지 않고 바로 다음 단계(단계마다 서버가 이미 천천히 부른다)
       if (!d.done) return (document.hidden ? Promise.resolve() : new Promise(function (r) { setTimeout(r, 700); })).then(function () { return stepLoop(d.job, theme, custom); });
-      lastJob = null; running = false; S.seen(custom ? 'custom:' + state.soft : theme); drawSave();
+      lastJob = null; running = false; keepJob(null); S.seen(custom ? 'custom:' + state.soft : theme); drawSave();
       showResult(d.result || { status: 'SUCCESS', ok: n, fail: 0, readFailed: 0 }, nameOf(theme, custom));
       loadConfig();
     });
@@ -643,7 +666,12 @@
         if (d.custom && /^#[0-9a-f]{6}$/i.test(d.custom.soft || '')) { state.soft = d.custom.soft; state.deep = d.custom.deep || ''; }
         draw();
       }
-      if (d.last && d.last.status !== 'SUCCESS' && !saveMsgBusy()) showResult(d.last, '', true);
+      var sj = savedJob();
+      if (sj && !running) {
+        // 이 기기에서 하던 적용이 멈춰 있다(새로고침 · 탭 닫힘) — 멈춘 곳부터
+        lastJob = sj.job; drawSave();
+        msg('지난번 노션 적용이 중간에 멈췄어요. 「이어서 적용」을 누르면 멈춘 곳부터 이어서 바꿔요(이미 바뀐 곳은 그대로).', true);
+      } else if (d.last && d.last.status !== 'SUCCESS' && !saveMsgBusy()) showResult(d.last, '', true);
       return loadConfig();
     }, function () { drawSave(); drawAdv(); });
   }
