@@ -74,6 +74,18 @@
   .adv .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .adv .list > * { min-width: 0; }
   @media (max-width: 520px) { .adv { padding: 12px 14px; } .adv .list { grid-template-columns: minmax(0, 1fr); } .adv .it .st { display: none; } .adv select { max-width: 52%; } }
+  .conn { margin-top: 22px; border: 1px solid var(--line); border-radius: 16px; background: #fff; padding: 18px 20px; }
+  .conn b { font-weight: 500; }
+  .conn p { font-size: 13px; color: var(--ink); line-height: 1.75; margin: 6px 0 12px; }
+  .conn p.small { font-size: 11.5px; color: var(--sub); margin: 10px 0 0; }
+  .conn .go { background: var(--deep); color: #fff; border-color: var(--deep); font-size: 12.5px; letter-spacing: .04em; padding: 11px 20px; }
+  .conn .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--ink); }
+  .conn .dot { width: 8px; height: 8px; border-radius: 50%; background: #7bb37f; flex: none; }
+  .conn .off { margin-left: auto; font-size: 11px; color: var(--sub); background: none; border: 0; text-decoration: underline; padding: 4px; }
+  .conn .pick { margin-top: 12px; display: grid; gap: 8px; }
+  .conn .pick button { text-align: left; font-size: 13px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: var(--ink); }
+  .conn .pick button:hover { border-color: var(--deep); }
+  .conn .pick .q { font-size: 12.5px; color: var(--ink); line-height: 1.7; }
   .popup { text-align: center; padding: 30px 16px; font-size: 13px; color: var(--ink); line-height: 1.8; }
   .popup code { display: block; margin: 10px auto; padding: 8px; background: var(--tint); border-radius: 8px; font-size: 12px; word-break: break-all; max-width: 360px; }
 </style>
@@ -92,6 +104,20 @@
       <a href="gallery.html">전체 위젯 보기</a>
     </nav>
   </header>
+
+  <!-- 노션 연결(연결 서버가 있을 때만): 처음엔 「Notion 연결하기」 하나, 연결 뒤에는 어느 플래너인지 · 여럿이면 고르기 · 연결 끊기 -->
+  <div class="conn" id="conn" hidden>
+    <div class="conn-off" id="connOff">
+      <b>내 노션 플래너와 연결하기</b>
+      <p>연결하면 아래에서 색을 고르고 「저장」 한 번으로 노션 플래너의 제목 배경 · 아이콘 · 커버 · 위젯까지 같은 색이 돼요. 내가 쓴 글 · 사진 · 기록은 그대로예요.</p>
+      <button class="go" id="connectGo">Notion 연결하기</button>
+      <p class="small">노션 화면이 열리면 「페이지 선택」에서 <b>내 플래너 페이지</b>를 고르고 「허용」을 눌러 주세요.</p>
+    </div>
+    <div class="conn-on" id="connOn" hidden>
+      <div class="row"><span class="dot"></span><span id="plannerLine">연결된 플래너를 확인하는 중…</span><button class="off" id="disconnectGo">Notion 연결 끊기</button></div>
+      <div class="pick" id="plannerPick" hidden></div>
+    </div>
+  </div>
 
   <h2>1 · 스타일 고르기</h2>
   <p style="margin:6px 0 0;font-size:13px;color:var(--sub);line-height:1.7">
@@ -115,8 +141,6 @@
     <div class="lead" id="saveLead">고른 스타일과 색을 저장하면 <b>이 기기에서 보는 모든 위젯</b>이 같은 색이 돼요.</div>
     <div class="row">
       <button class="go" id="saveGo">저장</button>
-      <button class="chip" id="connectGo" hidden style="font-size:12px;padding:9px 14px">노션과 연결하기</button>
-      <button class="off" id="disconnectGo" hidden>Notion 연결 끊기</button>
     </div>
     <div class="bar" id="saveBar" hidden><i></i></div>
     <div class="msg" id="saveMsg" style="margin-top:10px"></div>
@@ -328,21 +352,62 @@
       : linked() ? '저장하면 <b>위젯</b>과 <b>노션 플래너</b>가 함께 바뀌어요 — 섹션 제목 배경 · 달력 상자 · 아이콘 · 커버까지.<br>내가 쓴 글 · 사진 · 직접 칠한 색은 그대로예요.'
       : '노션과 연결하면 저장 한 번으로 <b>노션 플래너</b>의 섹션 제목 배경 · 달력 상자 · 아이콘 · 커버까지 이 색으로 바뀌어요.<br>연결하지 않아도 위젯 색은 저장돼요.';
     $('saveGo').textContent = lastJob && !running ? '이어서 적용' : linked() ? '저장 · 노션에도 적용' : '저장';
-    $('connectGo').hidden = !S.on || linked();
-    $('disconnectGo').hidden = !linked();
-    $('saveGo').disabled = running;
+    $('conn').hidden = !S.on;
+    $('connOff').hidden = linked();
+    $('connOn').hidden = !linked();
+    drawPlanner();
+    // 연결된 플래너가 여럿인데 아직 고르지 않았으면 노션 적용을 막는다(엉뚱한 플래너 방지)
+    $('saveGo').disabled = running || mustChoose();
     if ($('advApply')) $('advApply').disabled = $('advSave').disabled = running;
+  }
+  // ── 어느 플래너에 연결됐나 — 이름을 보여 주고, 여럿이면 고르게 한다(서버 /v1/planner). 고르기 전에는 적용하지 않는다
+  var plan = null;   // { planner: {id, title} | null, candidates: [{id, title}] }
+  function mustChoose() { return linked() && !!plan && !plan.planner && plan.candidates.length > 0; }
+  function drawPlanner() {
+    if (!$('plannerLine')) return;
+    var pick = $('plannerPick');
+    pick.innerHTML = ''; pick.hidden = true;
+    if (!plan) { $('plannerLine').textContent = '연결된 플래너를 확인하는 중…'; return; }
+    if (plan.planner) {
+      $('plannerLine').innerHTML = '';
+      $('plannerLine').appendChild(document.createTextNode('연결된 플래너 · '));
+      var b = document.createElement('b'); b.textContent = plan.planner.title || '내 플래너'; $('plannerLine').appendChild(b);
+      $('plannerLine').appendChild(document.createTextNode(' — 이 플래너에만 적용돼요'));
+      return;
+    }
+    if (plan.candidates.length) {
+      $('plannerLine').textContent = '노션과 연결됐어요.';
+      pick.hidden = false;
+      var q = document.createElement('div'); q.className = 'q'; q.textContent = '연결한 페이지 중 플래너가 ' + plan.candidates.length + '개 있어요. 색을 바꿀 플래너를 골라 주세요.'; pick.appendChild(q);
+      plan.candidates.forEach(function (c) {
+        var btn = document.createElement('button'); btn.type = 'button'; btn.textContent = c.title;
+        btn.onclick = function () {
+          S.api('POST', '/v1/planner', { id: c.id }).then(function (d) { plan = d; drawSave(); msg('✓ 「' + (d.planner && d.planner.title) + '」에 연결했어요. 색을 고른 뒤 「저장 · 노션에도 적용」을 눌러 주세요.'); },
+            function (e) { msg(ERR[e.code] || '고르지 못했어요. 잠시 뒤 다시 눌러 주세요.', true); });
+        };
+        pick.appendChild(btn);
+      });
+      return;
+    }
+    $('plannerLine').textContent = '노션과 연결됐어요. 플래너를 찾는 중이에요 — 방금 고른 페이지는 노션이 조금 늦게 보여 줄 때가 있어요.';
+  }
+  function loadPlanner() {
+    if (!linked()) { plan = null; return Promise.resolve(); }
+    return S.api('GET', '/v1/planner').then(function (d) { plan = d; drawSave(); }, function () { drawSave(); });
   }
   var ERR = {
     offline: '인터넷이 잠시 끊겼어요.',
     not_connected: '노션 연결이 끊겼어요. 다시 연결한 뒤 저장해 주세요.',
     notion_revoked: '노션에서 연결을 해제했어요. 다시 연결한 뒤 저장해 주세요.',
     no_planner: '플래너 첫 페이지를 찾지 못했어요. 다시 연결하면서 「ID ARCHIVE PLANNER」 페이지를 골라 주세요.',
+    choose_planner: '연결된 플래너가 여러 개예요. 위에서 색을 바꿀 플래너를 먼저 골라 주세요.',
+    protected_planner: '이 플래너에는 적용할 수 없어요. 내 플래너 페이지로 다시 연결해 주세요.',
     not_shared: '플래너 일부 페이지에 연결 권한이 없어요. 다시 연결하면서 「ID ARCHIVE PLANNER」 페이지 전체를 골라 주세요.'
   };
   function fail(e) {
     // 끊긴 연결 · 권한 문제는 처음부터 다시, 잠깐의 오류는 받은 작업(lastJob)으로 멈춘 곳부터 이어서
     if (!(e.code === 'offline' || e.code === 'notion_error' || /^http_5/.test(e.code || ''))) lastJob = null;
+    if (e.code === 'choose_planner') loadPlanner();
     running = false; drawSave(); bar(null);
     msg((ERR[e.code] || '노션에 적용하지 못했어요.') + (lastJob ? ' 「이어서 적용」을 누르면 멈춘 곳부터 이어서 바꿔요.' : ERR[e.code] && e.code !== 'offline' ? '' : ' 잠시 뒤 다시 저장해 주세요.'), true);
   }
@@ -431,11 +496,11 @@
   draw = function () { if (lastJob && !running) { lastJob = null; msg(''); } redraw(); if ($('saveGo')) { drawSave(); drawAdv(); } };
   $('saveGo').onclick = function () { save(); };
   $('retryGo').onclick = retry;
-  $('connectGo').onclick = function () { S.connect(location.origin + location.pathname + location.search); };
+  $('connectGo').onclick = function () { S.connectHere(location.origin + location.pathname + location.search); };
   // 결정 A: 한 번에 — 노션 연결 해제(토큰 폐기) + 서버의 연결 기록 삭제. 플래너 내용 · 색은 그대로 남는다
   $('disconnectGo').onclick = function () {
     if (!confirm('노션 연결을 끊을까요?\n노션의 연결 권한을 해제하고, ID Archive 서버에 있던 연결 정보를 바로 지워요.\n플래너 내용과 지금 색은 그대로 남아요.')) return;
-    S.disconnect().then(function () { lastJob = null; cfg = null; drawSave(); drawAdv(); $('retryRow').hidden = true; msg('연결을 끊었어요. 노션 연결 권한을 해제하고 서버의 연결 정보를 지웠어요. 플래너의 색은 마지막으로 적용한 그대로 남아요.'); });
+    S.disconnect().then(function () { lastJob = null; cfg = null; plan = null; drawSave(); drawAdv(); $('retryRow').hidden = true; msg('연결을 끊었어요. 노션 연결 권한을 해제하고 서버의 연결 정보를 지웠어요. 플래너의 색은 마지막으로 적용한 그대로 남아요.'); });
   };
 
   // ── 고급 설정: 페이지별 · 위젯별 색(우선순위 위젯 > 페이지 > 전체). 정본은 서버의 config, 여기 cfg 는 고치는 중인 사본 ──
@@ -570,9 +635,10 @@
   // 연결돼 있으면: 서버의 설정 · 마지막 적용 결과를 불러온다(다른 기기에서 적용한 색 · 남은 부분)
   function boot() {
     if (!linked()) return;
+    loadPlanner();
     S.api('GET', '/v1/theme').then(function (d) {
-      // 이 기기에 저장한 것이 없을 때만 처음 화면을 서버 색으로
-      if (!mine.theme && d.theme && IDP.THEMES[d.theme]) {
+      // 연결돼 있으면 처음 화면은 그 플래너에 저장된 색(정본은 연결 서버 — 다른 기기에서 바꿨어도 같은 색으로 시작)
+      if (d.theme && IDP.THEMES[d.theme]) {
         state.theme = d.theme;
         if (d.custom && /^#[0-9a-f]{6}$/i.test(d.custom.soft || '')) { state.soft = d.custom.soft; state.deep = d.custom.deep || ''; }
         draw();

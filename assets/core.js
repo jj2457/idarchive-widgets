@@ -212,18 +212,31 @@
     if (s.theme && THEMES[s.theme]) { p.set('theme', s.theme); p.delete('soft'); p.delete('deep'); }
     else if (s.custom && hex(String(s.custom.soft || '').slice(1))) { p.set('soft', s.custom.soft.slice(1)); p.set('deep', String(s.custom.deep || s.custom.soft).slice(1)); }
   }
-  function layered(p) { var L = layers(); specInto(L.pages[q.get('page')], p); specInto(L.widgets[WKEY], p); return p; }
+  // 노션이 색을 링크에 적어 둔 위젯(ts=1, sync/theme.mjs embedUrl): 링크의 색이 정본 — 그 페이지 색(theme · soft · deep) 위에 위젯별 색(wt · ws · wd).
+  // 이 기기의 「모든 위젯」 색은 이런 위젯을 덮지 않는다(다른 기기 · 휴대폰과 같은 색). 이 기기의 「이 위젯만」은 덮는다.
+  var SYNCED = q.get('ts') === '1';
+  var COLOUR = ['theme', 'soft', 'deep'];
+  function linkBase(p) { COLOUR.forEach(function (k) { if (q.get(k)) p.set(k, q.get(k)); else p.delete(k); }); }
+  function layered(p) {
+    var L = layers(), own = L.widgets[WKEY];
+    if (!SYNCED) specInto(L.pages[q.get('page')], p);
+    if (own && own.inherit) { if (SYNCED) linkBase(p); }     // 「전체 테마 따르기」 — 링크에 적힌 위젯별 색도 무시
+    else specInto(own, p);
+    return p;
+  }
   // 이 위젯만 따로(⚙ 「이 위젯만」) — null 이면 「전체 테마 따르기」(따로 정한 것을 지운다)
   function setWidget(spec) {
     var L = layers();
-    if (spec) L.widgets[WKEY] = spec; else delete L.widgets[WKEY];
+    // 링크에 위젯별 색(wt)이 적혀 있으면 지우는 것만으로는 그 색이 남는다 → 「따르기」 표시를 둔다(서버에 올리면 위젯별 설정이 지워진다)
+    if (spec) L.widgets[WKEY] = spec; else if (SYNCED && q.get('wt')) L.widgets[WKEY] = { inherit: true }; else delete L.widgets[WKEY];
     L.dirty[WKEY] = 1;
     return setLayers(L);
   }
   function effective() {
     var p = new URLSearchParams(q.toString()), s = saved();
     if (q.get('lock') === '1') return p;
-    if (s) Object.keys(s).forEach(function (k) { if (s[k] === '') p.delete(k); else p.set(k, s[k]); });
+    if (s) Object.keys(s).forEach(function (k) { if (SYNCED && COLOUR.indexOf(k) >= 0) return; if (s[k] === '') p.delete(k); else p.set(k, s[k]); });
+    if (SYNCED && q.get('wt')) { p.set('theme', q.get('wt')); if (q.get('ws')) { p.set('soft', q.get('ws')); p.set('deep', q.get('wd') || q.get('ws')); } else { p.delete('soft'); p.delete('deep'); } }
     return layered(p);
   }
   applyTheme(effective());
@@ -245,7 +258,8 @@
     panel.className = 'idp-panel'; panel.hidden = true;
     var s = saved() || {};
     // 색을 「모든 위젯」에 줄지 「이 위젯만」 줄지 — 처음엔 모든 위젯(이 위젯을 따로 정해 두었으면 이 위젯만)
-    var scope = layers().widgets[WKEY] ? 'one' : 'all';
+    var ownNow = layers().widgets[WKEY];
+    var scope = SYNCED || (ownNow && !ownNow.inherit) ? 'one' : 'all';
     var html = '<div class="idp-panel-title">STYLE</div><div class="idp-styles">';
     STYLES.forEach(function (st) {
       html += '<button type="button" data-style="' + st[0] + '">' + st[1] + '</button>';
@@ -276,11 +290,19 @@
     function markScope() {
       Array.prototype.forEach.call(panel.querySelectorAll('[data-scope]'), function (b) { b.className = b.dataset.scope === scope ? 'on' : ''; });
       var own = layers().widgets[WKEY], note = panel.querySelector('.idp-scope-note');
+      var followed = own && own.inherit;
+      if (followed) own = null;
+      // 노션이 링크에 적어 둔 위젯별 색(Theme Studio 에서 정한 것) — 이 기기에서 「따르기」를 누르지 않았으면 그것이 이 위젯의 색
+      var linkOwn = SYNCED && !followed && q.get('wt') ? (q.get('ws') ? '#' + q.get('ws').toUpperCase() : q.get('wt').toUpperCase()) : '';
+      if (SYNCED) panel.querySelector('[data-scope="all"]').hidden = true;   // 노션과 연결된 플래너의 전체 색은 Theme Studio 에서
       note.innerHTML = '';
       note.appendChild(document.createTextNode(scope === 'all' ? '고른 색이 이 기기의 모든 위젯에 적용돼요'
-        : own ? '이 위젯만 ' + (own.theme ? own.theme.toUpperCase() : own.custom.soft.toUpperCase()) + ' · ' : '이 위젯만 다른 색으로 — 지금은 전체 테마를 따라요'));
-      if (scope === 'one' && own) {
-        var b = document.createElement('button'); b.type = 'button'; b.setAttribute('data-inherit', ''); b.className = 'idp-link-btn'; b.textContent = '전체 테마 따르기';
+        : own ? '이 위젯만 ' + (own.theme ? own.theme.toUpperCase() : own.custom.soft.toUpperCase()) + ' · '
+        : linkOwn ? '이 위젯만 ' + linkOwn + ' · '
+        : SYNCED ? '이 위젯은 페이지 · 전체 테마를 따라요. 색을 누르면 이 위젯만 바뀌어요'
+        : '이 위젯만 다른 색으로 — 지금은 전체 테마를 따라요'));
+      if (scope === 'one' && (own || linkOwn)) {
+        var b = document.createElement('button'); b.type = 'button'; b.setAttribute('data-inherit', ''); b.className = 'idp-link-btn'; b.textContent = SYNCED ? '페이지 · 전체 테마 따르기' : '전체 테마 따르기';
         note.appendChild(b);
       }
     }
