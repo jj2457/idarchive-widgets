@@ -442,7 +442,8 @@
   function showProgress(d) {
     var p = d.progress || { pagesDone: d.pages, pagesTotal: Math.max(d.pages + d.left, 1), place: null, changed: d.changed.blocks + d.changed.pages };
     bar(d.done ? 1 : Math.min(.95, .05 + .9 * p.pagesDone / Math.max(p.pagesTotal, 1)));
-    if (!d.done) msg('적용 중 · 페이지 ' + p.pagesDone + ' / ' + p.pagesTotal + (p.place ? ' · ' + placeName(p.place) : '') + ' · ' + p.changed + '곳 바꿈');
+    // 살펴본 곳은 단계마다 늘어난다 — 바꿀 곳이 없는 큰 페이지를 읽는 동안에도 멈춘 것처럼 보이지 않게
+    if (!d.done) msg('적용 중 · 페이지 ' + p.pagesDone + ' / ' + p.pagesTotal + (p.place ? ' · ' + placeName(p.place) : '') + (p.scanned ? ' · ' + p.scanned + '곳 살펴봄' : '') + ' · ' + p.changed + '곳 바꿈');
   }
   function stepLoop(job, theme, custom) {
     lastJob = job; $('retryRow').hidden = true;
