@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Money (Notion)</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 520px; margin: 0 auto; }
+  [hidden] { display: none !important; }
+  .head { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; gap: 8px; }
+  .head h2 { margin: 0; font-size: 22px; letter-spacing: .02em; color: color-mix(in srgb, var(--deep) 75%, #2a2a2a); font-weight: 700; }
+  .nav { display: flex; align-items: center; gap: 2px; font-size: 12px; color: var(--sub); white-space: nowrap; }
+  .nav button { padding: 2px 8px; border: 0; background: none; color: var(--sub); font-size: 14px; line-height: 1; }
+  .nav button:hover { color: var(--deep); }
+  .nums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 12px; }
+  .num { padding: 9px 8px; border-radius: 10px; background: var(--tint); min-width: 0; }
+  .num b { display: block; font-size: 9.5px; font-weight: 600; letter-spacing: .06em; color: var(--sub); }
+  .num span { display: block; margin-top: 3px; font-size: 14px; font-weight: 700; color: color-mix(in srgb, var(--deep) 80%, #2a2a2a); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .num.minus span { color: #b4544c; }
+  .budget { margin-top: 12px; }
+  .budget .row, .cat .row { display: flex; align-items: baseline; gap: 8px; font-size: 11.5px; color: var(--ink); }
+  .budget .row .l, .cat .row .l { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .budget .row .r, .cat .row .r { flex: none; font-weight: 600; color: color-mix(in srgb, var(--deep) 80%, #2a2a2a); }
+  .bar { margin-top: 5px; height: 6px; border-radius: 999px; background: var(--tint); overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--deep); border-radius: 999px; transition: width .25s; }
+  .bar.over i { background: #b4544c; }
+  .sub { margin-top: 14px; font-size: 9.5px; letter-spacing: .08em; color: var(--sub); font-weight: 600; }
+  .cats { margin-top: 6px; display: flex; flex-direction: column; gap: 8px; }
+  .cat .bar { height: 4px; }
+  .meta { margin-top: 3px; font-size: 9.5px; color: var(--sub); }
+  .gate { margin-top: 16px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
+  .gate button { margin-top: 10px; padding: 9px 18px; border-radius: 999px; background: var(--deep); color: #fff; border: 0; font-size: 12px; letter-spacing: .04em; text-transform: none; }
+  .state { font-size: 9.5px; color: var(--sub); text-align: center; margin-top: 8px; letter-spacing: .04em; min-height: 12px; }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="grow"><div class="wrap">
+    <div class="head"><h2 id="title">MONEY</h2><div class="nav"><button type="button" id="prev" aria-label="지난달">‹</button><span id="month"></span><button type="button" id="next" aria-label="다음 달">›</button></div></div>
+    <div id="body">
+      <div class="nums">
+        <div class="num"><b>수입</b><span id="income">—</span></div>
+        <div class="num"><b>지출</b><span id="expense">—</span></div>
+        <div class="num" id="balBox"><b>남은 금액</b><span id="balance">—</span></div>
+      </div>
+      <div class="budget" id="budget"></div>
+      <div class="sub" id="catHead" hidden>많이 쓴 카테고리</div>
+      <div class="cats" id="cats"></div>
+    </div>
+    <div class="gate" id="gate" hidden></div>
+    <div class="state" id="state"></div>
+  </div></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script src="assets/sync.js"></script>
+<script>
+  // 노션 가계부(LEDGER) · 예산(BUDGET)과 이어지는 이번 달 요약 — 보기만 한다(REQ-090). 숫자는 노션에 적은 줄에서 계산한다.
+  // ?demo=1 은 견본(연결 없음). ?now=YYYY-MM-DD 는 그 날을 오늘로(촬영 · 시험).
+  var S = IDP.sync;
+  var DEMO = IDP.q.get('demo') === '1';
+  var today = /^\d{4}-\d{2}-\d{2}$/.test(IDP.q.get('now') || '') ? IDP.q.get('now') : (function () { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })();
+  var month = today.slice(0, 7), seq = 0, data = null;
+  function $(id) { return document.getElementById(id); }
+  if (S.popup()) throw new Error('popup');
+  S.onConnect(function () { load(); });
+  function won(n) { return n == null ? '—' : (n < 0 ? '−' : '') + Math.abs(Math.round(n)).toLocaleString('ko-KR') + '원'; }
+  function shift(m, n) { var y = +m.slice(0, 4), mo = +m.slice(5, 7) - 1 + n; y += Math.floor(mo / 12); mo = ((mo % 12) + 12) % 12; return y + '-' + String(mo + 1).padStart(2, '0'); }
+  function state(t) { $('state').textContent = t || ''; }
+  function gate(html, btn) {
+    $('gate').hidden = false; $('body').hidden = true;
+    $('gate').innerHTML = html + (btn ? '<br><button type="button" id="go">' + btn + '</button>' : '');
+    if (btn) $('go').onclick = function () { S.connect(); };
+  }
+  function bar(ratio, over) { var b = document.createElement('div'); b.className = 'bar' + (over ? ' over' : ''); var i = document.createElement('i'); i.style.width = Math.max(0, Math.min(100, Math.round(ratio * 100))) + '%'; b.appendChild(i); return b; }
+  function line(l, r) { var row = document.createElement('div'); row.className = 'row'; var a = document.createElement('span'); a.className = 'l'; a.textContent = l; var b = document.createElement('span'); b.className = 'r'; b.textContent = r; row.appendChild(a); row.appendChild(b); return row; }
+  function head() {
+    $('title').textContent = IDP.opt('financesync', 'label', '') || 'MONEY';
+    $('month').textContent = month.replace('-', '. ');
+    $('next').disabled = month >= today.slice(0, 7);
+    $('next').style.visibility = month >= today.slice(0, 7) ? 'hidden' : '';
+  }
+  function render() {
+    head(); $('body').hidden = false;
+    var d = data || {};
+    $('income').textContent = won(d.income); $('expense').textContent = won(d.expense); $('balance').textContent = won(d.balance);
+    $('balBox').className = 'num' + (d.balance < 0 ? ' minus' : '');
+    var B = $('budget'); B.innerHTML = '';
+    if (d.budget) {
+      B.appendChild(line('예산 ' + won(d.budget) + ' 중', Math.round(d.used * 100) + '% 사용'));
+      B.appendChild(bar(d.used, d.used > 1));
+      var m = document.createElement('div'); m.className = 'meta';
+      m.textContent = d.used > 1 ? '예산보다 ' + won(d.expense - d.budget) + ' 더 썼어요' : '앞으로 ' + won(d.budget - d.expense) + ' 쓸 수 있어요';
+      B.appendChild(m);
+    } else if (data) {
+      var n = document.createElement('div'); n.className = 'meta'; n.textContent = '노션 「예산」 표에 카테고리별 월 예산을 적으면 몇 % 썼는지 보여요'; B.appendChild(n);
+    }
+    var C = $('cats'); C.innerHTML = '';
+    var top = d.top || [];
+    $('catHead').hidden = !top.length;
+    top.forEach(function (c) {
+      var box = document.createElement('div'); box.className = 'cat';
+      box.appendChild(line(c.name, won(c.amount)));
+      if (c.budget) { box.appendChild(bar(c.amount / c.budget, c.amount > c.budget)); }
+      var m = document.createElement('div'); m.className = 'meta';
+      m.textContent = c.budget ? '예산 ' + won(c.budget) + ' · ' + Math.round(c.amount / c.budget * 100) + '%' : '예산 없음';
+      box.appendChild(m); C.appendChild(box);
+    });
+    if (d.uncategorized) { var u = document.createElement('div'); u.className = 'meta'; u.textContent = '카테고리 없는 지출 ' + won(d.uncategorized) + ' — 노션 가계부에서 카테고리를 고르면 나눠 보여요'; C.appendChild(u); }
+    if (data && !d.count) state('이 달에 적은 수입 · 지출이 없어요');
+  }
+  function load() {
+    $('gate').hidden = true; head();
+    if (DEMO) { data = { income: 2780000, expense: 898900, balance: 1881100, budget: 1150000, used: .782, count: 23, top: [{ name: '주거', amount: 600000, budget: 700000 }, { name: '식비', amount: 186400, budget: 300000 }, { name: '카페', amount: 62500, budget: 50000 }], uncategorized: 0 }; render(); state('견본 · 노션과 연결하면 내 가계부가 보여요'); return; }
+    if (!S.base) return gate('노션 연결 준비 중이에요.');
+    if (!S.wid()) return gate('노션 가계부 · 예산 표와 이어지는 위젯이에요.<br>노션 가계부에 적으면 이번 달 수입 · 지출 · 남은 금액이 저절로 바뀌어요.', '노션과 연결하기');
+    var my = ++seq;
+    state('불러오는 중…');
+    return S.api('GET', '/v1/finance?month=' + month + '&tz=' + new Date().getTimezoneOffset()).then(function (d) { if (my !== seq) return; data = d; state(''); render(); }).catch(function (e) {
+      if (my !== seq) return;
+      state('');
+      if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기');
+      if (e.code === 'choose_planner') return gate('연결된 플래너가 여러 개예요. Theme Studio 에서 플래너를 먼저 골라 주세요.');
+      if (e.code === 'no_table' || e.code === 'not_shared') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
+      state(e.message);
+    });
+  }
+  $('prev').onclick = function () { month = shift(month, -1); data = null; load(); };
+  $('next').onclick = function () { if (month < today.slice(0, 7)) { month = shift(month, 1); data = null; load(); } };
+  // 노션에서 적고 돌아오면 다시 읽는다
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && !DEMO && S.wid() && S.base) load(); });
+  IDP.options('financesync', [{ k: 'label', label: '제목', ph: 'MONEY' }], function () { head(); });
+  load();
+</script>
+</body>
+</html>

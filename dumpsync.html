@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Brain Dump (Notion)</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 520px; margin: 0 auto; }
+  [hidden] { display: none !important; }
+  .head { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 4px; gap: 8px; }
+  .head h2 { margin: 0; font-size: 22px; letter-spacing: .02em; color: color-mix(in srgb, var(--deep) 75%, #2a2a2a); font-weight: 700; }
+  .pill { font-size: 10.5px; padding: 3px 10px; border-radius: 999px; background: var(--tint); color: color-mix(in srgb, var(--deep) 70%, #2a2a2a); white-space: nowrap; }
+  form { display: flex; gap: 6px; margin-top: 10px; }
+  form input { flex: 1; min-width: 0; padding: 9px 12px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--deep) 25%, transparent); background: var(--paper); font: inherit; font-size: 13px; color: var(--ink); }
+  form input:focus { outline: none; border-color: var(--deep); }
+  form button { flex: none; padding: 0 14px; border-radius: 999px; border: 0; background: var(--deep); color: #fff; font-size: 12px; letter-spacing: .04em; text-transform: none; }
+  form button:disabled { opacity: .5; }
+  .list { margin-top: 10px; display: flex; flex-direction: column; gap: 2px; min-height: 40px; }
+  .n { display: flex; align-items: flex-start; gap: 8px; padding: 7px 6px; border-radius: 8px; }
+  .n:hover { background: var(--tint); }
+  .n .ck { flex: none; width: 16px; height: 16px; margin-top: 1px; border-radius: 50%; border: 1.5px solid color-mix(in srgb, var(--deep) 45%, transparent); background: none; padding: 0; cursor: pointer; }
+  .n.done .ck { background: var(--deep); border-color: var(--deep); }
+  .n a { flex: 1; min-width: 0; font-size: 13px; color: var(--ink); text-decoration: none; line-height: 1.45; word-break: break-word; }
+  .n.done a { color: var(--sub); text-decoration: line-through; }
+  .n time { flex: none; font-size: 9.5px; color: var(--sub); margin-top: 3px; }
+  .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+  .foot button { padding: 0; border: 0; background: none; font-size: 10.5px; color: var(--sub); text-transform: none; letter-spacing: .02em; }
+  .foot button:hover { color: var(--deep); }
+  .empty, .gate { margin-top: 12px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
+  .gate button { margin-top: 10px; padding: 9px 18px; border-radius: 999px; background: var(--deep); color: #fff; border: 0; font-size: 12px; letter-spacing: .04em; text-transform: none; }
+  .state { font-size: 9.5px; color: var(--sub); text-align: center; margin-top: 8px; letter-spacing: .04em; min-height: 12px; }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="grow"><div class="wrap">
+    <div class="head"><h2 id="title">BRAIN DUMP</h2><span class="pill" id="sum"></span></div>
+    <div id="body">
+      <form id="add" autocomplete="off"><input id="text" maxlength="500" placeholder="머릿속에 떠오른 것 한 줄" aria-label="머릿속에 떠오른 것"><button type="submit" id="go">적기</button></form>
+      <div class="list" id="list"></div>
+      <div class="foot"><button type="button" id="show"></button><span></span></div>
+    </div>
+    <div class="gate" id="gate" hidden></div>
+    <div class="state" id="state"></div>
+  </div></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script src="assets/sync.js"></script>
+<script>
+  // 노션 NOTES 와 이어지는 머릿속 비우기 — 적으면 노션 메모(분류 = 브레인덤프)가 생기고, ○ 를 누르면 노션 「정리함」이 체크된다.
+  // 원본은 노션 표 — 위젯은 아무것도 따로 저장하지 않는다(보기 설정 「정리한 것도」만 이 기기에). ?demo=1 은 견본.
+  var S = IDP.sync;
+  var DEMO = IDP.q.get('demo') === '1';
+  var SKEY = 'idarchive.dumpsync.show';
+  var show = (function () { try { return localStorage.getItem(SKEY) === 'all' ? 'all' : 'open'; } catch (e) { return 'open'; } })();
+  var items = [], seq = 0, busy = false;
+  function $(id) { return document.getElementById(id); }
+  if (S.popup()) throw new Error('popup');
+  S.onConnect(function () { load(); });
+  function state(t) { $('state').textContent = t || ''; }
+  function gate(html, btn) {
+    $('gate').hidden = false; $('body').hidden = true; $('sum').textContent = '';
+    $('gate').innerHTML = html + (btn ? '<br><button type="button" id="cn">' + btn + '</button>' : '');
+    if (btn) $('cn').onclick = function () { S.connect(); };
+  }
+  function when(iso) {
+    if (!iso) return '';
+    var d = new Date(iso), now = new Date();
+    if (d.toDateString() === now.toDateString()) return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    return (d.getMonth() + 1) + '/' + d.getDate();
+  }
+  function render() {
+    $('title').textContent = IDP.opt('dumpsync', 'label', '') || 'BRAIN DUMP';
+    $('body').hidden = false;
+    var open = items.filter(function (x) { return !x.done; }).length;
+    $('sum').textContent = open ? '정리할 것 ' + open : '';
+    $('show').textContent = show === 'all' ? '정리한 것 숨기기' : '정리한 것도 보기';
+    var L = $('list'); L.innerHTML = '';
+    items.forEach(function (x) {
+      var row = document.createElement('div'); row.className = 'n' + (x.done ? ' done' : '');
+      var ck = document.createElement('button'); ck.type = 'button'; ck.className = 'ck'; ck.setAttribute('aria-label', x.done ? '정리 안 함으로' : '정리함으로');
+      ck.onclick = function () { toggle(x); };
+      var a = document.createElement('a'); a.textContent = x.text || '(빈 메모)'; if (x.url) { a.href = x.url; a.target = '_blank'; a.rel = 'noopener'; }
+      var tm = document.createElement('time'); tm.textContent = when(x.created);
+      row.appendChild(ck); row.appendChild(a); row.appendChild(tm); L.appendChild(row);
+    });
+    if (!items.length) L.innerHTML = '<div class="empty">' + (show === 'all' ? '아직 적은 것이 없어요.' : '정리할 것이 없어요. 떠오르는 것을 위에 적어 두세요.') + '</div>';
+  }
+  function toggle(x) {
+    if (DEMO) { x.done = !x.done; if (show === 'open' && x.done) items = items.filter(function (y) { return y !== x; }); return render(); }
+    var before = x.done; x.done = !x.done; render();
+    S.api('PATCH', '/v1/notes/' + x.id, { done: x.done }).then(function () {
+      if (show === 'open' && x.done) { items = items.filter(function (y) { return y !== x; }); render(); }
+    }).catch(function (e) { x.done = before; render(); state(e.message || '노션에 저장하지 못했어요'); });
+  }
+  $('add').onsubmit = function (ev) {
+    ev.preventDefault();
+    var t = $('text').value.replace(/\s+/g, ' ').trim();
+    if (!t || busy) return;
+    if (DEMO) { items.unshift({ id: 'd' + Date.now(), text: t, created: new Date().toISOString(), done: false }); $('text').value = ''; return render(); }
+    busy = true; $('go').disabled = true; state('노션에 적는 중…');
+    S.api('POST', '/v1/notes', { text: t }).then(function (n) { items.unshift(n); $('text').value = ''; state(''); render(); })
+      .catch(function (e) { state(e.message || '노션에 저장하지 못했어요 — 글은 그대로 두었어요'); })
+      .then(function () { busy = false; $('go').disabled = false; $('text').focus(); });
+  };
+  $('show').onclick = function () { show = show === 'all' ? 'open' : 'all'; try { localStorage.setItem(SKEY, show); } catch (e) {} load(); };
+  function load() {
+    $('gate').hidden = true;
+    if (DEMO) { if (!items.length) items = [{ id: 'd1', text: '세탁소 맡긴 코트 찾기', created: new Date().toISOString(), done: false }, { id: 'd2', text: '다음 달 여행 숙소 후보 3곳 비교', created: new Date(Date.now() - 864e5).toISOString(), done: false }, { id: 'd3', text: '블로그 글감 — 아침 루틴 바꾼 이야기', created: new Date(Date.now() - 2 * 864e5).toISOString(), done: false }]; render(); state('견본 · 노션과 연결하면 적은 것이 노션 메모로 저장돼요'); return; }
+    if (!S.base) return gate('노션 연결 준비 중이에요.');
+    if (!S.wid()) return gate('여기에 적으면 노션 메모(머릿속 비우기)로 바로 저장돼요.<br>DAILY · ARCHIVE 의 메모 목록에서 그대로 보여요.', '노션과 연결하기');
+    var my = ++seq;
+    state('불러오는 중…');
+    return S.api('GET', '/v1/notes?show=' + show).then(function (d) { if (my !== seq) return; items = d.items || []; state(''); render(); }).catch(function (e) {
+      if (my !== seq) return;
+      state('');
+      if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기');
+      if (e.code === 'choose_planner') return gate('연결된 플래너가 여러 개예요. Theme Studio 에서 플래너를 먼저 골라 주세요.');
+      if (e.code === 'no_table' || e.code === 'not_shared') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
+      state(e.message);
+    });
+  }
+  // 노션에서 정리하고 돌아오면 다시 읽는다
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && !DEMO && S.wid() && S.base && !busy) load(); });
+  IDP.options('dumpsync', [{ k: 'label', label: '제목', ph: 'BRAIN DUMP' }], function () { render(); });
+  load();
+</script>
+</body>
+</html>

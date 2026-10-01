@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Calendar (Notion)</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 520px; margin: 0 auto; }
+  [hidden] { display: none !important; }
+  .nav { background: none; border: 0; padding: 4px 8px; font-size: 14px; color: var(--sub); letter-spacing: 0; }
+  .nav:hover { background: var(--tint); color: var(--ink); }
+  .title { font-size: 15px; letter-spacing: .1em; }
+  .title span { color: var(--sub); font-size: .8em; margin-left: .5em; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
+  th { font-size: 9px; font-weight: 400; letter-spacing: .1em; color: var(--sub); padding: 4px 0 6px; }
+  td { text-align: center; font-size: 11px; padding: 3px 0 5px; border-top: 1px solid var(--line); height: 32px; cursor: pointer; vertical-align: top; }
+  td.empty { cursor: default; }
+  td i { font-style: normal; display: inline-block; width: 22px; line-height: 22px; border-radius: 50%; }
+  td:not(.empty):hover i { background: var(--tint); }
+  .sun, .hol { color: var(--red); } .sat { color: var(--blue); }
+  .today i { background: var(--deep); color: #fff; }
+  td.sel i { box-shadow: 0 0 0 1.5px var(--deep); }
+  td u { display: block; margin: 2px auto 0; width: 5px; height: 5px; border-radius: 50%; background: var(--deep); text-decoration: none; }
+  td u.part { background: color-mix(in srgb, var(--deep) 45%, transparent); }
+  td u.all { background: none; box-shadow: inset 0 0 0 1.5px var(--deep); }
+  .day { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
+  .day h3 { margin: 0 0 4px; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; color: color-mix(in srgb, var(--deep) 75%, #2a2a2a); }
+  .day h3 small { font-weight: 400; color: var(--red); margin-left: 6px; }
+  .it { display: flex; align-items: center; gap: 8px; padding: 5px 4px; border-radius: 8px; font-size: 12.5px; color: var(--ink); }
+  .it button { flex: none; width: 16px; height: 16px; padding: 0; border-radius: 50%; border: 1.5px solid color-mix(in srgb, var(--deep) 50%, transparent); background: var(--paper); }
+  .it.done button { background: var(--deep); border-color: var(--deep); }
+  .it.done span { color: var(--sub); text-decoration: line-through; }
+  .it span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .empty-day { font-size: 11px; color: var(--sub); padding: 4px; }
+  .gate { margin-top: 12px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
+  .gate button { margin-top: 10px; padding: 9px 18px; border-radius: 999px; background: var(--deep); color: #fff; border: 0; font-size: 12px; letter-spacing: .04em; text-transform: none; }
+  .state { font-size: 9.5px; color: var(--sub); text-align: center; margin-top: 8px; letter-spacing: .04em; min-height: 12px; }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="grow"><div class="wrap">
+    <div class="row">
+      <div class="badge" id="badge">Calendar</div>
+      <div class="row" style="gap:2px"><button class="nav" id="prev" aria-label="이전 달">‹</button><button class="nav" id="next" aria-label="다음 달">›</button></div>
+    </div>
+    <div class="title serif" style="margin-top:12px" id="title"></div>
+    <table id="grid"></table>
+    <div class="day" id="day" hidden></div>
+    <div class="gate" id="gate" hidden></div>
+    <div class="state" id="state"></div>
+  </div></div>
+</div>
+<script src="assets/holidays.js"></script>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script src="assets/sync.js"></script>
+<script>
+  // 노션 할 일 표(TASKS)와 이어지는 달력 — 테마 색을 따르고(노션 달력은 색을 못 바꿈, REQ-010), 할 일이 있는 날에 점,
+  // 날짜를 누르면 그날 할 일이 아래에 보이고 ○ 로 끝낼 수 있다(노션 「완료」). 원본은 노션 표 — 위젯은 따로 저장하지 않는다.
+  // 점: ● 남은 일 있음 · ◐ 일부 끝냄 · ○ 다 끝냄. ?demo=1 은 견본.
+  var S = IDP.sync;
+  var DEMO = IDP.q.get('demo') === '1';
+  var mon = IDP.weekStart === 'mon';
+  var now = IDP.now(), y = now.getFullYear(), m = now.getMonth();
+  var days = {}, sel = null, items = [], seq = 0, dseq = 0;
+  function $(id) { return document.getElementById(id); }
+  if (S.popup()) throw new Error('popup');
+  S.onConnect(function () { load(); });
+  function key(d) { return y + '-' + IDP.pad(m + 1) + '-' + IDP.pad(d); }
+  function monthKey() { return y + '-' + IDP.pad(m + 1); }
+  function state(t) { $('state').textContent = t || ''; }
+  function gate(html, btn) {
+    $('gate').hidden = false; $('day').hidden = true;
+    $('gate').innerHTML = html + (btn ? '<br><button type="button" id="go">' + btn + '</button>' : '');
+    if (btn) $('go').onclick = function () { S.connect(); };
+  }
+  function render() {
+    $('badge').textContent = IDP.opt('calsync', 'label', '') || 'Calendar';
+    $('title').innerHTML = IDP.pad(m + 1) + ' ' + IDP.MONTHS[m] + '<span>' + y + '</span>';
+    var order = mon ? [1, 2, 3, 4, 5, 6, 0] : [0, 1, 2, 3, 4, 5, 6];
+    var html = '<tr>' + order.map(function (w) { return '<th class="' + (w === 0 ? 'sun' : w === 6 ? 'sat' : '') + '">' + IDP.DOW[w][0] + '</th>'; }).join('') + '</tr>';
+    var first = new Date(y, m, 1), lead = (first.getDay() - (mon ? 1 : 0) + 7) % 7, dim = new Date(y, m + 1, 0).getDate();
+    for (var d = 1 - lead; d <= dim;) {
+      html += '<tr>';
+      for (var c = 0; c < 7; c++, d++) {
+        if (d < 1 || d > dim) { html += '<td class="empty"></td>'; continue; }
+        var k = key(d), w = order[c], info = days[k] || {};
+        var hol = info.holiday || (window.IDP_HOLIDAYS && IDP_HOLIDAYS[k]);
+        var cls = hol ? 'hol' : w === 0 ? 'sun' : w === 6 ? 'sat' : '';
+        if (k === IDP.iso(now)) cls += ' today';
+        if (k === sel) cls += ' sel';
+        var dot = info.n ? '<u class="' + (info.done >= info.n ? 'all' : info.done ? 'part' : '') + '"></u>' : '';
+        html += '<td class="' + cls + '" data-k="' + k + '" title="' + (hol ? hol + ' · ' : '') + (info.n ? '할 일 ' + info.n + ' · 끝냄 ' + info.done : '') + '"><i>' + IDP.pad(d) + '</i>' + dot + '</td>';
+      }
+      html += '</tr>';
+    }
+    $('grid').innerHTML = html;
+    [].forEach.call($('grid').querySelectorAll('td[data-k]'), function (td) { td.onclick = function () { pick(td.getAttribute('data-k')); }; });
+  }
+  function drawDay() {
+    var D = $('day'); if (!sel) { D.hidden = true; return; }
+    D.hidden = false; D.innerHTML = '';
+    var h = document.createElement('h3'), dt = new Date(sel + 'T00:00:00');
+    h.textContent = (dt.getMonth() + 1) + '월 ' + dt.getDate() + '일 (' + '일월화수목금토'[dt.getDay()] + ')';
+    var hol = (days[sel] || {}).holiday || (window.IDP_HOLIDAYS && IDP_HOLIDAYS[sel]);
+    if (hol) { var s = document.createElement('small'); s.textContent = hol; h.appendChild(s); }
+    D.appendChild(h);
+    if (!items.length) { var e = document.createElement('div'); e.className = 'empty-day'; e.textContent = '이 날 할 일이 없어요.'; D.appendChild(e); return; }
+    items.forEach(function (it) {
+      var row = document.createElement('div'); row.className = 'it' + (it.done ? ' done' : '');
+      var b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-label', it.title + (it.done ? ' 끝내기 취소' : ' 끝내기'));
+      b.onclick = function () { toggle(it); };
+      var t = document.createElement('span'); t.textContent = it.title || '(제목 없음)';
+      row.appendChild(b); row.appendChild(t); D.appendChild(row);
+    });
+  }
+  function pick(k) {
+    sel = sel === k ? null : k; render();
+    if (!sel) return drawDay();
+    if (DEMO) { items = (DEMO_ITEMS[sel] || []).slice(); return drawDay(); }
+    var my = ++dseq; items = []; drawDay(); state('불러오는 중…');
+    S.api('GET', '/v1/todo?date=' + sel + '&tz=' + new Date().getTimezoneOffset()).then(function (d) { if (my !== dseq) return; items = d.items || []; state(''); drawDay(); })
+      .catch(function (e) { if (my !== dseq) return; state(e.message); });
+  }
+  function toggle(it) {
+    var before = it.done; it.done = !it.done; drawDay();
+    var info = days[sel]; if (info) { info.done += it.done ? 1 : -1; render(); }
+    if (DEMO) return;
+    S.api('PATCH', '/v1/todo/' + it.id, { done: it.done }).catch(function (e) {
+      it.done = before; if (info) info.done += before ? 1 : -1; render(); drawDay(); state(e.message || '노션에 저장하지 못했어요');
+    });
+  }
+  var DEMO_ITEMS = {};
+  function load() {
+    $('gate').hidden = true; render();
+    if (DEMO) {
+      var a = key(1), b = key(Math.min(now.getDate(), 28)), c = key(Math.min(now.getDate() + 3, 28));
+      days = {}; days[a] = { n: 2, done: 2 }; days[b] = { n: 3, done: 1 }; days[c] = { n: 1, done: 0 };
+      DEMO_ITEMS[a] = [{ id: 'x1', title: '월세 이체', done: true }, { id: 'x2', title: '분리수거', done: true }];
+      DEMO_ITEMS[b] = [{ id: 'y1', title: '상세페이지 초안 마무리', done: true }, { id: 'y2', title: '헬스 PT', done: false }, { id: 'y3', title: '엄마 생신 선물 고르기', done: false }];
+      DEMO_ITEMS[c] = [{ id: 'z1', title: '치과 정기검진', done: false }];
+      render(); state('견본 · 노션과 연결하면 내 할 일이 달력에 보여요'); return;
+    }
+    if (!S.base) return gate('노션 연결 준비 중이에요.');
+    if (!S.wid()) return gate('노션 할 일 표와 이어지는 달력이에요.<br>할 일이 있는 날에 점이 찍히고, 날짜를 누르면 그날 할 일을 끝낼 수 있어요.', '노션과 연결하기');
+    var my = ++seq; state('불러오는 중…');
+    return S.api('GET', '/v1/todo/month?month=' + monthKey() + '&tz=' + new Date().getTimezoneOffset()).then(function (d) {
+      if (my !== seq) return; days = d.days || {}; state(''); render();
+      if (sel && sel.slice(0, 7) === monthKey()) { var s0 = sel; sel = null; pick(s0); }
+    }).catch(function (e) {
+      if (my !== seq) return; state('');
+      if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기');
+      if (e.code === 'no_planner' || e.code === 'not_shared') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
+      state(e.message);
+    });
+  }
+  function shift(n) { m += n; if (m < 0) { m = 11; y--; } if (m > 11) { m = 0; y++; } days = {}; sel = null; drawDay(); load(); }
+  $('prev').onclick = function () { shift(-1); };
+  $('next').onclick = function () { shift(1); };
+  // 노션에서 고치고 돌아오면 다시 읽는다
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && !DEMO && S.wid() && S.base) load(); });
+  IDP.options('calsync', [{ k: 'label', label: '제목', ph: 'Calendar' }], function () { render(); });
+  load();
+</script>
+</body>
+</html>

@@ -25,6 +25,12 @@
   .t { flex: 1; min-width: 0; font-size: 13px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .meta { flex: none; text-align: right; font-size: 9.5px; color: var(--sub); line-height: 1.5; letter-spacing: .02em; }
   .meta b { font-weight: 500; color: color-mix(in srgb, var(--deep) 75%, #2a2a2a); letter-spacing: .12em; }
+  .views { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+  .views button { padding: 0; border: 0; background: none; font-size: 10.5px; letter-spacing: .04em; text-transform: none; color: var(--sub); }
+  .views button.on { color: color-mix(in srgb, var(--deep) 80%, #2a2a2a); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+  .rings { display: flex; justify-content: center; margin-top: 10px; }
+  .rings svg { width: 132px; height: 132px; transform: rotate(-90deg); }
+  .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--deep); }
   .gate { margin-top: 16px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
   .gate button { margin-top: 10px; padding: 9px 18px; border-radius: 999px; background: var(--deep); color: #fff; border: 0; font-size: 12px; letter-spacing: .04em; text-transform: none; }
   .state { font-size: 9.5px; color: var(--sub); text-align: center; margin-top: 8px; letter-spacing: .04em; min-height: 12px; }
@@ -38,6 +44,8 @@
     <div class="nav"><button id="prev" aria-label="전날">‹</button><span class="d" id="day" title="오늘로"></span><button id="next" aria-label="다음 날">›</button></div>
     <div class="head"><h2 id="title">HABIT</h2><span class="pill" id="left"></span></div>
     <div class="bar"><i id="barI"></i></div>
+    <div class="views" id="views"></div>
+    <div class="rings" id="rings" hidden></div>
     <div class="list" id="list"></div>
     <div class="gate" id="gate" hidden></div>
     <div class="state" id="state"></div>
@@ -57,6 +65,39 @@
   var W = ['일', '월', '화', '수', '목', '금', '토'];
   var day = IDP.now(); day.setHours(0, 0, 0, 0);
   var items = [], busy = 0;
+  // 보기: 목록 | 링(REQ-017 — 습관마다 이번 주 횟수 ÷ 주간 목표를 겹친 링으로, 최대 5개). 이 기기의 보기 설정만 저장(기록 아님)
+  var VKEY = 'idarchive.habitsync.view';
+  var view = IDP.q.get('view') === 'ring' ? 'ring' : (function () { try { return localStorage.getItem(VKEY) === 'ring' ? 'ring' : 'list'; } catch (e) { return 'list'; } })();
+  var RING_ALPHA = [1, .78, .6, .44, .3];
+  function drawViews() {
+    var V = $('views'); V.innerHTML = '';
+    [['list', '목록'], ['ring', '링']].forEach(function (x) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = x[1]; if (x[0] === view) b.className = 'on';
+      b.onclick = function () { view = x[0]; try { localStorage.setItem(VKEY, view); } catch (e) {} render(); };
+      V.appendChild(b);
+    });
+  }
+  function drawRings() {
+    var R = $('rings'), show = view === 'ring' && items.length;
+    R.hidden = !show; R.innerHTML = '';
+    if (!show) return;
+    var NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg'), size = 132, sw = 9, gap = 3;
+    svg.setAttribute('viewBox', '0 0 ' + size + ' ' + size); svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', items.slice(0, 5).map(function (it) { return it.title + ' 이번 주 ' + it.week + '/' + it.goal; }).join(', '));
+    items.slice(0, 5).forEach(function (it, i) {
+      var r = size / 2 - sw / 2 - i * (sw + gap), c = 2 * Math.PI * r, p = Math.max(0, Math.min(1, it.goal ? it.week / it.goal : 0));
+      [[1, 'track'], [p, 'arc']].forEach(function (x) {
+        var el = document.createElementNS(NS, 'circle');
+        el.setAttribute('cx', size / 2); el.setAttribute('cy', size / 2); el.setAttribute('r', r); el.setAttribute('fill', 'none');
+        el.setAttribute('stroke-width', sw); el.setAttribute('stroke-linecap', 'round');
+        el.style.stroke = x[1] === 'track' ? 'var(--tint)' : 'color-mix(in srgb, var(--deep) ' + Math.round(RING_ALPHA[i] * 100) + '%, transparent)';
+        el.setAttribute('stroke-dasharray', (x[0] * c) + ' ' + c);
+        if (x[1] === 'arc' && !p) return;
+        svg.appendChild(el);
+      });
+    });
+    R.appendChild(svg);
+  }
 
   if (S.popup()) throw new Error('popup');
   function wid() { return S.wid(IDP.opt('habitsync', 'code', '')); }
@@ -80,9 +121,11 @@
     $('left').textContent = n ? done + ' / ' + n : '';
     $('barI').style.width = n ? Math.round(done / n * 100) + '%' : '0';
     if (skipList) return;
+    drawViews(); drawRings();
     var L = $('list'); L.innerHTML = '';
-    items.forEach(function (it) {
+    items.forEach(function (it, i) {
       var row = document.createElement('div'); row.className = 'it' + (it.done ? ' done' : '');
+      if (view === 'ring' && i < 5) { var dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = 'color-mix(in srgb, var(--deep) ' + Math.round(RING_ALPHA[i] * 100) + '%, transparent)'; row.appendChild(dot); }
       var c = document.createElement('button'); c.className = 'chk'; c.type = 'button'; c.textContent = it.done ? '✓' : ''; c.setAttribute('aria-label', it.title + ' 체크');
       c.onclick = function () { toggle(it); };
       var t = document.createElement('span'); t.className = 't'; t.textContent = it.title;
