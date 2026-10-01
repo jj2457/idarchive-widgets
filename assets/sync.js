@@ -5,7 +5,7 @@
   var IDP = window.IDP;
   // BUYER QA(오너 2026-10-01): 판매 화면에는 아직 연결을 켜지 않는다 — 시작 링크(?preview=connect)로 연 화면에서만 실제 연결 서버를 쓴다
   var PREVIEW = 'https://idarchive-sync.dlr5275.workers.dev';
-  var BASE = (location.hostname === 'localhost' && IDP.q.get('sync')) || (window.IDP_CONFIG && IDP_CONFIG.syncBase) || (IDP.q.get('preview') === 'connect' ? PREVIEW : '');
+  var BASE = (location.hostname === 'localhost' && IDP.q.get('sync')) || (window.IDP_CONFIG && IDP_CONFIG.syncBase) || (IDP.q.get('preview') === 'connect' || IDP.q.get('ts') === '1' ? PREVIEW : '');   // ts=1 = 그 서버가 색을 적어 둔 위젯
   var KEY = 'idarchive.sync.wid';
 
   // 연결 창(팝업): 노션에서 돌아오면 위젯 번호를 연 창에게 건네고 닫힌다. 팝업이면 true(위젯 화면은 그리지 않는다)

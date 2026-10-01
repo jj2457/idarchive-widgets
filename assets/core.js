@@ -230,7 +230,33 @@
     // 링크에 위젯별 색(wt)이 적혀 있으면 지우는 것만으로는 그 색이 남는다 → 「따르기」 표시를 둔다(서버에 올리면 위젯별 설정이 지워진다)
     if (spec) L.widgets[WKEY] = spec; else if (SYNCED && q.get('wt')) L.widgets[WKEY] = { inherit: true }; else delete L.widgets[WKEY];
     L.dirty[WKEY] = 1;
-    return setLayers(L);
+    var ok = setLayers(L);
+    pushWidget();
+    return ok;
+  }
+  // ⚙ 「이 위젯만」은 서버(정본 — 플래너마다 하나)에 바로 올린다(오너 2026-10-01 Final 요구: localStorage 만 정본으로 두지 않는다).
+  // 노션과 연결된 플래너의 위젯(ts=1)이고 이 기기에 연결이 있을 때. 없으면 이 기기에서만 바뀐 것을 그대로 알린다.
+  // 다른 기기의 위젯 색(노션 링크)은 Theme Studio 「노션에 적용」 때 바뀐다 — 설정 저장과 적용 결과는 따로.
+  var pushTimer = null, pushState = '';
+  function pushWidget() {
+    if (!SYNCED) return;
+    clearTimeout(pushTimer);
+    pushState = 'saving'; syncNote();
+    pushTimer = setTimeout(function () {                       // 색상 상자를 끄는 동안 여러 번 바뀌므로 잠깐 모았다가 한 번
+      function go() {
+        if (!IDP.sync || !IDP.sync.on || !IDP.sync.wid()) { pushState = 'local'; return syncNote(); }
+        IDP.sync.syncLayers().then(function (c) { pushState = c ? 'saved' : 'local'; syncNote(); }, function () { pushState = 'error'; syncNote(); });
+      }
+      if (IDP.sync) return go();
+      var sc = document.createElement('script'); sc.src = 'assets/sync.js'; sc.onload = go; sc.onerror = function () { pushState = 'error'; syncNote(); };
+      document.head.appendChild(sc);
+    }, 700);
+  }
+  function syncNote() {
+    var el = panelEl && panelEl.querySelector('.idp-sync-note');
+    if (!el) return;
+    el.textContent = { saving: '저장하는 중…', saved: '✓ 내 플래너 설정에 저장했어요 — 다른 기기 위젯은 Theme Studio 에서 「노션에 적용」하면 같은 색이 돼요',
+      local: '이 기기에서만 바뀌었어요 — 다른 기기와 맞추려면 Theme Studio 에서 노션과 연결해 주세요', error: '서버에 저장하지 못했어요 — 잠시 뒤 다시 골라 주세요' }[pushState] || '';
   }
   function effective() {
     var p = new URLSearchParams(q.toString()), s = saved();
@@ -267,7 +293,7 @@
     html += '<button type="button" data-style="">기본</button></div>' +
       '<div class="idp-panel-title" style="margin-top:14px">THEME</div>' +
       '<div class="idp-row idp-scope"><button type="button" data-scope="all">모든 위젯</button><button type="button" data-scope="one">이 위젯만</button></div>' +
-      '<div class="idp-note idp-scope-note"></div><div class="idp-swatches">';
+      '<div class="idp-note idp-scope-note"></div><div class="idp-note idp-sync-note"></div><div class="idp-swatches">';
     Object.keys(THEMES).forEach(function (name) {
       html += '<button type="button" data-theme="' + name + '" title="' + name + '" aria-label="' + name + '" style="background:linear-gradient(135deg,' +
         THEMES[name].soft + ' 50%,' + THEMES[name].deep + ' 50%)"></button>';
