@@ -105,7 +105,10 @@
       s.onclick = function () { patch(it, { important: !it.important }); };
       var x = document.createElement('button'); x.className = 'ic'; x.type = 'button'; x.textContent = '✕'; x.setAttribute('aria-label', '지우기');
       x.onclick = function () { remove(it); };
-      row.appendChild(c); row.appendChild(t); row.appendChild(s); row.appendChild(x);
+      row.appendChild(c); row.appendChild(t); row.appendChild(s);
+      // 못 끝낸 일은 「내일로」(REQ-092) — 노션 할 일 표의 날짜가 바뀌므로 노션 DAILY · 주차별 · 달력에도 그대로 옮겨 간다
+      if (!it.done) { var m = document.createElement('button'); m.className = 'ic'; m.type = 'button'; m.textContent = '→'; m.title = '내일로'; m.setAttribute('aria-label', '내일로 미루기'); m.onclick = function () { postpone(it); }; row.appendChild(m); }
+      row.appendChild(x);
       L.appendChild(row);
     });
     if (!n) L.innerHTML = '<div class="gate">이 날은 할 일이 없어요.</div>';
@@ -116,7 +119,7 @@
     if (DEMO) { if (!items.length) items = [{ id: 'a', title: '할 일 추가하기', done: true, important: false }, { id: 'b', title: '상세페이지 초안 한 장', done: false, important: true }, { id: 'c', title: '저녁 30분 걷기', done: false, important: false }]; render(); state('견본 · 노션과 연결하면 내 할 일이 보여요'); return; }
     if (!SYNC) return gate('노션 연결 준비 중이에요.');
     if (!wid()) return gate('노션의 할 일 표(TASKS)와 이어지는 위젯이에요.<br>여기서 적고 체크하면 노션에도, 노션에서 고치면 여기에도 보여요.', '노션과 연결하기');
-    return api('GET', '/v1/todo?date=' + iso(day)).then(function (d) { items = d.items; render(); })
+    return api('GET', '/v1/todo?date=' + iso(day) + '&tz=' + new Date().getTimezoneOffset()).then(function (d) { items = d.items; render(); })
       .catch(function (e) {
         if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기');
         if (e.code === 'not_shared') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
@@ -128,6 +131,14 @@
     if (DEMO) return;
     api('PATCH', '/v1/todo/' + it.id, change).then(function (d) { Object.assign(it, d); render(); })
       .catch(function (e) { Object.assign(it, before); render(); state(e.message); });
+  }
+  function postpone(it) {
+    var next = new Date(day); next.setDate(next.getDate() + 1);
+    var i = items.indexOf(it); items.splice(i, 1); render();
+    var label = (next.getMonth() + 1) + '/' + next.getDate();
+    if (DEMO) { state('「' + it.title + '」을 내일(' + label + ')로 옮겼어요'); return; }
+    api('PATCH', '/v1/todo/' + it.id, { date: iso(next), from: iso(day) }).then(function () { state('「' + it.title + '」을 내일(' + label + ')로 옮겼어요 — 노션에도 반영됐어요'); })
+      .catch(function (e) { items.splice(i, 0, it); render(); state(e.message); });
   }
   function remove(it) {
     var i = items.indexOf(it); items.splice(i, 1); render();
