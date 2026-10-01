@@ -373,6 +373,15 @@
   // 결과는 있는 그대로: SUCCESS · PARTIAL · FAILED. 남은 곳이 있으면 「남은 부분 다시 적용」(이미 바뀐 곳은 다시 고치지 않는다)
   function showResult(r, name, past) {
     var left = r.fail || 0, ok = r.ok || 0;
+    // 진행 중으로 남아 있다 = 다른 창 · 기기에서 지금 하는 중이거나(3분 안), 창을 닫아 중간에 멈춘 것
+    if (r.status === 'RUNNING') {
+      var fresh = r.at && Date.now() - r.at < 3 * 60 * 1000;
+      $('retryRow').hidden = fresh || !r.retry;
+      msg(fresh ? '다른 창이나 기기에서 지금 노션에 적용하고 있어요. 끝난 뒤에 다시 열어 주세요.'
+        : '지난번 노션 적용이 중간에 멈췄어요(창을 닫았거나 인터넷이 끊겼을 때). 「저장 · 노션에도 적용」' + (r.retry ? ' 또는 「남은 부분 다시 적용」' : '') +
+          '을 누르면 이미 바뀐 곳은 그대로 두고 나머지를 마저 바꿔요.', !fresh);
+      return;
+    }
     $('retryRow').hidden = r.status === 'SUCCESS';
     if (r.status === 'SUCCESS') {
       msg(past ? '' : ok ? '✓ 노션 플래너를 ' + name + '으로 바꿨어요 · ' + ok + '곳 적용 완료. 노션 화면을 새로고침하면 보여요.'
