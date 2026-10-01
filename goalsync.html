@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Goals (Notion)</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 520px; margin: 0 auto; }
+  [hidden] { display: none !important; }
+  .head { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 4px; gap: 8px; }
+  .head h2 { margin: 0; font-size: 22px; letter-spacing: .02em; color: color-mix(in srgb, var(--deep) 75%, #2a2a2a); font-weight: 700; }
+  .pill { font-size: 10.5px; padding: 3px 10px; border-radius: 999px; background: var(--tint); color: color-mix(in srgb, var(--deep) 70%, #2a2a2a); white-space: nowrap; }
+  .tabs { display: flex; gap: 4px; margin-top: 10px; flex-wrap: wrap; }
+  .tabs button { padding: 4px 10px; border-radius: 999px; font-size: 11px; letter-spacing: .02em; text-transform: none; border: 1px solid color-mix(in srgb, var(--deep) 25%, transparent); background: var(--paper); color: var(--sub); }
+  .tabs button.on { background: var(--deep); border-color: var(--deep); color: #fff; }
+  .list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; min-height: 60px; }
+  .g { display: block; padding: 9px 10px; border-radius: 10px; text-decoration: none; color: inherit; }
+  .g:hover { background: var(--tint); }
+  .row { display: flex; align-items: baseline; gap: 8px; }
+  .t { flex: 1; min-width: 0; font-size: 13px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .p { flex: none; font-size: 12px; font-weight: 600; color: color-mix(in srgb, var(--deep) 80%, #2a2a2a); }
+  .g.done .t { color: var(--sub); text-decoration: line-through; }
+  .bar { margin-top: 6px; height: 5px; border-radius: 999px; background: var(--tint); overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--deep); border-radius: 999px; transition: width .25s; }
+  .meta { margin-top: 4px; font-size: 9.5px; color: var(--sub); letter-spacing: .02em; }
+  .gate { margin-top: 16px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
+  .gate button { margin-top: 10px; padding: 9px 18px; border-radius: 999px; background: var(--deep); color: #fff; border: 0; font-size: 12px; letter-spacing: .04em; text-transform: none; }
+  .state { font-size: 9.5px; color: var(--sub); text-align: center; margin-top: 8px; letter-spacing: .04em; min-height: 12px; }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="grow"><div class="wrap">
+    <div class="head"><h2 id="title">GOALS</h2><span class="pill" id="sum"></span></div>
+    <div class="tabs" id="tabs"></div>
+    <div class="list" id="list"></div>
+    <div class="gate" id="gate" hidden></div>
+    <div class="state" id="state"></div>
+  </div></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script src="assets/sync.js"></script>
+<script>
+  // 노션 GOALS 와 이어지는 목표 진행률 위젯 — 보기만 한다. 진행률은 노션 수식(할 일 · 프로젝트 · 하위 목표 · 습관)이 계산한 값 그대로.
+  // 목표를 누르면 노션의 그 목표 페이지가 열린다. ?demo=1 은 견본(연결 없음).
+  var S = IDP.sync;
+  var DEMO = IDP.q.get('demo') === '1';
+  var TABS = [['all', '전체'], ['year', '올해'], ['month', '이번 달'], ['week', '이번 주']];
+  var KEY = 'idarchive.goalsync.period';
+  var period = (function () { try { return localStorage.getItem(KEY) || 'all'; } catch (e) { return 'all'; } })();
+  var goals = [];
+  function $(id) { return document.getElementById(id); }
+  if (S.popup()) throw new Error('popup');
+  S.onConnect(function () { load(); });
+  function state(t) { $('state').textContent = t || ''; }
+  function gate(html, btn) {
+    $('gate').hidden = false; $('list').innerHTML = ''; $('sum').textContent = '';
+    $('gate').innerHTML = html + (btn ? '<br><button type="button" id="go">' + btn + '</button>' : '');
+    if (btn) $('go').onclick = function () { S.connect(); };
+  }
+  function pct(p) { return p == null ? '—' : Math.round(p * 100) + '%'; }
+  function drawTabs() {
+    var T = $('tabs'); T.innerHTML = '';
+    TABS.forEach(function (x) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = x[1]; if (x[0] === period) b.className = 'on';
+      b.onclick = function () { period = x[0]; try { localStorage.setItem(KEY, period); } catch (e) {} drawTabs(); load(); };
+      T.appendChild(b);
+    });
+  }
+  function render() {
+    $('title').textContent = IDP.opt('goalsync', 'label', 'GOALS');
+    var withP = goals.filter(function (g) { return g.progress != null; });
+    var avg = withP.length ? withP.reduce(function (a, g) { return a + g.progress; }, 0) / withP.length : null;
+    $('sum').textContent = !goals.length ? '' : (avg == null ? '' : '평균 ' + pct(avg) + ' · ') + goals.length + '개';
+    var L = $('list'); L.innerHTML = '';
+    goals.forEach(function (g) {
+      var a = document.createElement('a'); a.className = 'g' + (g.status === '완료' ? ' done' : '');
+      if (g.url) { a.href = g.url; a.target = '_blank'; a.rel = 'noopener'; }
+      var row = document.createElement('div'); row.className = 'row';
+      var t = document.createElement('span'); t.className = 't'; t.textContent = g.title;
+      var p = document.createElement('span'); p.className = 'p'; p.textContent = pct(g.progress);
+      row.appendChild(t); row.appendChild(p);
+      var bar = document.createElement('div'); bar.className = 'bar'; var i = document.createElement('i'); i.style.width = g.progress == null ? '0' : Math.round(g.progress * 100) + '%'; bar.appendChild(i);
+      var m = document.createElement('div'); m.className = 'meta';
+      m.textContent = [g.period, g.area, g.status, g.due ? '마감 ' + g.due.slice(5).replace('-', '/') : ''].filter(Boolean).join(' · ') || '진행률은 연결한 할 일 · 프로젝트 · 습관에서 계산돼요';
+      a.appendChild(row); a.appendChild(bar); a.appendChild(m);
+      L.appendChild(a);
+    });
+    if (!goals.length) L.innerHTML = '<div class="gate">' + (period === 'all' ? '아직 목표가 없어요. 노션 GOALS 에서 목표를 더해 주세요.' : '이 기간의 목표가 없어요. 노션 GOALS 의 「기간」을 정하면 여기 모여요.') + '</div>';
+  }
+  function load() {
+    $('gate').hidden = true; drawTabs();
+    if (DEMO) { goals = [{ title: '하프 마라톤 완주', progress: .62, period: '1년 목표', area: '건강', status: '진행 중' }, { title: '책 24권 읽기', progress: .38, period: '1년 목표', area: '성장', status: '진행 중' }, { title: '비상금 300만 원', progress: 1, period: '이번 달', area: '돈', status: '완료' }].filter(function (g) { return period === 'all' || (period === 'year' && g.period === '1년 목표') || (period === 'month' && g.period === '이번 달'); }); render(); state('견본 · 노션과 연결하면 내 목표가 보여요'); return; }
+    if (!S.base) return gate('노션 연결 준비 중이에요.');
+    if (!S.wid()) return gate('노션의 목표 표(GOALS)와 이어지는 위젯이에요.<br>할 일 · 프로젝트 · 습관을 끝낼수록 진행률이 저절로 올라가요.', '노션과 연결하기');
+    state('');
+    return S.api('GET', '/v1/goals?period=' + period).then(function (d) { goals = d.goals || []; render(); }).catch(function (e) {
+      if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기');
+      if (e.code === 'choose_planner') return gate('연결된 플래너가 여러 개예요. Theme Studio 에서 플래너를 먼저 골라 주세요.');
+      if (e.code === 'no_goals' || e.code === 'not_shared') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
+      state(e.message);
+    });
+  }
+  // 다른 탭(노션)에서 목표를 고치고 돌아오면 다시 읽는다
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && !DEMO && S.wid() && S.base) load(); });
+  IDP.options('goalsync', [{ k: 'label', label: '제목', ph: 'GOALS' }], function () { render(); });
+  load();
+</script>
+</body>
+</html>
