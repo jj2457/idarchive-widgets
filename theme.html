@@ -37,6 +37,19 @@
   .how code { background: #fff; border-radius: 6px; padding: 1px 6px; font-size: 12px; }
   .note { font-size: 12px; color: var(--sub); margin-top: 10px; line-height: 1.7; }
   .bulk { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .save { margin-top: 22px; border: 1px solid var(--line); border-radius: 16px; background: #fff; padding: 18px 20px; }
+  .save .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .save .go { background: var(--deep); color: #fff; border-color: var(--deep); font-size: 12px; letter-spacing: .06em; padding: 10px 18px; }
+  .save .go[disabled] { opacity: .55; cursor: default; }
+  .save .lead { font-size: 13px; color: var(--ink); line-height: 1.75; margin-bottom: 12px; }
+  .save .lead b { font-weight: 500; }
+  .save .msg { font-size: 12px; color: var(--sub); line-height: 1.7; }
+  .save .msg.err { color: #b4544c; }
+  .save .bar { height: 6px; border-radius: 999px; background: var(--tint); overflow: hidden; margin-top: 12px; }
+  .save .bar i { display: block; height: 100%; width: 0; background: var(--deep); border-radius: 999px; transition: width .3s; }
+  .save .off { margin-left: auto; font-size: 11px; color: var(--sub); background: none; border: 0; text-decoration: underline; padding: 4px; }
+  .popup { text-align: center; padding: 30px 16px; font-size: 13px; color: var(--ink); line-height: 1.8; }
+  .popup code { display: block; margin: 10px auto; padding: 8px; background: var(--tint); border-radius: 8px; font-size: 12px; word-break: break-all; max-width: 360px; }
 </style>
 </head>
 <body>
@@ -69,6 +82,18 @@
     <span id="picked"></span>
   </div>
 
+  <!-- 저장: 이 기기의 위젯은 언제나, 노션과 연결돼 있으면 플래너의 제목 배경 · 달력 상자 · 아이콘 · 커버까지 한 번에 -->
+  <div class="save" id="save">
+    <div class="lead" id="saveLead">고른 스타일과 색을 저장하면 <b>이 기기에서 보는 모든 위젯</b>이 같은 색이 돼요.</div>
+    <div class="row">
+      <button class="go" id="saveGo">저장</button>
+      <button class="chip" id="connectGo" hidden style="font-size:12px;padding:9px 14px">노션과 연결하기</button>
+      <button class="off" id="disconnectGo" hidden>Notion 연결 끊기</button>
+    </div>
+    <div class="bar" id="saveBar" hidden><i></i></div>
+    <div class="msg" id="saveMsg" style="margin-top:10px"></div>
+  </div>
+
   <h2>3 · 위젯은 이렇게 보입니다</h2>
   <div class="strip" id="strip"></div>
   <div class="how">
@@ -91,8 +116,10 @@
 
 <script src="config/themes.js"></script>
 <script src="assets/core.js"></script>
+<script src="assets/sync.js"></script>
 <script>
   // Theme Studio: the one place a buyer changes the planner's colour — widgets, covers and the sample dashboard.
+  if (IDP.sync.popup({ back: true })) throw new Error('popup');   // 노션 연결 창으로 열린 경우 — 화면은 그리지 않는다
   var PAGES = [
     ['home', 'HOME'], ['start-here', 'START HERE'], ['year', 'YEAR'], ['monthly', 'MONTHLY'], ['weekly', 'WEEKLY'],
     ['daily', 'DAILY'], ['goal', 'GOALS'], ['habit', 'HABIT'], ['review', 'REVIEW'], ['archive', 'ARCHIVE'],
@@ -101,7 +128,9 @@
   var MONTHS = ['01 JANUARY', '02 FEBRUARY', '03 MARCH', '04 APRIL', '05 MAY', '06 JUNE',
                 '07 JULY', '08 AUGUST', '09 SEPTEMBER', '10 OCTOBER', '11 NOVEMBER', '12 DECEMBER'];
   var PREVIEW = ['clock', 'week', 'progress'];
-  var state = { theme: IDP.CFG.defaults.theme, soft: '', deep: '', style: '' };
+  // 처음 화면은 이 기기에 저장된 테마(없으면 기본) — 저장한 것을 다시 열었는데 다른 색이 보이면 안 된다
+  var mine = IDP.savedTheme() || {};
+  var state = { theme: IDP.THEMES[mine.theme] ? mine.theme : IDP.CFG.defaults.theme, soft: mine.soft ? '#' + mine.soft : '', deep: mine.deep ? '#' + mine.deep : '', style: mine.style || '' };
 
   function base() { return new URL('covers/', location.href).href; }
   function coverUrl(file) { return base() + state.theme + '/' + file + '.png'; }
@@ -205,6 +234,89 @@
     copy(all, this, '달 커버 12개만 복사');
   };
   draw();
+
+  // ── 저장 · 노션에도 적용 ───────────────────────────────────────────────
+  // 노션 쪽은 서버(sync/worker.mjs /v1/theme)가 우리가 만든 부분(섹션 제목 배경 · 달력 상자 · 칸 이름 · 아이콘 · 커버)만 바꾼다.
+  // 사용자가 쓴 글 · 사진 · 직접 칠한 색 · 표의 내용은 건드리지 않는다. 한 번에 다 못 하므로 단계를 이어서 부른다.
+  var S = IDP.sync, running = false, lastJob = null;
+  function $(id) { return document.getElementById(id); }
+  function msg(t, err) { $('saveMsg').textContent = t || ''; $('saveMsg').className = 'msg' + (err ? ' err' : ''); }
+  function bar(f) { $('saveBar').hidden = f == null; if (f != null) $('saveBar').firstChild.style.width = Math.round(f * 100) + '%'; }
+  function linked() { return S.on && !!S.wid(); }
+  function drawSave() {
+    $('saveLead').innerHTML = !S.on ? '고른 스타일과 색을 저장하면 <b>이 기기에서 보는 모든 위젯</b>이 같은 색이 돼요.'
+      : linked() ? '저장하면 <b>위젯</b>과 <b>노션 플래너</b>가 함께 바뀌어요 — 섹션 제목 배경 · 달력 상자 · 아이콘 · 커버까지.<br>내가 쓴 글 · 사진 · 직접 칠한 색은 그대로예요.'
+      : '노션과 연결하면 저장 한 번으로 <b>노션 플래너</b>의 섹션 제목 배경 · 달력 상자 · 아이콘 · 커버까지 이 색으로 바뀌어요.<br>연결하지 않아도 위젯 색은 저장돼요.';
+    $('saveGo').textContent = lastJob && !running ? '이어서 적용' : linked() ? '저장 · 노션에도 적용' : '저장';
+    $('connectGo').hidden = !S.on || linked();
+    $('disconnectGo').hidden = !linked();
+    $('saveGo').disabled = running;
+  }
+  var ERR = {
+    offline: '인터넷이 잠시 끊겼어요.',
+    not_connected: '노션 연결이 끊겼어요. 다시 연결한 뒤 저장해 주세요.',
+    notion_revoked: '노션에서 연결을 해제했어요. 다시 연결한 뒤 저장해 주세요.',
+    no_planner: '플래너 첫 페이지를 찾지 못했어요. 다시 연결하면서 「ID ARCHIVE PLANNER」 페이지를 골라 주세요.',
+    not_shared: '플래너 일부 페이지에 연결 권한이 없어요. 다시 연결하면서 「ID ARCHIVE PLANNER」 페이지 전체를 골라 주세요.'
+  };
+  function fail(e) {
+    // 끊긴 연결 · 권한 문제는 처음부터 다시, 잠깐의 오류는 받은 작업(lastJob)으로 멈춘 곳부터 이어서
+    if (!(e.code === 'offline' || e.code === 'notion_error' || /^http_5/.test(e.code || ''))) lastJob = null;
+    running = false; drawSave(); bar(null);
+    msg((ERR[e.code] || '노션에 적용하지 못했어요.') + (lastJob ? ' 「이어서 적용」을 누르면 멈춘 곳부터 이어서 바꿔요.' : ERR[e.code] && e.code !== 'offline' ? '' : ' 잠시 뒤 다시 저장해 주세요.'), true);
+  }
+  // 노션이 잠깐 응답하지 않는 일은 실제로 있다(2026-10-01 실제 적용 중 한 번) — 같은 단계를 두 번까지 저절로 다시 부른다
+  function stepOnce(job, tries) {
+    return S.api('POST', '/v1/theme/step', { job: job }).catch(function (e) {
+      var transient = e.code === 'offline' || e.code === 'notion_error' || /^http_5/.test(e.code || '');
+      if (!transient || tries >= 2) throw e;
+      msg('노션이 잠깐 늦어요 — 다시 시도하는 중…');
+      return new Promise(function (r) { setTimeout(r, 3000 * (tries + 1)); }).then(function () { return stepOnce(job, tries + 1); });
+    });
+  }
+  function stepLoop(job, theme, custom) {
+    lastJob = job;
+    return stepOnce(job, 0).then(function (d) {
+      var n = d.changed.blocks + d.changed.pages;
+      bar(d.done ? 1 : Math.min(.95, .05 + d.pages / Math.max(d.pages + d.left, 24)));
+      msg('노션 플래너를 바꾸는 중… 페이지 ' + d.pages + '개 확인 · ' + n + '곳 바꿈');
+      if (!d.done) return stepLoop(d.job, theme, custom);
+      lastJob = null; running = false; S.seen(custom ? 'custom:' + state.soft : theme); drawSave();
+      var name = custom ? '나만의 색' : theme.toUpperCase() + ' 색';
+      msg(n ? '✓ 노션 플래너를 ' + name + '으로 바꿨어요 · ' + n + '곳. 노션 화면을 새로고침하면 보여요.'
+            : '✓ 노션 플래너는 이미 ' + name + '이에요. 바꿀 곳이 없었어요.');
+    });
+  }
+  function save() {
+    if (running) return;
+    var ok = IDP.saveTheme({ theme: state.theme, soft: state.soft ? state.soft.slice(1) : '', deep: state.deep ? state.deep.slice(1) : '', style: state.style });
+    if (!linked()) {
+      msg(ok ? '✓ 저장했어요. 이 기기의 모든 위젯이 ' + state.theme.toUpperCase() + ' 색으로 보여요.' : '이 브라우저는 저장을 막고 있어요. 위젯의 ⚙ 에서 색을 골라 주세요.', !ok);
+      return;
+    }
+    var resume = lastJob;
+    running = true; drawSave(); bar(.05);
+    msg(state.soft ? '나만의 색으로 바꾸는 중… 위젯 · 페이지 아이콘 · 그라데이션 커버는 고른 색 그대로, 노션 글자 · 바탕색은 노션이 가진 10가지 색 중 가장 가까운 색으로 바뀌어요.' : '노션 플래너를 바꾸는 중…');
+    (resume ? stepLoop(resume, state.theme, !!state.soft)
+            : S.api('POST', '/v1/theme/start', { theme: state.theme, custom: state.soft ? { soft: state.soft, deep: state.deep || '' } : null })
+                .then(function (d) { return stepLoop(d.job, d.theme, !!state.soft); })
+    ).catch(fail);
+  }
+  // 이어서 적용 중에 색을 다른 것으로 고르면 멈춘 작업은 버리고 새 색으로 처음부터
+  var redraw = draw;
+  draw = function () { if (lastJob && !running) { lastJob = null; msg(''); } redraw(); if ($('saveGo')) drawSave(); };
+  $('saveGo').onclick = save;
+  $('connectGo').onclick = function () { S.connect(location.origin + location.pathname + location.search); };
+  // 결정 A: 한 번에 — 노션 연결 해제(토큰 폐기) + 서버의 연결 기록 삭제. 플래너 내용 · 색은 그대로 남는다
+  $('disconnectGo').onclick = function () {
+    if (!confirm('노션 연결을 끊을까요?\n노션의 연결 권한을 해제하고, ID Archive 서버에 있던 연결 정보를 바로 지워요.\n플래너 내용과 지금 색은 그대로 남아요.')) return;
+    S.disconnect().then(function () { lastJob = null; drawSave(); msg('연결을 끊었어요. 노션 연결 권한을 해제하고 서버의 연결 정보를 지웠어요. 플래너의 색은 마지막으로 적용한 그대로 남아요.'); });
+  };
+  S.onConnect(function () { drawSave(); msg('✓ 노션과 연결됐어요. 색을 고른 뒤 「저장 · 노션에도 적용」을 눌러 주세요.'); });
+  drawSave();
+  (function () { var n = S.notice(); if (n) msg(n === '노션과 연결됐어요.' ? '✓ 노션과 연결됐어요. 색을 고른 뒤 「저장 · 노션에도 적용」을 눌러 주세요.' : n, n !== '노션과 연결됐어요.'); })();
+  // 다른 기기에서 노션에 적용한 테마가 있으면 처음 화면을 그 색으로(이 기기에 저장한 것이 없을 때만)
+  if (linked() && !mine.theme) S.api('GET', '/v1/theme').then(function (d) { if (d.theme && IDP.THEMES[d.theme]) { state.theme = d.theme; draw(); } }, function () { drawSave(); });
 </script>
 </body>
 </html>

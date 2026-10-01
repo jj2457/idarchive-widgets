@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Updates</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  html, body { height: auto; }
+  body { display: block; padding: 0; background: var(--paper); }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 18px 16px 28px; }
+  [hidden] { display: none !important; }
+  .head { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .head h2 { margin: 0; font-family: 'Playfair Display', serif; font-weight: 400; font-size: 22px; letter-spacing: .08em; color: var(--ink); }
+  .head .sub { font-size: 11px; color: var(--sub); }
+  .tabs { display: flex; gap: 6px; margin-top: 12px; }
+  .tabs button { font-size: 11px; letter-spacing: .06em; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--sub); }
+  .tabs button[aria-pressed="true"] { background: var(--soft); border-color: var(--soft); color: color-mix(in srgb, var(--deep) 60%, #2a2a2a); }
+  .month { margin: 18px 0 6px; font-size: 10px; letter-spacing: .24em; color: var(--sub); text-transform: uppercase; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-top: 8px; }
+  .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .tag { font-size: 9.5px; letter-spacing: .12em; padding: 2px 8px; border-radius: 999px; background: var(--tint); color: color-mix(in srgb, var(--deep) 70%, #2a2a2a); }
+  .tag.FIX { background: #f2f2ef; color: #777; }
+  .date { font-size: 10.5px; color: var(--sub); margin-left: auto; }
+  .t { font-size: 14px; color: var(--ink); font-weight: 500; margin-top: 6px; }
+  .s { font-size: 12.5px; color: var(--ink); line-height: 1.7; margin-top: 4px; }
+  .where { font-size: 11px; color: var(--sub); margin-top: 6px; }
+  .go { display: inline-block; margin-top: 8px; font-size: 11px; color: color-mix(in srgb, var(--deep) 75%, #2a2a2a); text-decoration: none; border-bottom: 1px solid currentColor; }
+  .who { font-size: 11.5px; color: color-mix(in srgb, var(--deep) 75%, #2a2a2a); }
+  .scope { font-size: 10.5px; color: var(--sub); }
+  .empty { margin-top: 18px; font-size: 12px; color: var(--sub); line-height: 1.8; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head"><h2>UPDATES</h2><span class="sub" id="built"></span></div>
+  <div class="tabs" role="tablist">
+    <button type="button" data-tab="update" aria-pressed="true">전체 업데이트</button>
+    <button type="button" data-tab="request" aria-pressed="false">고객 요청</button>
+  </div>
+  <div id="list"></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="config/updates.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // 「UPDATES · 업데이트 소식」(REQ-098 · REQ-099) — 구매자 복제본에서 늘 최신 소식을 본다. 내용은 config/updates.js(scripts/update-log.js build).
+  var D = window.IDP_UPDATES || { entries: [] };
+  var tab = 'update';
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function draw() {
+    document.querySelectorAll('.tabs button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.tab === tab)); });
+    var L = document.getElementById('list'); L.innerHTML = '';
+    var list = D.entries.filter(function (e) { return e.kind === tab; });
+    if (!list.length) {
+      L.appendChild(el('div', 'empty', tab === 'request'
+        ? '요청해 주신 내용이 반영되면 여기에 「박*원 고객님 요청」처럼 이름 가운데를 가려 알려 드려요. 모두에게 도움이 되는 요청은 「전체 업데이트」에도 올라가요.'
+        : '아직 소식이 없어요.'));
+      return;
+    }
+    var month = '';
+    list.forEach(function (e) {
+      var m = e.date.slice(0, 7).replace('-', '. ');
+      if (m !== month) { month = m; L.appendChild(el('div', 'month', m)); }
+      var c = el('div', 'card');
+      var r = el('div', 'row');
+      if (e.kind === 'update') r.appendChild(el('span', 'tag ' + e.tag, e.tag));
+      else { r.appendChild(el('span', 'who', e.who + ' 고객님 요청')); r.appendChild(el('span', 'scope', e.scope === 'all' ? '· 모두에게 반영' : '· 원하는 분만 가져가기')); }
+      r.appendChild(el('span', 'date', e.date.replace(/-/g, '. ')));
+      c.appendChild(r);
+      c.appendChild(el('div', 't', e.title));
+      c.appendChild(el('div', 's', e.summary));
+      if (e.where) c.appendChild(el('div', 'where', '📍 ' + e.where));
+      if (e.link && /^https:\/\//.test(e.link)) {
+        var a = el('a', 'go', e.kind === 'request' && e.scope !== 'all' ? '가져가기 →' : '자세히 보기 →');
+        a.href = e.link; a.target = '_blank'; a.rel = 'noopener';
+        c.appendChild(a);
+      }
+      L.appendChild(c);
+    });
+  }
+  document.querySelectorAll('.tabs button').forEach(function (b) { b.onclick = function () { tab = b.dataset.tab; draw(); }; });
+  document.getElementById('built').textContent = D.built ? '마지막 소식 ' + D.built.replace(/-/g, '. ') : '';
+  draw();
+</script>
+</body>
+</html>

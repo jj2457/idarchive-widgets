@@ -54,13 +54,13 @@
 </div>
 <script src="config/themes.js"></script>
 <script src="assets/core.js"></script>
+<script src="assets/sync.js"></script>
 <script>
   // 노션 TASKS 와 양방향으로 이어지는 할 일 위젯 — 적은 것은 이 브라우저가 아니라 구매자의 노션 표에 저장된다.
   // 서버(sync/worker.mjs)가 켜져 있어야 한다: IDP_CONFIG.syncBase. 연결 전에는 무엇도 저장하지 않는다.
   // ?demo=1 은 갤러리 · 상세페이지용 견본(저장 없음, 새로고침하면 처음으로).
-  var SYNC = (location.hostname === 'localhost' && IDP.q.get('sync')) || (window.IDP_CONFIG && IDP_CONFIG.syncBase) || '';   // localhost 에서만 시험 서버
+  var S = IDP.sync, SYNC = S.base;   // 연결 층(assets/sync.js) — localhost 에서만 ?sync= 시험 서버
   var DEMO = IDP.q.get('demo') === '1';
-  var KEY = 'idarchive.sync.wid';
   function $(id) { return document.getElementById(id); }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
@@ -68,39 +68,15 @@
   var day = IDP.now(); day.setHours(0, 0, 0, 0);
   var items = [], busy = 0;
 
-  // ── 연결 창(팝업): 노션에서 돌아오면 위젯 번호를 위젯에게 건네고 닫힌다 ──
-  var m = /#sync=([A-Za-z0-9_-]+)/.exec(location.hash);
-  if (m) {
-    var v = m[1];
-    var msg = { cancelled: '연결을 취소했어요.', failed: '연결하지 못했어요. 잠시 뒤 다시 눌러 주세요.', 'no-planner': '플래너 페이지를 찾지 못했어요. 노션 연결 화면에서 「ID ARCHIVE PLANNER」 페이지를 골라 주세요.' }[v];
-    document.body.innerHTML = '<div class="popup" id="pp"></div>';
-    var pp = $('pp');
-    if (msg) pp.textContent = msg;
-    else if (window.opener) {
-      try { window.opener.postMessage({ idpSync: v }, location.origin); } catch (e) {}
-      pp.textContent = '노션과 연결됐어요. 이 창은 닫아도 돼요.';
-      setTimeout(function () { window.close(); }, 1500);
-    } else {
-      // 같은 브라우저 저장소면 바로 쓰이고, 노션 휴대폰 앱처럼 저장소가 다르면 번호를 붙여 넣는다
-      try { localStorage.setItem(KEY, v); } catch (e) {}
-      pp.innerHTML = '노션과 연결됐어요.<br>위젯에 할 일이 보이지 않으면 위젯의 ⚙ → 「연결 번호」에 아래 번호를 붙여 넣어 주세요.<code></code><a href="' + location.pathname + location.search + '">위젯으로 돌아가기</a>';
-      pp.querySelector('code').textContent = v;
-    }
-    throw new Error('popup');   // 위젯 화면은 그리지 않는다
-  }
+  // ── 연결 창(팝업): 노션에서 돌아오면 위젯 번호를 위젯에게 건네고 닫힌다(assets/sync.js) ──
+  if (S.popup()) throw new Error('popup');   // 위젯 화면은 그리지 않는다
 
-  function wid() { var o = IDP.opt('todosync', 'code', ''); if (o) return o; try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
-  window.addEventListener('message', function (e) {
-    if (e.origin !== location.origin || !e.data || !e.data.idpSync) return;
-    try { localStorage.setItem(KEY, e.data.idpSync); } catch (err) {}
-    load();
-  });
+  function wid() { return S.wid(IDP.opt('todosync', 'code', '')); }
+  S.onConnect(function () { load(); });
 
   function api(method, path, body) {
     busy++; state('');
-    return fetch(SYNC + path, { method: method, headers: { Authorization: 'Widget ' + wid(), 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
-      .then(function (r) { return r.json().then(function (d) { if (!r.ok) { var e = new Error(d.message || '오류'); e.code = d.error; throw e; } return d; }); })
-      .finally(function () { busy--; });
+    return S.api(method, path, body, IDP.opt('todosync', 'code', '')).finally(function () { busy--; });
   }
   function state(t) { $('state').textContent = t; }
   function gate(html, btn) {
@@ -109,10 +85,7 @@
     if (btn) $('go').onclick = connect;
     render(true);
   }
-  function connect() {
-    var ret = location.origin + location.pathname + '?theme=' + encodeURIComponent(IDP.q.get('theme') || '');
-    window.open(SYNC + (/localhost/.test(SYNC) ? '/dev-connect' : '/connect') + '?return=' + encodeURIComponent(ret), 'idp-sync', 'width=520,height=720');
-  }
+  function connect() { S.connect(); }
 
   function render(skipList) {
     $('title').textContent = IDP.opt('todosync', 'label', 'TO-DO');
@@ -145,7 +118,7 @@
     if (!wid()) return gate('노션의 할 일 표(TASKS)와 이어지는 위젯이에요.<br>여기서 적고 체크하면 노션에도, 노션에서 고치면 여기에도 보여요.', '노션과 연결하기');
     return api('GET', '/v1/todo?date=' + iso(day)).then(function (d) { items = d.items; render(); })
       .catch(function (e) {
-        if (e.code === 'not_connected' || e.code === 'notion_revoked') { try { localStorage.removeItem(KEY); } catch (err) {} return gate('노션 연결이 끊겼어요.', '다시 연결하기'); }
+        if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기');
         if (e.code === 'not_shared') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
         state(e.message);
       });

@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Habit (Notion)</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 520px; margin: 0 auto; }
+  [hidden] { display: none !important; }
+  .nav { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 2px; }
+  .nav button { width: 26px; height: 26px; padding: 0; border-radius: 50%; font-size: 12px; line-height: 24px; letter-spacing: 0; }
+  .nav .d { font-size: 12.5px; color: var(--ink); min-width: 104px; text-align: center; cursor: pointer; }
+  .head { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 12px; }
+  .head h2 { margin: 0; font-size: 22px; letter-spacing: .02em; color: color-mix(in srgb, var(--deep) 75%, #2a2a2a); font-weight: 700; }
+  .pill { font-size: 10.5px; padding: 3px 10px; border-radius: 999px; background: var(--tint); color: color-mix(in srgb, var(--deep) 70%, #2a2a2a); }
+  .bar { margin-top: 10px; height: 4px; border-radius: 999px; background: var(--tint); overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--deep); border-radius: 999px; transition: width .25s; }
+  .list { margin-top: 8px; display: flex; flex-direction: column; gap: 2px; min-height: 60px; }
+  .it { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px; }
+  .it:hover { background: var(--tint); }
+  .chk { flex: none; width: 20px; height: 20px; border-radius: 50%; padding: 0; border: 1.5px solid color-mix(in srgb, var(--deep) 55%, transparent);
+         background: var(--paper); color: #fff; font-size: 11px; line-height: 17px; letter-spacing: 0; }
+  .it.done .chk { background: var(--deep); border-color: var(--deep); }
+  .t { flex: 1; min-width: 0; font-size: 13px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .meta { flex: none; text-align: right; font-size: 9.5px; color: var(--sub); line-height: 1.5; letter-spacing: .02em; }
+  .meta b { font-weight: 500; color: color-mix(in srgb, var(--deep) 75%, #2a2a2a); letter-spacing: .12em; }
+  .gate { margin-top: 16px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
+  .gate button { margin-top: 10px; padding: 9px 18px; border-radius: 999px; background: var(--deep); color: #fff; border: 0; font-size: 12px; letter-spacing: .04em; text-transform: none; }
+  .state { font-size: 9.5px; color: var(--sub); text-align: center; margin-top: 8px; letter-spacing: .04em; min-height: 12px; }
+  .popup { text-align: center; padding: 30px 16px; font-size: 13px; color: var(--ink); line-height: 1.8; }
+  .popup code { display: block; margin: 10px auto; padding: 8px; background: var(--tint); border-radius: 8px; font-size: 12px; word-break: break-all; max-width: 360px; }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="grow"><div class="wrap">
+    <div class="nav"><button id="prev" aria-label="전날">‹</button><span class="d" id="day" title="오늘로"></span><button id="next" aria-label="다음 날">›</button></div>
+    <div class="head"><h2 id="title">HABIT</h2><span class="pill" id="left"></span></div>
+    <div class="bar"><i id="barI"></i></div>
+    <div class="list" id="list"></div>
+    <div class="gate" id="gate" hidden></div>
+    <div class="state" id="state"></div>
+  </div></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script src="assets/sync.js"></script>
+<script>
+  // 노션 HABITS · DAYS 와 이어지는 습관 위젯 — 체크는 이 브라우저가 아니라 구매자의 노션 표(그날의 DAYS 「완료한 습관」)에 저장된다.
+  // 이번 주 · 연속 기록은 노션 수식이 계산한 값을 그대로 보여 준다(위젯이 따로 세지 않음). ?demo=1 은 견본(저장 없음).
+  var S = IDP.sync, SYNC = S.base;
+  var DEMO = IDP.q.get('demo') === '1';
+  function $(id) { return document.getElementById(id); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  var W = ['일', '월', '화', '수', '목', '금', '토'];
+  var day = IDP.now(); day.setHours(0, 0, 0, 0);
+  var items = [], busy = 0;
+
+  if (S.popup()) throw new Error('popup');
+  function wid() { return S.wid(IDP.opt('habitsync', 'code', '')); }
+  S.onConnect(function () { load(); });
+  function api(method, path, body) {
+    busy++; state('');
+    return S.api(method, path, body, IDP.opt('habitsync', 'code', '')).finally(function () { busy--; });
+  }
+  function state(t) { $('state').textContent = t; }
+  function gate(html, btn) {
+    $('gate').hidden = false; $('list').innerHTML = '';
+    $('gate').innerHTML = html + (btn ? '<br><button type="button" id="go">' + btn + '</button>' : '');
+    if (btn) $('go').onclick = function () { S.connect(); };
+    render(true);
+  }
+
+  function render(skipList) {
+    $('title').textContent = IDP.opt('habitsync', 'label', 'HABIT');
+    $('day').textContent = (day.getMonth() + 1) + '월 ' + day.getDate() + '일 (' + W[day.getDay()] + ')';
+    var done = items.filter(function (i) { return i.done; }).length, n = items.length;
+    $('left').textContent = n ? done + ' / ' + n : '';
+    $('barI').style.width = n ? Math.round(done / n * 100) + '%' : '0';
+    if (skipList) return;
+    var L = $('list'); L.innerHTML = '';
+    items.forEach(function (it) {
+      var row = document.createElement('div'); row.className = 'it' + (it.done ? ' done' : '');
+      var c = document.createElement('button'); c.className = 'chk'; c.type = 'button'; c.textContent = it.done ? '✓' : ''; c.setAttribute('aria-label', it.title + ' 체크');
+      c.onclick = function () { toggle(it); };
+      var t = document.createElement('span'); t.className = 't'; t.textContent = it.title;
+      var m = document.createElement('span'); m.className = 'meta';
+      m.innerHTML = '<b></b><br>';
+      m.querySelector('b').textContent = it.dots || '';
+      m.appendChild(document.createTextNode('이번 주 ' + it.week + '/' + it.goal + (it.streak ? ' · 연속 ' + it.streak + '일' : '')));
+      row.appendChild(c); row.appendChild(t); row.appendChild(m);
+      L.appendChild(row);
+    });
+    if (!n) L.innerHTML = '<div class="gate">아직 습관이 없어요. 노션 HABIT 페이지에서 습관을 더해 주세요.</div>';
+  }
+
+  function load() {
+    $('gate').hidden = true;
+    if (DEMO) { if (!items.length) items = [{ id: 'a', title: '책 20쪽 읽기', done: true, week: 3, goal: 5, streak: 4, dots: '●●●○○' }, { id: 'b', title: '물 2L', done: false, week: 5, goal: 7, streak: 0, dots: '●●●●●○○' }, { id: 'c', title: '스트레칭', done: false, week: 1, goal: 3, streak: 0, dots: '●○○' }]; render(); state('견본 · 노션과 연결하면 내 습관이 보여요'); return; }
+    if (!SYNC) return gate('노션 연결 준비 중이에요.');
+    if (!wid()) return gate('노션의 습관 표(HABITS)와 이어지는 위젯이에요.<br>여기서 체크하면 노션에도, 노션에서 체크하면 여기에도 보여요.', '노션과 연결하기');
+    return api('GET', '/v1/habits?date=' + iso(day)).then(function (d) {
+      items = d.habits; render();
+      if (!d.day) state('이 날짜의 기록 페이지(DAYS)가 없어서 체크할 수 없어요.');
+    }).catch(function (e) {
+      if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기');
+      if (e.code === 'not_shared' || e.code === 'no_habits') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
+      state(e.message);
+    });
+  }
+  function toggle(it) {
+    var before = it.done; it.done = !it.done; render();
+    if (DEMO) return;
+    api('POST', '/v1/habits/check', { habit: it.id, date: iso(day), done: it.done })
+      .then(function () { return load(); })   // 이번 주 · 연속은 노션 수식이 다시 계산한 값으로
+      .catch(function (e) { it.done = before; render(); state(e.code === 'no_day' ? '이 날짜의 기록 페이지(DAYS)가 없어요.' : e.message); });
+  }
+  function move(n) { day.setDate(day.getDate() + n); items = DEMO ? items : []; render(); load(); }
+  $('prev').onclick = function () { move(-1); };
+  $('next').onclick = function () { move(1); };
+  $('day').onclick = function () { day = IDP.now(); day.setHours(0, 0, 0, 0); move(0); };
+  setInterval(function () { if (!document.hidden && !busy && !DEMO && wid() && SYNC) load(); }, 30000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && !DEMO && wid() && SYNC) load(); });
+  IDP.options('habitsync', [
+    { k: 'label', label: '제목', ph: 'HABIT' },
+    { k: 'code', label: '연결 번호(휴대폰 앱에서 연결했을 때만)', ph: '', secret: true }
+  ], function () { render(); load(); });
+  render(); load();
+</script>
+</body>
+</html>

@@ -203,6 +203,14 @@
   }
   applyTheme(effective());
   window.addEventListener('storage', function (e) { if (e.key === STORE) applyTheme(effective()); });
+  // Theme Studio 「저장」 · 노션 연결의 테마 — ⚙ 와 같은 저장소라 이 기기의 모든 위젯이 따른다
+  function saveTheme(patch) {
+    var cur = saved() || {};
+    Object.keys(patch).forEach(function (k) { cur[k] = patch[k]; });
+    try { localStorage.setItem(STORE, JSON.stringify(cur)); } catch (e) { return false; }
+    applyTheme(effective());
+    return true;
+  }
 
   function settingsPanel() {
     if (q.get('settings') === '0' || !document.querySelector('.card')) return; // Studio page and opted-out widgets have no panel
@@ -563,7 +571,7 @@
     return new Date();
   }
 
-  window.IDP = { q: q, CFG: CFG, THEMES: THEMES, applyTheme: applyTheme, weekStart: weekStart === 'sun' ? 'sun' : 'mon',
+  window.IDP = { q: q, CFG: CFG, THEMES: THEMES, applyTheme: applyTheme, savedTheme: saved, saveTheme: saveTheme, weekStart: weekStart === 'sun' ? 'sun' : 'mon',
     DOW: DOW, MONTHS: MONTHS, pad: pad, iso: iso, plannerDate: plannerDate, parseDate: parseDate,
     options: options, opt: opt, photo: photo, listParse: listParse, seed: seed, seedDone: seedDone, now: now,
     STYLES: STYLES, share: share, shareLink: shareLink,
