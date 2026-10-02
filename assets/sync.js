@@ -61,7 +61,7 @@
   function connect(ret) {
     ret = ret || location.origin + location.pathname + '?theme=' + encodeURIComponent(IDP.q.get('theme') || '');
     // 새 탭으로 연다(2026-10-02) — 작은 창은 팝업 차단 · 창 뒤로 숨는 일이 잦다. 탭도 opener 가 남아 돌아오면 번호를 넘기고 스스로 닫힌다
-    window.open(BASE + (/localhost/.test(BASE) ? '/dev-connect' : '/connect') + '?return=' + encodeURIComponent(ret), 'idp-sync');
+    window.open(BASE + (/localhost/.test(BASE) ? '/dev-connect' : '/connect') + '?return=' + encodeURIComponent(ret), '_blank');
   }
   // 서버 오류는 e.code(not_connected · notion_revoked · not_shared · no_planner …)로 — 끊긴 연결이면 번호를 잊는다
   function api(method, path, body, code) {
