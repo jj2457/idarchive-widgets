@@ -17,6 +17,10 @@
   /* 바로 하기(2026-10-02) — 다음 할 일 · 다음 습관 옆 동그라미 하나. 누르면 노션에 체크, 아래 줄에 「되돌리기」 */
   .c .tick { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; padding: 0; border-radius: 50%; border: 1.5px solid color-mix(in srgb, var(--deep) 55%, transparent); background: var(--paper); color: var(--deep); display: flex; align-items: center; justify-content: center; text-transform: none; letter-spacing: 0; cursor: pointer; }
   .c .tick svg { width: 13px; height: 13px; opacity: .35; } .c .tick:hover svg, .c .tick:focus-visible svg { opacity: 1; } .c .tick:disabled { opacity: .45; }
+  /* 밀린 일(2026-10-02) — 할 일 칸 맨 아래 한 줄, 있을 때만. 「오늘로」 = 그 일을 오늘 날짜로 */
+  .c .late { margin-top: 6px; display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--sub); min-width: 0; }
+  .c .late span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .c .late button { flex: none; padding: 2px 8px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--deep) 45%, transparent); background: var(--paper); color: var(--deep); font-size: 10px; text-transform: none; letter-spacing: 0; cursor: pointer; }
   .foot .undo { margin-left: 6px; padding: 0; border: 0; background: none; font-size: 9.5px; color: var(--deep); text-decoration: underline; text-transform: none; letter-spacing: .02em; }
   .c .k { font-size: 9.5px; letter-spacing: .16em; color: var(--sub); }
   .c .v { margin-top: 5px; font-family: var(--serif); font-size: 19px; line-height: 1.15; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -91,14 +95,15 @@
     if (btn) $('cn').onclick = function () { S.connect(); };
   }
   // 칸 하나 = { k, v, unit, s, pct, quiet, over }
-  function todoCard(d) {
+  function todoCard(d, late) {
     if (d === FAIL) return failCard('할 일');
     if (!d) return { k: '할 일', v: '—', quiet: true, s: '할 일 목록을 찾지 못했어요' };
     var all = (d.items || []), left = all.filter(function (x) { return !x.done; });
-    if (!all.length) return { k: '할 일', v: '아직 없어요', quiet: true, s: '눌러서 오늘 할 일 한 줄', archie: true, go: 'todo' };
+    var lt = late && late !== FAIL && late.count ? late : null;   // 밀린 일(지난 60일 · 끝내지 않은 할 일)
+    if (!all.length) return { k: '할 일', v: '아직 없어요', quiet: true, s: '눌러서 오늘 할 일 한 줄', archie: true, go: 'todo', late: lt };
     var first = left.filter(function (x) { return x.important; })[0] || left[0];
     return { k: '할 일', v: left.length ? String(left.length) : '다 했어요', unit: left.length ? '개 남음' : '', s: first ? first.title : all.length + '개 모두 끝냈어요', pct: (all.length - left.length) / all.length, archie: left.length ? null : 'done',
-      act: first ? { kind: 'todo', id: first.id, title: first.title, label: '「' + first.title + '」 끝냄' } : null };
+      act: first ? { kind: 'todo', id: first.id, title: first.title, label: '「' + first.title + '」 끝냄' } : null, late: lt };
   }
   function habitCard(d) {
     if (d === FAIL) return failCard('습관');
@@ -142,6 +147,13 @@
       if (c.unit) { var u = document.createElement('small'); u.textContent = c.unit; v.appendChild(u); }
       var s = document.createElement('div'); s.className = 's'; s.textContent = c.s || '';
       e.appendChild(k); e.appendChild(v); e.appendChild(s);
+      if (c.late) {
+        var it = c.late.items[0], ln = document.createElement('div'); ln.className = 'late';
+        var tx = document.createElement('span'); tx.textContent = '밀린 일 ' + c.late.count + ' · ' + it.title; ln.appendChild(tx);
+        var mv = document.createElement('button'); mv.type = 'button'; mv.textContent = '오늘로'; mv.setAttribute('aria-label', '「' + it.title + '」 오늘로 옮기기');
+        mv.onclick = (function (x, b) { return function (ev) { ev.stopPropagation(); b.disabled = true; doMove(x, true); }; })(it, mv);
+        ln.appendChild(mv); e.appendChild(ln);
+      }
       if (c.pct != null) { var b = document.createElement('div'); b.className = 'bar'; b.innerHTML = '<i></i>'; b.firstChild.style.width = Math.round(c.pct * 100) + '%'; e.appendChild(b); }
       G.appendChild(e);
     });
@@ -162,10 +174,12 @@
   function build(r) {
     if (r[0] && r[0] !== FAIL) mine(r[0].items);
     if (r[1] && r[1] !== FAIL) mine(r[1].habits);
-    cards = [todoCard(r[0]), habitCard(r[1]), moneyCard(r[2]), noteCard(r[3])];
+    cards = [todoCard(r[0], r[4]), habitCard(r[1]), moneyCard(r[2]), noteCard(r[3])];
   }
   // 바로 하기 — 할 일은 노션 TASKS 「완료」, 습관은 오늘 DAYS 「완료한 습관」. 되돌리기는 같은 길로 반대로
+  var acting = false;   // 노션에 적는 동안 다른 ✓ · 오늘로 · 되돌리기는 받지 않는다(느린 연결에서 두 번 눌러 다른 줄이 바뀌는 일 막기)
   function doAct(a, done) {
+    if (acting && !DEMO) return;
     var label = a.kind === 'todo' ? (done ? '끝냈어요' : '다시 할 일로 돌렸어요') : (done ? '오늘 체크했어요' : '체크를 풀었어요');
     function after() {
       wrote[a.id] = { done: done, until: Date.now() + 20000 };
@@ -175,10 +189,28 @@
       if (done) { var u = document.createElement('button'); u.type = 'button'; u.className = 'undo'; u.textContent = '되돌리기'; u.onclick = function () { u.disabled = true; doAct(a, false); }; st.appendChild(u); }
     }
     if (DEMO) { (a.kind === 'todo' ? raw[0].items : raw[1].habits).forEach(function (x) { if (x.id === a.id) x.done = done; }); return after(); }
-    state('노션에 적는 중…');
+    state('노션에 적는 중…'); acting = true;
     var p = a.kind === 'todo' ? S.api('PATCH', '/v1/todo/' + a.id, { done: done }) : S.api('POST', '/v1/habits/check', { habit: a.id, date: iso(IDP.now()), done: done });
-    p.then(function () { after(); setTimeout(function () { load(true); }, 4000); })
-      .catch(function (e) { render(); state(e.code === 'no_day' ? '오늘 기록 페이지(DAYS)가 없어요.' : (e.message || '노션에 적지 못했어요 — 다시 눌러 주세요')); });
+    p.then(function () { acting = false; after(); setTimeout(function () { load(true); }, 4000); })
+      .catch(function (e) { acting = false; render(); state(e.code === 'no_day' ? '오늘 기록 페이지(DAYS)가 없어요.' : (e.message || '노션에 적지 못했어요 — 다시 눌러 주세요')); });
+  }
+  // 밀린 일 「오늘로」 — 노션 TASKS 의 날짜만 오늘로(시간이 있으면 시간은 그대로). 되돌리기 = 원래 날짜로
+  function doMove(it, toToday) {
+    if (acting && !DEMO) return;
+    var today = iso(IDP.now()), to = toToday ? today : it.date, from = toToday ? it.date : today;
+    function after() {
+      var st = $('state'); st.textContent = '「' + it.title + '」 ' + (toToday ? '오늘로 옮겼어요' : '원래 날짜로 돌렸어요');
+      if (toToday) { var u = document.createElement('button'); u.type = 'button'; u.className = 'undo'; u.textContent = '되돌리기'; u.onclick = function () { u.disabled = true; doMove(it, false); }; st.appendChild(u); }
+    }
+    if (DEMO) {
+      if (toToday) { raw[4].items = raw[4].items.filter(function (x) { return x.id !== it.id; }); raw[4].count--; raw[0].items.push({ id: it.id, title: it.title, done: false }); }
+      else { raw[0].items = raw[0].items.filter(function (x) { return x.id !== it.id; }); raw[4].items.unshift(it); raw[4].count++; }
+      build(raw); render(); return after();
+    }
+    state('노션에 적는 중…'); acting = true;
+    S.api('PATCH', '/v1/todo/' + it.id, { date: to, from: from })
+      .then(function () { acting = false; return load(true); }).then(after)
+      .catch(function (e) { acting = false; render(); state(e.message || '노션에 적지 못했어요 — 다시 눌러 주세요'); });
   }
   function soft(p) { return p.catch(function (e) { if (HARD[e.code]) throw e; return (e.code === 'no_table' || e.code === 'not_shared' || e.code === 'no_habits') ? null : FAIL; }); }
   function failCard(k) { return { k: k, v: '잠시 뒤 다시', soft: true, quiet: true, s: '노션이 잠깐 응답하지 않았어요 — 「새로 읽기」' }; }
@@ -189,7 +221,8 @@
       raw = raw || [{ items: [{ id: 't1', title: '기획안 초안 보내기', done: false, important: true }, { id: 't2', title: '운동 30분', done: true }, { id: 't3', title: '장보기', done: false }, { id: 't4', title: '책 20쪽', done: true }, { id: 't5', title: '메일 정리', done: true }] },
         { habits: [{ id: 'h1', name: '운동', done: true }, { id: 'h2', name: '물 마시기', done: true }, { id: 'h3', name: '책 읽기', done: false }, { id: 'h4', name: '일기 쓰기', done: false }] },
         { count: 23, expense: 412300, income: 0, budget: 800000, used: 0.515 },
-        { items: [{ text: '다음 달 여행 숙소 후보 3곳 비교' }, { text: '세탁소 맡긴 코트 찾기' }, { text: '블로그 글감 — 아침 루틴' }] }];
+        { items: [{ text: '다음 달 여행 숙소 후보 3곳 비교' }, { text: '세탁소 맡긴 코트 찾기' }, { text: '블로그 글감 — 아침 루틴' }] },
+        { count: 1, items: [{ id: 'o1', title: '세금 고지서 확인', date: iso(new Date(IDP.now().getTime() - 2 * 864e5)) }] }];
       build(raw); render(); state('견본 · 노션과 연결하면 내 플래너의 오늘이 보여요'); return;
     }
     if (!S.base) return gate('노션 연결 준비 중이에요.');
@@ -201,7 +234,8 @@
       soft(S.api('GET', '/v1/todo?date=' + day + '&tz=' + tz)),
       soft(S.api('GET', '/v1/habits?date=' + day)),
       soft(S.api('GET', '/v1/finance?month=' + month + '&tz=' + tz)),
-      soft(S.api('GET', '/v1/notes?show=open'))
+      soft(S.api('GET', '/v1/notes?show=open')),
+      soft(S.api('GET', '/v1/todo/overdue?date=' + day + '&tz=' + tz)).catch(function () { return null; })
     ]).then(function (r) {
       if (my !== seq) return;
       raw = r; build(r);
