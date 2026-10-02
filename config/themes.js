@@ -2,9 +2,9 @@
 window.IDP_CONFIG = {
   "themes": {
     "ivory": {
-      "soft": "#ebe3d4",
-      "deep": "#c8b89c",
-      "tint": "#f8f4ec"
+      "soft": "#f2ece1",
+      "deep": "#c9bba6",
+      "tint": "#f8f5ef"
     },
     "lavender": {
       "soft": "#d9d5f5",
