@@ -56,6 +56,18 @@
   .wk button.na { border-style: dashed; border-color: var(--line); cursor: default; }
   .wk button.later { border-color: var(--line); background: transparent; cursor: default; }
   .wk button.sel { box-shadow: 0 0 0 2px color-mix(in srgb, var(--deep) 30%, transparent); }
+  /* 해(REQ-030 · 1년 습관 — YEAR 페이지): 열두 줄 × 그 달 날수, 칸 진하기 = 그날 지킨 습관 ÷ 습관 수 */
+  .yr { margin-top: 10px; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 3px 6px; align-items: center; }
+  .yr .mo { font-size: 9.5px; color: var(--sub); letter-spacing: .04em; text-align: right; }
+  .yr .ds { display: grid; grid-template-columns: repeat(31, minmax(0, 1fr)); gap: 2px; }
+  .yr .ds i { aspect-ratio: 1; border-radius: 2px; background: var(--tint); }
+  .yr .ds i.l1 { background: color-mix(in srgb, var(--deep) 30%, var(--tint)); }
+  .yr .ds i.l2 { background: color-mix(in srgb, var(--deep) 55%, var(--tint)); }
+  .yr .ds i.l3 { background: color-mix(in srgb, var(--deep) 78%, var(--tint)); }
+  .yr .ds i.l4 { background: var(--deep); }
+  .yr .ds i.fu { background: transparent; box-shadow: inset 0 0 0 1px var(--tint); }
+  .yr .ds i.no { visibility: hidden; }
+  .yr .ds i.td { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--deep) 80%, #2a2a2a); }
   .gate { margin-top: 16px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
   .gate svg.archie { display: block; width: 40px; height: 40px; margin: 0 auto 4px; color: var(--deep); }
   .gate button { margin-top: 10px; padding: 9px 18px; border-radius: 999px; background: var(--deep); color: #fff; border: 0; font-size: 12px; letter-spacing: .04em; text-transform: none; }
@@ -74,6 +86,7 @@
     <div class="rings" id="rings" hidden></div>
     <div id="map" hidden><div class="heat" id="heat"></div><div class="legend"><span>적게</span><b></b><b class="l1"></b><b class="l2"></b><b class="l3"></b><b class="l4"></b><span>다 지킴</span></div></div>
     <div class="wk" id="wk" hidden></div>
+    <div class="yr" id="yr" hidden></div>
     <div class="list" id="list"></div>
     <div class="gate" id="gate" hidden></div>
     <div class="state" id="state"></div>
@@ -95,13 +108,41 @@
   var items = [], busy = 0, loaded = false, wrote = {};
   // 보기: 목록 | 링(REQ-017 — 습관마다 이번 주 횟수 ÷ 주간 목표를 겹친 링으로, 최대 5개). 이 기기의 보기 설정만 저장(기록 아님)
   var VKEY = 'idarchive.habitsync.view';
-  var VIEWS = ['list', 'ring', 'month', 'week'];
+  var VIEWS = ['list', 'ring', 'month', 'week', 'year'];
   var view = VIEWS.indexOf(IDP.q.get('view')) > 0 ? IDP.q.get('view') : (function () { try { var v = localStorage.getItem(VKEY); return VIEWS.indexOf(v) >= 0 ? v : 'list'; } catch (e) { return 'list'; } })();
   // 습관 하나만(habit=책 읽기 · REQ-021 독서한 날): 그 습관을 체크한 날만 한 달 지도로 — 새로 적을 것 없이 「책 읽기」 체크가 곧 읽은 날
   var ONE = (IDP.q.get('habit') || '').slice(0, 60);
-  if (ONE) view = 'month';
+  if (ONE && view !== 'year') view = 'month';   // 습관 하나: 달(기본) 또는 view=year 로 1년
   var monthData = null, monthKey = '';   // 달 보기: { total, days: [{ date, done }] } — 노션 DAYS 에서 읽은 값(위젯은 저장 안 함)
   var RING_ALPHA = [1, .78, .6, .44, .3];
+  var yearData = null, yearKey = '';   // 해 보기: { total, months: [{ month, days: [{ date, done }] }] }
+  function demoYear(y) { var out = []; for (var m = 1; m <= 12; m++) out.push(demoMonth(y + '-' + pad(m))); return { year: y, total: 4, months: out.map(function (r) { return { month: r.month, days: r.days }; }) }; }
+  function drawYear() {
+    var Y = $('yr'), show = view === 'year';
+    Y.hidden = !show; if (!show) return;
+    Y.innerHTML = '';
+    var y = day.getFullYear(), now = IDP.now(); now.setHours(0, 0, 0, 0);
+    var total = yearData ? (ONE ? 1 : yearData.total) : 0, by = {}, full = 0;
+    (yearData ? yearData.months : []).forEach(function (m) { m.days.forEach(function (d) { by[d.date] = ONE ? (d.done ? 1 : 0) : d.done; }); });
+    for (var m = 0; m < 12; m++) {
+      var mo = document.createElement('div'); mo.className = 'mo'; mo.textContent = (m + 1); Y.appendChild(mo);
+      var ds = document.createElement('div'); ds.className = 'ds'; var n = new Date(y, m + 1, 0).getDate();
+      for (var d = 1; d <= 31; d++) {
+        var i = document.createElement('i');
+        if (d > n) i.className = 'no';
+        else {
+          var dt = new Date(y, m, d), k = iso(dt), done = by[k] || 0, r = total ? done / total : 0;
+          i.className = dt > now ? 'fu' : (r >= 1 ? 'l4' : r > .67 ? 'l3' : r > .34 ? 'l2' : r > 0 ? 'l1' : '');
+          if (+dt === +now) i.className += ' td';
+          if (total && done >= total && dt <= now) full++;
+          i.title = (m + 1) + '/' + d + (total ? ' · ' + done + '/' + total : '');
+        }
+        ds.appendChild(i);
+      }
+      Y.appendChild(ds);
+    }
+    $('left').textContent = yearData ? (ONE ? ONE + ' ' + full + '일' : '다 지킨 날 ' + full + '일') : '';
+  }
   var weekData = null, weekKey = '';   // 주 보기: { dates: [7], habits: [{ id, title, days: [true|false|null ×7] }] } — 노션 DAYS 에서 읽은 값
   function wkStart(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() - (IDP.weekStart === 'sun' ? 0 : 1) + 7) % 7)); return x; }
   function demoWeek() {
@@ -139,9 +180,9 @@
   function drawViews() {
     var V = $('views'); V.innerHTML = '';
     if (ONE) return;
-    [['list', '목록'], ['ring', '링'], ['week', '주'], ['month', '달']].forEach(function (x) {
+    [['list', '목록'], ['ring', '링'], ['week', '주'], ['month', '달'], ['year', '해']].forEach(function (x) {
       var b = document.createElement('button'); b.type = 'button'; b.textContent = x[1]; if (x[0] === view) b.className = 'on';
-      b.onclick = function () { var was = view; view = x[0]; try { localStorage.setItem(VKEY, view); } catch (e) {} render(); if (was !== view && (was === 'month' || view === 'month' || was === 'week' || view === 'week')) load(); };
+      b.onclick = function () { var was = view; view = x[0]; try { localStorage.setItem(VKEY, view); } catch (e) {} render(); if (was !== view && (/^(month|week|year)$/.test(was) || /^(month|week|year)$/.test(view))) load(); };
       V.appendChild(b);
     });
   }
@@ -218,7 +259,7 @@
   function render(skipList) {
     $('title').textContent = IDP.opt('habitsync', 'label', 'HABIT');
     var ws = wkStart(day), we = new Date(ws); we.setDate(ws.getDate() + 6);
-    $('day').textContent = view === 'month' ? day.getFullYear() + '년 ' + (day.getMonth() + 1) + '월'
+    $('day').textContent = view === 'year' ? day.getFullYear() + '년' : view === 'month' ? day.getFullYear() + '년 ' + (day.getMonth() + 1) + '월'
       : view === 'week' ? (ws.getMonth() + 1) + '월 ' + ws.getDate() + '일 – ' + (we.getMonth() !== ws.getMonth() ? (we.getMonth() + 1) + '월 ' : '') + we.getDate() + '일'
       : (day.getMonth() + 1) + '월 ' + day.getDate() + '일 (' + W[day.getDay()] + ')';
     if (view === 'week' && weekData) {   // 위 막대 = 고른 날(기본 오늘) 지킨 습관 ÷ 습관 수
@@ -231,9 +272,9 @@
     if (skipList) return;
     drawViews(); drawRings();
     var L = $('list'); L.innerHTML = '';
-    $('barI').parentNode.hidden = view === 'month';
-    drawMap(); drawWeek();
-    if (view === 'month' || view === 'week') return;
+    $('barI').parentNode.hidden = view === 'month' || view === 'year';
+    drawMap(); drawWeek(); drawYear();
+    if (view === 'month' || view === 'week' || view === 'year') return;
     items.forEach(function (it, i) {
       var row = document.createElement('div'); row.className = 'it' + (it.done ? ' done' : '');
       if (view === 'ring' && i < 5) { var dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = 'color-mix(in srgb, var(--deep) ' + Math.round(RING_ALPHA[i] * 100) + '%, transparent)'; row.appendChild(dot); }
@@ -259,6 +300,18 @@
       if (!wid()) return gate('노션의 습관 표(HABITS)와 이어지는 위젯이에요.<br>그날 지킨 습관이 많을수록 진한 색으로 한 달이 보여요.', '노션과 연결하기');
       if (monthKey !== k) { monthData = null; render(); state('불러오는 중…'); }
       return api('GET', '/v1/habits/month?month=' + k + (ONE ? '&habit=' + encodeURIComponent(ONE) : '')).then(function (d) { monthData = d; monthKey = k; state(''); render(); }).catch(function (e) {
+        if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기'); if (e.code === 'choose_planner') { gate('연결된 플래너가 여러 개예요. 이 위젯이 쓸 플래너를 골라 주세요.'); return S.choosePlanner($('gate'), load); }
+        if (e.code === 'not_shared' || e.code === 'no_habits') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
+        state(e.message);
+      });
+    }
+    if (view === 'year') {
+      var yk = String(day.getFullYear());
+      if (DEMO) { yearData = demoYear(yk); if (ONE) { yearData.total = 1; yearData.months.forEach(function (m) { m.days = m.days.map(function (d) { return { date: d.date, done: d.done >= 3 ? 1 : 0 }; }); }); } yearKey = yk; loaded = true; render(); state('견본 · 노션과 연결하면 1년 습관이 보여요'); return; }
+      if (!SYNC) return gate('노션 연결 준비 중이에요.');
+      if (!wid()) return gate('노션의 습관 표(HABITS)와 이어지는 위젯이에요.<br>1년 365일 — 그날 지킨 습관이 많을수록 진하게 보여요.', '노션과 연결하기');
+      if (yearKey !== yk) { yearData = null; render(); state('불러오는 중…'); }
+      return api('GET', '/v1/habits/year?year=' + yk + (ONE ? '&habit=' + encodeURIComponent(ONE) : '')).then(function (d) { yearData = d; yearKey = yk; loaded = true; state(''); render(); }).catch(function (e) {
         if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기'); if (e.code === 'choose_planner') { gate('연결된 플래너가 여러 개예요. 이 위젯이 쓸 플래너를 골라 주세요.'); return S.choosePlanner($('gate'), load); }
         if (e.code === 'not_shared' || e.code === 'no_habits') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
         state(e.message);
@@ -306,6 +359,7 @@
   function move(n) {
     if (view === 'month') { if (n) { day.setDate(1); day.setMonth(day.getMonth() + n); } monthData = null; render(); return load(); }
     if (view === 'week') { day.setDate(day.getDate() + 7 * n); render(); return load(); }
+    if (view === 'year') { if (n) day.setFullYear(day.getFullYear() + n); render(); return load(); }
     day.setDate(day.getDate() + n); if (!DEMO) { items = []; loaded = false; } render(); load();
   }
   $('prev').onclick = function () { move(-1); };
