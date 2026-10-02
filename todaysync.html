@@ -123,7 +123,8 @@
     if (!d) return { k: '메모', v: '—', quiet: true, s: '메모 목록을 찾지 못했어요' };
     var n = (d.items || []).length;
     if (!n) return { k: '메모', v: '0', unit: '개', quiet: true, s: '눌러서 떠오른 생각 한 줄', go: 'note' };
-    return { k: '메모', v: n >= 30 ? '30+' : String(n), unit: '개 정리 전', s: d.items[0].text || '' };   // 서버는 최근 30개까지 돌려준다
+    var tx = (d.items.filter(function (x) { return (x.text || '').trim(); })[0] || {}).text;   // 맨 위 메모가 비어 있으면 글이 있는 다음 메모
+    return { k: '메모', v: n >= 30 ? '30+' : String(n), unit: '개 정리 전', s: tx || '내용이 빈 메모예요' };   // 서버는 최근 30개까지 돌려준다
   }
   function render() {
     $('title').textContent = IDP.opt('todaysync', 'label', '') || 'TODAY';
