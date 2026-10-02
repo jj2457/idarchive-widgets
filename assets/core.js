@@ -663,7 +663,15 @@
     return new Date();
   }
 
-  window.IDP = { layers: { get: layers, set: setLayers, setWidget: setWidget, key: WKEY }, q: q, CFG: CFG, THEMES: THEMES, applyTheme: applyTheme, savedTheme: saved, saveTheme: saveTheme, weekStart: weekStart === 'sun' ? 'sun' : 'mon',
+  // 캐릭터 아키(REQ-045 · widgets/_character.html 의 ARCHIE) — 빈 칸 · 다 끝낸 순간에만 작게. kind: 'empty' | 'done'
+  function archie(kind, cls) {
+    var face = kind === 'done'
+      ? '<path d="M45 76 q5 -7 10 0 M65 76 q5 -7 10 0 M52 85 q8 8 16 0" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>'
+      : '<path d="M46 74 h8 M66 74 h8" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><circle cx="60" cy="86" r="3" fill="none" stroke="currentColor" stroke-width="4"/>';
+    return '<svg class="' + (cls || 'archie') + '" viewBox="0 0 120 120" aria-hidden="true"><path d="M28 46 h64 v46 a10 10 0 0 1 -10 10 h-44 a10 10 0 0 1 -10 -10 z" style="fill:var(--tint)" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><path d="M22 36 h76 a4 4 0 0 1 4 4 v6 h-84 v-6 a4 4 0 0 1 4 -4 z" style="fill:var(--paper)" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/>' + face + '</svg>';
+  }
+
+  window.IDP = { archie: archie, layers: { get: layers, set: setLayers, setWidget: setWidget, key: WKEY }, q: q, CFG: CFG, THEMES: THEMES, applyTheme: applyTheme, savedTheme: saved, saveTheme: saveTheme, weekStart: weekStart === 'sun' ? 'sun' : 'mon',
     DOW: DOW, MONTHS: MONTHS, pad: pad, iso: iso, plannerDate: plannerDate, parseDate: parseDate,
     options: options, opt: opt, photo: photo, listParse: listParse, seed: seed, seedDone: seedDone, now: now,
     STYLES: STYLES, share: share, shareLink: shareLink,

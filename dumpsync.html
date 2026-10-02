@@ -28,6 +28,7 @@
   .foot button { padding: 0; border: 0; background: none; font-size: 10.5px; color: var(--sub); text-transform: none; letter-spacing: .02em; }
   .foot button:hover { color: var(--deep); }
   .empty, .gate { margin-top: 12px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
+  .empty svg.archie { display: block; width: 40px; height: 40px; margin: 0 auto 4px; color: var(--deep); }
   .gate button { margin-top: 10px; padding: 9px 18px; border-radius: 999px; background: var(--deep); color: #fff; border: 0; font-size: 12px; letter-spacing: .04em; text-transform: none; }
   .state { font-size: 9.5px; color: var(--sub); text-align: center; margin-top: 8px; letter-spacing: .04em; min-height: 12px; }
 </style>
@@ -86,7 +87,7 @@
       var tm = document.createElement('time'); tm.textContent = when(x.created);
       row.appendChild(ck); row.appendChild(a); row.appendChild(tm); L.appendChild(row);
     });
-    if (!items.length) L.innerHTML = '<div class="empty">' + (show === 'all' ? '아직 적은 것이 없어요.' : '정리할 것이 없어요. 떠오르는 것을 위에 적어 두세요.') + '</div>';
+    if (!items.length) L.innerHTML = '<div class="empty">' + (show === 'all' ? IDP.archie('empty') + '아직 적은 것이 없어요.' : IDP.archie('done') + '정리할 것이 없어요. 떠오르는 것을 위에 적어 두세요.') + '</div>';
   }
   function toggle(x) {
     if (DEMO) { x.done = !x.done; if (show === 'open' && x.done) items = items.filter(function (y) { return y !== x; }); return render(); }

@@ -150,8 +150,8 @@
   var HARD = { not_connected: 1, notion_revoked: 1, choose_planner: 1, no_planner: 1, protected_planner: 1 };
   // 표가 없는 옛 복제본(no_table · not_shared) = null(그 칸만 「—」), 잠깐의 오류(노션 지연 · 인터넷) = FAIL(그 칸만 「잠시 뒤 다시」) — 둘을 섞지 않는다
   var FAIL = {};
-  var ARCHIE = '<svg class="archie" viewBox="0 0 120 120" aria-hidden="true"><path d="M28 46 h64 v46 a10 10 0 0 1 -10 10 h-44 a10 10 0 0 1 -10 -10 z" style="fill:var(--tint)" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><path d="M22 36 h76 a4 4 0 0 1 4 4 v6 h-84 v-6 a4 4 0 0 1 4 -4 z" style="fill:var(--paper)" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><path d="M46 74 h8 M66 74 h8" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><circle cx="60" cy="86" r="3" fill="none" stroke="currentColor" stroke-width="4"/></svg>';
-  var ARCHIE_DONE = '<svg class="archie" viewBox="0 0 120 120" aria-hidden="true"><path d="M28 46 h64 v46 a10 10 0 0 1 -10 10 h-44 a10 10 0 0 1 -10 -10 z" style="fill:var(--tint)" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><path d="M22 36 h76 a4 4 0 0 1 4 4 v6 h-84 v-6 a4 4 0 0 1 4 -4 z" style="fill:var(--paper)" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><path d="M45 76 q5 -7 10 0 M65 76 q5 -7 10 0 M52 85 q8 8 16 0" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg>';   // 해냈어요 — 웃는 눈 · 입
+  var ARCHIE = IDP.archie('empty');
+  var ARCHIE_DONE = IDP.archie('done');   // 해냈어요 — 웃는 눈 · 입
   var TICK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5 l3 3 l6 -7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   // 방금 내가 바꾼 것 — 노션이 몇 초 늦게 읽혀도 20초 동안은 내 저장을 믿는다(HABIT 위젯과 같은 규칙)
   var wrote = {}, raw = null;
