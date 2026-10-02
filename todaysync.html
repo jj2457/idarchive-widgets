@@ -128,8 +128,10 @@
     if (!d) return { k: '메모', v: '—', quiet: true, s: '메모 목록을 찾지 못했어요' };
     var n = (d.items || []).length;
     if (!n) return { k: '메모', v: '0', unit: '개', quiet: true, s: '눌러서 떠오른 생각 한 줄', go: 'note' };
-    var tx = (d.items.filter(function (x) { return (x.text || '').trim(); })[0] || {}).text;   // 맨 위 메모가 비어 있으면 글이 있는 다음 메모
-    return { k: '메모', v: n >= 30 ? '30+' : String(n), unit: '개 정리 전', s: tx || '내용이 빈 메모예요' };   // 서버는 최근 30개까지 돌려준다
+    var m = d.items.filter(function (x) { return (x.text || '').trim(); })[0];   // 맨 위 메모가 비어 있으면 글이 있는 다음 메모
+    // 메모 → 할 일(2026-10-02 · 다시 적지 않기) — 글이 있는 메모 한 건에 「할 일로」. 글은 줄 안에 보이므로 아래 작은 줄(s)은 비운다
+    if (m) return { k: '메모', v: n >= 30 ? '30+' : String(n), unit: '개 정리 전', s: '', memo: { id: m.id, text: m.text.trim() } };
+    return { k: '메모', v: n >= 30 ? '30+' : String(n), unit: '개 정리 전', s: '내용이 빈 메모예요' };   // 서버는 최근 30개까지 돌려준다
   }
   function render() {
     $('title').textContent = IDP.opt('todaysync', 'label', '') || 'TODAY';
@@ -153,6 +155,13 @@
         var mv = document.createElement('button'); mv.type = 'button'; mv.textContent = '오늘로'; mv.setAttribute('aria-label', '「' + it.title + '」 오늘로 옮기기');
         mv.onclick = (function (x, b) { return function (ev) { ev.stopPropagation(); b.disabled = true; doMove(x, true); }; })(it, mv);
         ln.appendChild(mv); e.appendChild(ln);
+      }
+      if (c.memo) {
+        var mm = c.memo, ml = document.createElement('div'); ml.className = 'late';
+        var mt = document.createElement('span'); mt.textContent = mm.text; ml.appendChild(mt);
+        var mb = document.createElement('button'); mb.type = 'button'; mb.textContent = '할 일로'; mb.setAttribute('aria-label', '「' + mm.text + '」 오늘 할 일로 옮기기');
+        mb.onclick = (function (x, b) { return function (ev) { ev.stopPropagation(); b.disabled = true; doMemo(x, true); }; })(mm, mb);
+        ml.appendChild(mb); e.appendChild(ml);
       }
       if (c.pct != null) { var b = document.createElement('div'); b.className = 'bar'; b.innerHTML = '<i></i>'; b.firstChild.style.width = Math.round(c.pct * 100) + '%'; e.appendChild(b); }
       G.appendChild(e);
@@ -212,6 +221,33 @@
       .then(function () { acting = false; return load(true); }).then(after)
       .catch(function (e) { acting = false; render(); state(e.message || '노션에 적지 못했어요 — 다시 눌러 주세요'); });
   }
+  // 메모 → 오늘 할 일: TASKS 에 새 할 일(오늘 · 메모 글 그대로) → 그 메모는 「정리함」. 되돌리기 = 새 할 일 휴지통 + 메모 다시 정리 전.
+  // 할 일은 생겼는데 메모 정리가 실패하면 둘 다 남겨 두고 알린다(지우지 않는다 — 다시 적을 일이 없게)
+  function doMemo(mm, forward) {
+    if (acting && !DEMO) return;
+    function after() {
+      var st = $('state'); st.textContent = '「' + mm.text.slice(0, 20) + (mm.text.length > 20 ? '…' : '') + '」 ' + (forward ? '오늘 할 일로 옮겼어요' : '메모로 돌렸어요');
+      if (forward) { var u = document.createElement('button'); u.type = 'button'; u.className = 'undo'; u.textContent = '되돌리기'; u.onclick = function () { u.disabled = true; doMemo(mm, false); }; st.appendChild(u); }
+    }
+    if (DEMO) {
+      if (forward) { mm.task = 'm' + Date.now(); raw[3].items = raw[3].items.filter(function (x) { return x.id !== mm.id; }); raw[0].items.push({ id: mm.task, title: mm.text, done: false }); }
+      else { raw[0].items = raw[0].items.filter(function (x) { return x.id !== mm.task; }); raw[3].items.unshift({ id: mm.id, text: mm.text }); }
+      build(raw); render(); return after();
+    }
+    state('노션에 적는 중…'); acting = true;
+    var p = forward
+      ? S.api('POST', '/v1/todo', { title: mm.text.slice(0, 200), date: iso(IDP.now()) }).then(function (t) {
+          mm.task = t.id;
+          return S.api('PATCH', '/v1/notes/' + mm.id, { done: true }).catch(function (e) { e.half = true; throw e; });
+        })
+      : S.api('DELETE', '/v1/todo/' + mm.task).then(function () { return S.api('PATCH', '/v1/notes/' + mm.id, { done: false }); });
+    p.then(function () { acting = false; return load(true); }).then(after)
+      .catch(function (e) {
+        acting = false;
+        if (e.half) { load(true); return state('할 일은 만들었어요 — 메모 정리는 노션에서 한 번 더 해 주세요'); }
+        render(); state(e.message || '노션에 적지 못했어요 — 다시 눌러 주세요');
+      });
+  }
   function soft(p) { return p.catch(function (e) { if (HARD[e.code]) throw e; return (e.code === 'no_table' || e.code === 'not_shared' || e.code === 'no_habits') ? null : FAIL; }); }
   function failCard(k) { return { k: k, v: '잠시 뒤 다시', soft: true, quiet: true, s: '노션이 잠깐 응답하지 않았어요 — 「새로 읽기」' }; }
   function waitCards() { return ['할 일', '습관', '이번 달 지출', '메모'].map(function (k) { return { k: k, v: '…', wait: true, s: '' }; }); }
@@ -221,7 +257,7 @@
       raw = raw || [{ items: [{ id: 't1', title: '기획안 초안 보내기', done: false, important: true }, { id: 't2', title: '운동 30분', done: true }, { id: 't3', title: '장보기', done: false }, { id: 't4', title: '책 20쪽', done: true }, { id: 't5', title: '메일 정리', done: true }] },
         { habits: [{ id: 'h1', name: '운동', done: true }, { id: 'h2', name: '물 마시기', done: true }, { id: 'h3', name: '책 읽기', done: false }, { id: 'h4', name: '일기 쓰기', done: false }] },
         { count: 23, expense: 412300, income: 0, budget: 800000, used: 0.515 },
-        { items: [{ text: '다음 달 여행 숙소 후보 3곳 비교' }, { text: '세탁소 맡긴 코트 찾기' }, { text: '블로그 글감 — 아침 루틴' }] },
+        { items: [{ id: 'n1', text: '다음 달 여행 숙소 후보 3곳 비교' }, { id: 'n2', text: '세탁소 맡긴 코트 찾기' }, { id: 'n3', text: '블로그 글감 — 아침 루틴' }] },
         { count: 1, items: [{ id: 'o1', title: '세금 고지서 확인', date: iso(new Date(IDP.now().getTime() - 2 * 864e5)) }] }];
       build(raw); render(); state('견본 · 노션과 연결하면 내 플래너의 오늘이 보여요'); return;
     }
@@ -266,7 +302,7 @@
     ev.preventDefault();
     var t = $('text').value.replace(/\s+/g, ' ').trim();
     if (!t || busy) return;
-    if (DEMO) { if (kind === 'todo') raw[0].items.unshift({ id: 't' + Date.now(), title: t, done: false, important: true }); else raw[3].items.unshift({ text: t }); $('text').value = ''; build(raw); render(); state(kind === 'todo' ? '견본 · 할 일에 더했어요' : '견본 · 메모에 더했어요'); return; }
+    if (DEMO) { if (kind === 'todo') raw[0].items.unshift({ id: 't' + Date.now(), title: t, done: false, important: true }); else raw[3].items.unshift({ id: 'n' + Date.now(), text: t }); $('text').value = ''; build(raw); render(); state(kind === 'todo' ? '견본 · 할 일에 더했어요' : '견본 · 메모에 더했어요'); return; }
     busy = true; $('go').disabled = true; state('노션에 적는 중…');
     var p = kind === 'todo' ? S.api('POST', '/v1/todo', { title: t, date: iso(IDP.now()) }) : S.api('POST', '/v1/notes', { text: t });
     p.then(function () { $('text').value = ''; state(kind === 'todo' ? '오늘 할 일에 넣었어요' : '머릿속 비우기에 넣었어요'); setTimeout(load, 1200); })
