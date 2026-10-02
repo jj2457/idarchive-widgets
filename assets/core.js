@@ -456,8 +456,9 @@
       rows.forEach(function (r, ri) {
         var card = document.createElement('div'); card.className = 'idp-list-item';
         var top = document.createElement('div'); top.className = 'idp-list-top';
-        top.innerHTML = '<span>' + String(ri + 1).padStart(2, '0') + '</span>';
-        [['↑', -1], ['↓', 1]].forEach(function (mv) {
+        // (2026-10-03) 한 칸짜리(프로필 사진처럼 max 1)는 번호 · 순서 단추 없이 「지우기」만
+        top.innerHTML = max > 1 ? '<span>' + String(ri + 1).padStart(2, '0') + '</span>' : '<span></span>';
+        if (max > 1) [['↑', -1], ['↓', 1]].forEach(function (mv) {
           var b = document.createElement('button'); b.type = 'button'; b.textContent = mv[0]; b.setAttribute('aria-label', mv[1] < 0 ? '위로' : '아래로');
           b.disabled = ri + mv[1] < 0 || ri + mv[1] >= rows.length;
           b.onclick = function () { var t = rows[ri]; rows[ri] = rows[ri + mv[1]]; rows[ri + mv[1]] = t; draw(); commit(); };
@@ -467,6 +468,7 @@
         del.onclick = function () { rows.splice(ri, 1); draw(); commit(); };
         top.appendChild(del); card.appendChild(top);
         fields.forEach(function (fd, fi) {
+          if (fd.photo) { card.appendChild(photoField(fd, r, fi)); return; }
           var lab = document.createElement('label'); lab.className = 'idp-list-field';
           lab.innerHTML = '<span>' + fd.label + '</span>';
           var inp = document.createElement('input'); inp.type = 'text'; inp.value = /^local:/.test(r[fi]) ? '' : (r[fi] || '');
@@ -474,18 +476,36 @@
           if (fd.url) { inp.inputMode = 'url'; inp.autocapitalize = 'off'; inp.spellcheck = false; }
           inp.addEventListener('input', function (e) { e.stopPropagation(); r[fi] = inp.value; commit(); });
           lab.appendChild(inp);
-          if (fd.photo) {
-            var pb = document.createElement('button'); pb.type = 'button'; pb.textContent = '사진 고르기';
-            pb.onclick = function () { pickPhoto(function (v) { r[fi] = v; draw(); commit(); }); };
-            lab.appendChild(pb);
-          }
           card.appendChild(lab);
         });
         holder.appendChild(card);
       });
       add.disabled = rows.length >= max;
+      if (max === 1) add.style.display = 'none';   // 한 칸짜리는 「하나 더」 없음
     }
     add.onclick = function () { rows.push(fields.map(function () { return ''; })); draw(); var ins = holder.querySelectorAll('.idp-list-item:last-child input'); if (ins[0]) ins[0].focus(); };
+    // (2026-10-03 오너: 「왜 다른 기기에서 사진이 없어졌지?」를 없애기) 사진 칸 = 「사진 고르기」 하나가 기본,
+    // 어디에 저장되는지 한 줄로 말하고, 모든 기기에서 같은 사진(사진 주소)은 접힌 「고급」 안에
+    function photoField(fd, r, fi) {
+      var box = document.createElement('div'); box.className = 'idp-list-field idp-photo';
+      if (!(max === 1 && fields.length === 1)) { var head = document.createElement('span'); head.textContent = String(fd.label || '사진').split(' — ')[0]; box.appendChild(head); }
+      var pb = document.createElement('button'); pb.type = 'button'; pb.className = 'idp-photo-pick';
+      pb.textContent = r[fi] ? '다른 사진 고르기' : '사진 고르기';
+      pb.onclick = function () { pickPhoto(function (v) { r[fi] = v; draw(); commit(); }); };
+      box.appendChild(pb);
+      var st = document.createElement('div'); st.className = 'idp-note';
+      st.textContent = /^local:/.test(r[fi]) ? '이 기기에서 고른 사진이에요 — 다른 기기(폰 · 노트북)에서는 그 기기에서 한 번 더 골라 주세요.'
+        : (r[fi] ? '사진 주소 — 모든 기기에서 같은 사진이 보여요.' : '고른 사진은 이 기기에 저장돼요.');
+      box.appendChild(st);
+      var adv = document.createElement('details'); adv.className = 'idp-photo-adv';
+      adv.innerHTML = '<summary>사진 주소로 넣기 · 모든 기기에서 같은 사진</summary>';
+      var inp = document.createElement('input'); inp.type = 'text'; inp.inputMode = 'url'; inp.autocapitalize = 'off'; inp.spellcheck = false;
+      inp.value = /^local:/.test(r[fi]) ? '' : (r[fi] || ''); inp.placeholder = fd.ph || 'https://…jpg';
+      inp.addEventListener('input', function (e) { e.stopPropagation(); r[fi] = inp.value; commit(); });
+      if (r[fi] && !/^local:/.test(r[fi])) adv.open = true;
+      adv.appendChild(inp); box.appendChild(adv);
+      return box;
+    }
     draw();
     return wrap;
   }
