@@ -24,26 +24,42 @@ function glyph(m, ink, soft) {
   return g.replace(/\{INK\}/g, ink).replace(/\{SOFT\}/g, soft).replace(/\{TINT\}/g, mix(soft, '#ffffff', 0.35)).replace(/\{WHITE\}/g, '#ffffff');
 }
 
-// 1500 × 600 판(노션 커버 비율) — 가운데 띠 안에 그림 · 이름 · 캡션(데스크톱 · 폰 모두 보이는 자리)
-function monthSvg({ soft, deep, month, year = 2027, faint = true, font = "'Playfair Display', Georgia, 'Times New Roman', serif", sans = "'Segoe UI', 'Noto Sans KR', sans-serif" }) {
-  if (!HEX.test(soft || '') || !HEX.test(deep || '')) return null;
-  const m = Math.max(1, Math.min(12, month | 0));
-  soft = norm(soft); deep = norm(deep);
+const SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif", SANS = "'Segoe UI', 'Noto Sans KR', sans-serif";
+// 1500 × 600 판(노션 커버 비율) — 가운데 띠 안에 그림 · 이름 · 캡션(데스크톱 · 폰 모두 보이는 자리). 달 커버 · 모듈 커버가 같은 틀
+function frame({ soft, deep, far, art, ghost, word, caption, font = SERIF, sans = SANS }) {
   const ink = mix(deep, '#2a2a2a', 0.5), title = mix(deep, '#3a3a3a', 0.45), cap = mix(title, '#ffffff', 0.35);
-  const far = mix(mix(monthColor(m), mix(deep, '#ffffff', 0.3), 0.18), '#ffffff', 0.3);   // 커버 그림과 같은 세기(오른쪽 끝 30% 밝게)
-  const art = glyph(m, ink, soft);
-  const ghost = glyph(m, deep, deep).replace(/fill="#[0-9a-f]{6}"/gi, `fill="${deep}"`);
   return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 600" preserveAspectRatio="xMidYMid slice">'
     + '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0.35">'
     + `<stop offset="0" stop-color="${soft}"/><stop offset="0.3" stop-color="${mix(soft, '#fcfcfd', 0.55)}"/><stop offset="0.58" stop-color="#fcfcfd"/>`
     + `<stop offset="0.82" stop-color="${mix('#fcfcfd', far, 0.55)}"/><stop offset="1" stop-color="${far}"/></linearGradient></defs>`
     + '<rect width="1500" height="600" fill="url(#g)"/>'
-    + (faint ? `<g transform="translate(1130 150) scale(4.6875)" opacity="0.2" fill="none" stroke="${deep}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${ghost}</g>` : '')
+    + (ghost ? `<g transform="translate(1130 150) scale(4.6875)" opacity="0.2" fill="none" stroke="${deep}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${ghost}</g>` : '')
     + `<g transform="translate(704 186) scale(1.4375)" fill="none" stroke="${ink}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${art}</g>`
-    + `<text x="750" y="342" text-anchor="middle" font-family="${font}" font-size="56" letter-spacing="9" fill="${title}">${MONTH_NAMES[m - 1]}</text>`
+    + `<text x="750" y="342" text-anchor="middle" font-family="${font}" font-size="56" letter-spacing="9" fill="${title}">${word}</text>`
     + `<line x1="726" y1="366" x2="774" y2="366" stroke="${mix(deep, '#ffffff', 0.25)}" stroke-width="1"/>`
-    + `<text x="750" y="394" text-anchor="middle" font-family="${sans}" font-size="13" letter-spacing="6.5" fill="${cap}">${String(m).padStart(2, '0')}  ·  ${year}</text>`
+    + `<text x="750" y="394" text-anchor="middle" font-family="${sans}" font-size="13" letter-spacing="6.5" fill="${cap}">${caption}</text>`
     + '</svg>';
+}
+const solid = (g, deep) => g.replace(/fill="#[0-9a-f]{6}"/gi, `fill="${deep}"`);   // 오른쪽 큰 그림 = 진한 색 한 덩어리(옅게)
+
+function monthSvg({ soft, deep, month, year = 2027, faint = true, font, sans }) {
+  if (!HEX.test(soft || '') || !HEX.test(deep || '')) return null;
+  const m = Math.max(1, Math.min(12, month | 0));
+  soft = norm(soft); deep = norm(deep);
+  const far = mix(mix(monthColor(m), mix(deep, '#ffffff', 0.3), 0.18), '#ffffff', 0.3);   // 커버 그림과 같은 세기(오른쪽 끝 30% 밝게)
+  return frame({ soft, deep, far, font, sans, art: glyph(m, mix(deep, '#2a2a2a', 0.5), soft), ghost: faint && solid(glyph(m, deep, deep), deep),
+    word: MONTH_NAMES[m - 1], caption: `${String(m).padStart(2, '0')}  ·  ${year}` });
+}
+
+// 모듈 커버(WORK · CAREER · … · PLACE LIST) — scripts/build-module-covers.py 와 같은 판. 나만의 색이면 서버가 이것으로 HEX 그대로
+function moduleSvg({ soft, deep, name, year = 2027, font, sans }) {
+  if (!HEX.test(soft || '') || !HEX.test(deep || '')) return null;
+  const word = (G.modules || {})[name], g = G.glyphs['module-' + name] || G.glyphs[name];
+  if (!word || !g) return null;
+  soft = norm(soft); deep = norm(deep);
+  const paint = (ink, s) => g.replace(/\{INK\}/g, ink).replace(/\{SOFT\}/g, s).replace(/\{TINT\}/g, mix(s, '#ffffff', 0.35)).replace(/\{WHITE\}/g, '#ffffff');
+  return frame({ soft, deep, far: mix(mix(deep, '#ffffff', 0.3), '#ffffff', 0.3), font, sans, art: paint(mix(deep, '#2a2a2a', 0.5), soft),
+    ghost: solid(paint(deep, deep), deep), word, caption: 'ID ARCHIVE PLANNER ' + year });
 }
 
 window.IDP_MONTH_ART = { MONTH_NAMES: MONTH_NAMES, monthColor: monthColor, glyph: glyph, monthSvg: monthSvg, mix: mix };
