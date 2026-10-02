@@ -12,12 +12,25 @@
   .date b { font-weight: 400; color: var(--deep); margin-left: .5em; letter-spacing: .12em; font-size: .8em; }
   .date b.sun { color: var(--red); } .date b.sat { color: var(--blue); }
   .hol { margin-top: 8px; font-size: 11px; color: var(--red); letter-spacing: .08em; min-height: 14px; }
+  /* 상단바 한 줄(REQ-038 ③) — 날짜 · 내 문구 · 시각을 페이지 맨 위 얇은 띠로. ?bar=1 */
+  [hidden] { display: none !important; }
+  .bar { display: flex; align-items: center; gap: 12px; min-height: 100%; }
+  .bar .bd { flex: none; font-size: 15px; white-space: nowrap; }
+  .bar .bd b { font-weight: 400; color: var(--deep); margin-left: .45em; letter-spacing: .12em; font-size: .78em; }
+  .bar .bd b.sun { color: var(--red); } .bar .bd b.sat { color: var(--blue); }
+  .bar .bt { flex: 1; min-width: 0; text-align: center; font-size: 12.5px; color: var(--sub); letter-spacing: .06em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar .bt i { font-style: normal; color: var(--red); margin-left: .6em; font-size: .9em; }
+  .bar .bc { flex: none; font-size: 17px; color: var(--ink); white-space: nowrap; }
+  .bar .bc small { font-size: .55em; letter-spacing: .16em; color: var(--sub); margin-left: .25em; font-family: 'Roboto', sans-serif; }
+  body.is-bar .card { padding-top: 10px; padding-bottom: 10px; }
+  @media (max-width: 420px) { .bar { gap: 8px; } .bar .bd { font-size: 13px; } .bar .bc { font-size: 15px; } .bar .bt { font-size: 11.5px; } }
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="badge">Today</div>
-  <div class="grow center">
+  <div class="bar serif" id="bar" hidden><span class="bd" id="bd"></span><span class="bt" id="bt"></span><span class="bc" id="bc"></span></div>
+  <div class="badge" id="badge">Today</div>
+  <div class="grow center" id="full">
     <div class="time serif" id="time"></div>
     <div class="date serif" id="date"></div>
     <div class="hol" id="hol"></div>
@@ -27,9 +40,19 @@
 <script src="config/themes.js"></script>
 <script src="assets/core.js"></script>
 <script>
-  var h24 = IDP.q.get('h24') === '1';
+  var h24 = IDP.q.get('h24') === '1', BAR = IDP.q.get('bar') === '1';
+  if (BAR) { document.body.classList.add('is-bar'); document.getElementById('bar').hidden = false; document.getElementById('badge').hidden = true; document.getElementById('full').hidden = true; }
+  function esc(t) { var e = document.createElement('span'); e.textContent = t; return e.innerHTML; }
+  function tickBar(d) {   // 날짜 · 내 문구(없으면 공휴일 · 기념일) · 시각
+    var h = d.getHours(), w = d.getDay(), k = IDP.iso(d), hol = IDP_HOLIDAYS[k] || IDP_MEMORIAL[k] || '';
+    document.getElementById('bd').innerHTML = IDP.plannerDate(d) + '<b class="' + (w === 0 ? 'sun' : w === 6 ? 'sat' : '') + '">' + IDP.DOW[w] + '</b>';
+    var text = String(IDP.opt('clock', 'text', '') || '').trim();
+    document.getElementById('bt').innerHTML = esc(text) + (hol ? '<i>' + esc(hol) + '</i>' : '');
+    document.getElementById('bc').innerHTML = (h24 ? IDP.pad(h) : (h % 12 || 12)) + ':' + IDP.pad(d.getMinutes()) + (h24 ? '' : '<small>' + (h < 12 ? 'AM' : 'PM') + '</small>');
+  }
   function tick() {
     var d = IDP.now(), h = d.getHours();
+    if (BAR) return tickBar(d);
     var hh = h24 ? IDP.pad(h) : (h % 12 || 12);
     document.getElementById('time').innerHTML = hh + ':' + IDP.pad(d.getMinutes()) + (h24 ? '' : '<small>' + (h < 12 ? 'AM' : 'PM') + '</small>');
     var w = d.getDay();
@@ -38,6 +61,7 @@
     document.getElementById('hol').textContent = IDP_HOLIDAYS[k] || IDP_MEMORIAL[k] || '';
   }
   tick(); setInterval(tick, 1000);
+  if (BAR) IDP.options('clock', [{ k: 'text', label: '내 문구', ph: '오늘도 나답게' }], function () { tick(); });
 </script>
 </body>
 </html>
