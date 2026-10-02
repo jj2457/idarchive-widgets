@@ -64,7 +64,7 @@
   function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
   var W = ['일', '월', '화', '수', '목', '금', '토'];
   var day = IDP.now(); day.setHours(0, 0, 0, 0);
-  var items = [], busy = 0;
+  var items = [], busy = 0, loaded = false, wrote = {};
   // 보기: 목록 | 링(REQ-017 — 습관마다 이번 주 횟수 ÷ 주간 목표를 겹친 링으로, 최대 5개). 이 기기의 보기 설정만 저장(기록 아님)
   var VKEY = 'idarchive.habitsync.view';
   var view = IDP.q.get('view') === 'ring' ? 'ring' : (function () { try { return localStorage.getItem(VKEY) === 'ring' ? 'ring' : 'list'; } catch (e) { return 'list'; } })();
@@ -136,18 +136,22 @@
       row.appendChild(c); row.appendChild(t); row.appendChild(m);
       L.appendChild(row);
     });
-    if (!n) L.innerHTML = '<div class="gate">아직 습관이 없어요. 노션 HABIT 페이지에서 습관을 더해 주세요.</div>';
+    if (!n) L.innerHTML = '<div class="gate">' + (loaded ? '아직 습관이 없어요. 노션 HABIT 페이지에서 습관을 더해 주세요.' : '불러오는 중…') + '</div>';
   }
 
   function load() {
     $('gate').hidden = true;
-    if (DEMO) { if (!items.length) items = [{ id: 'a', title: '책 20쪽 읽기', done: true, week: 3, goal: 5, streak: 4, dots: '●●●○○' }, { id: 'b', title: '물 2L', done: false, week: 5, goal: 7, streak: 0, dots: '●●●●●○○' }, { id: 'c', title: '스트레칭', done: false, week: 1, goal: 3, streak: 0, dots: '●○○' }]; render(); state('견본 · 노션과 연결하면 내 습관이 보여요'); return; }
+    if (DEMO) { loaded = true; if (!items.length) items = [{ id: 'a', title: '책 20쪽 읽기', done: true, week: 3, goal: 5, streak: 4, dots: '●●●○○' }, { id: 'b', title: '물 2L', done: false, week: 5, goal: 7, streak: 0, dots: '●●●●●○○' }, { id: 'c', title: '스트레칭', done: false, week: 1, goal: 3, streak: 0, dots: '●○○' }]; render(); state('견본 · 노션과 연결하면 내 습관이 보여요'); return; }
     if (!SYNC) return gate('노션 연결 준비 중이에요.');
     if (!wid()) return gate('노션의 습관 표(HABITS)와 이어지는 위젯이에요.<br>여기서 체크하면 노션에도, 노션에서 체크하면 여기에도 보여요.', '노션과 연결하기');
     return api('GET', '/v1/habits?date=' + iso(day)).then(function (d) {
-      items = d.habits; render();
+      // 방금 저장한 체크는 노션이 몇 초 늦게 읽혀 줄 때가 있다(2026-10-02 BUYER QA 실제) — 20초 동안은 내 저장을 믿는다
+      var now = Date.now();
+      items = d.habits.map(function (h) { var p = wrote[h.id + '|' + iso(day)]; if (p && now < p.until && h.done !== p.done) h.done = p.done; return h; });
+      loaded = true; render();
       if (!d.day) state('이 날짜의 기록 페이지(DAYS)가 없어서 체크할 수 없어요.');
     }).catch(function (e) {
+      if (!items.length) $('list').innerHTML = '';
       if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기');
       if (e.code === 'not_shared' || e.code === 'no_habits') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
       state(e.message);
@@ -157,10 +161,10 @@
     var before = it.done; it.done = !it.done; render();
     if (DEMO) return;
     api('POST', '/v1/habits/check', { habit: it.id, date: iso(day), done: it.done })
-      .then(function () { return load(); })   // 이번 주 · 연속은 노션 수식이 다시 계산한 값으로
+      .then(function () { wrote[it.id + '|' + iso(day)] = { done: it.done, until: Date.now() + 20000 }; return load(); })   // 이번 주 · 연속은 노션 수식이 다시 계산한 값으로
       .catch(function (e) { it.done = before; render(); state(e.code === 'no_day' ? '이 날짜의 기록 페이지(DAYS)가 없어요.' : e.message); });
   }
-  function move(n) { day.setDate(day.getDate() + n); items = DEMO ? items : []; render(); load(); }
+  function move(n) { day.setDate(day.getDate() + n); if (!DEMO) { items = []; loaded = false; } render(); load(); }
   $('prev').onclick = function () { move(-1); };
   $('next').onclick = function () { move(1); };
   $('day').onclick = function () { day = IDP.now(); day.setHours(0, 0, 0, 0); move(0); };

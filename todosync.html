@@ -66,7 +66,7 @@
   function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
   var W = ['일', '월', '화', '수', '목', '금', '토'];
   var day = IDP.now(); day.setHours(0, 0, 0, 0);
-  var items = [], busy = 0;
+  var items = [], busy = 0, loaded = false;
 
   // ── 연결 창(팝업): 노션에서 돌아오면 위젯 번호를 위젯에게 건네고 닫힌다(assets/sync.js) ──
   if (S.popup()) throw new Error('popup');   // 위젯 화면은 그리지 않는다
@@ -111,16 +111,17 @@
       row.appendChild(x);
       L.appendChild(row);
     });
-    if (!n) L.innerHTML = '<div class="gate">이 날은 할 일이 없어요.</div>';
+    if (!n) L.innerHTML = '<div class="gate">' + (loaded ? '이 날은 할 일이 없어요.' : '불러오는 중…') + '</div>';
   }
 
   function load() {
     $('gate').hidden = true; $('add').hidden = false;
-    if (DEMO) { if (!items.length) items = [{ id: 'a', title: '할 일 추가하기', done: true, important: false }, { id: 'b', title: '상세페이지 초안 한 장', done: false, important: true }, { id: 'c', title: '저녁 30분 걷기', done: false, important: false }]; render(); state('견본 · 노션과 연결하면 내 할 일이 보여요'); return; }
+    if (DEMO) { loaded = true; if (!items.length) items = [{ id: 'a', title: '할 일 추가하기', done: true, important: false }, { id: 'b', title: '상세페이지 초안 한 장', done: false, important: true }, { id: 'c', title: '저녁 30분 걷기', done: false, important: false }]; render(); state('견본 · 노션과 연결하면 내 할 일이 보여요'); return; }
     if (!SYNC) return gate('노션 연결 준비 중이에요.');
     if (!wid()) return gate('노션의 할 일 표(TASKS)와 이어지는 위젯이에요.<br>여기서 적고 체크하면 노션에도, 노션에서 고치면 여기에도 보여요.', '노션과 연결하기');
-    return api('GET', '/v1/todo?date=' + iso(day) + '&tz=' + new Date().getTimezoneOffset()).then(function (d) { items = d.items; render(); })
+    return api('GET', '/v1/todo?date=' + iso(day) + '&tz=' + new Date().getTimezoneOffset()).then(function (d) { items = d.items; loaded = true; render(); })
       .catch(function (e) {
+        if (!items.length) $('list').innerHTML = '';
         if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기');
         if (e.code === 'not_shared') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
         state(e.message);
@@ -154,7 +155,7 @@
     api('POST', '/v1/todo', { date: iso(day), title: t }).then(function (d) { Object.assign(tmp, d); render(); })
       .catch(function (err) { items.splice(items.indexOf(tmp), 1); render(); state(err.message); });
   };
-  function move(n) { day.setDate(day.getDate() + n); items = DEMO ? items : []; render(); load(); }
+  function move(n) { day.setDate(day.getDate() + n); if (!DEMO) { items = []; loaded = false; } render(); load(); }
   $('prev').onclick = function () { move(-1); };
   $('next').onclick = function () { move(1); };
   $('day').onclick = function () { day = IDP.now(); day.setHours(0, 0, 0, 0); move(0); };

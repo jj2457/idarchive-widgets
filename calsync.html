@@ -64,7 +64,7 @@
   var DEMO = IDP.q.get('demo') === '1';
   var mon = IDP.weekStart === 'mon';
   var now = IDP.now(), y = now.getFullYear(), m = now.getMonth();
-  var days = {}, sel = null, items = [], seq = 0, dseq = 0;
+  var days = {}, sel = null, items = [], seq = 0, dseq = 0, dayLoading = false;
   function $(id) { return document.getElementById(id); }
   if (S.popup()) throw new Error('popup');
   S.onConnect(function () { load(); });
@@ -107,7 +107,7 @@
     var hol = (days[sel] || {}).holiday || (window.IDP_HOLIDAYS && IDP_HOLIDAYS[sel]);
     if (hol) { var s = document.createElement('small'); s.textContent = hol; h.appendChild(s); }
     D.appendChild(h);
-    if (!items.length) { var e = document.createElement('div'); e.className = 'empty-day'; e.textContent = '이 날 할 일이 없어요.'; D.appendChild(e); return; }
+    if (!items.length) { var e = document.createElement('div'); e.className = 'empty-day'; e.textContent = dayLoading ? '불러오는 중…' : '이 날 할 일이 없어요.'; D.appendChild(e); return; }
     items.forEach(function (it) {
       var row = document.createElement('div'); row.className = 'it' + (it.done ? ' done' : '');
       var b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-label', it.title + (it.done ? ' 끝내기 취소' : ' 끝내기'));
@@ -120,9 +120,9 @@
     sel = sel === k ? null : k; render();
     if (!sel) return drawDay();
     if (DEMO) { items = (DEMO_ITEMS[sel] || []).slice(); return drawDay(); }
-    var my = ++dseq; items = []; drawDay(); state('불러오는 중…');
-    S.api('GET', '/v1/todo?date=' + sel + '&tz=' + new Date().getTimezoneOffset()).then(function (d) { if (my !== dseq) return; items = d.items || []; state(''); drawDay(); })
-      .catch(function (e) { if (my !== dseq) return; state(e.message); });
+    var my = ++dseq; items = []; dayLoading = true; drawDay();
+    S.api('GET', '/v1/todo?date=' + sel + '&tz=' + new Date().getTimezoneOffset()).then(function (d) { if (my !== dseq) return; items = d.items || []; dayLoading = false; drawDay(); })
+      .catch(function (e) { if (my !== dseq) return; dayLoading = false; drawDay(); state(e.message || '노션에서 읽지 못했어요'); });
   }
   function toggle(it) {
     var before = it.done; it.done = !it.done; drawDay();
