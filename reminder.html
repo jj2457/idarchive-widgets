@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Reminder</title>
+<link rel="stylesheet" href="assets/core.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap">
+<style>
+  /* REMINDER (inbox REQ-172, 2026-10-03) — a sticky note to yourself. The reference's taped paper note,
+     in our own mood: plain paper on the theme's lightest wash, a strip of tape in the theme colour, faint ruled lines. */
+  body { display: grid; place-items: center; padding: 14px; }
+  .note { position: relative; width: 100%; max-width: 360px; min-height: 180px; padding: 30px 22px 18px;
+          background: color-mix(in srgb, var(--tint) 55%, var(--paper));
+          border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 8px 18px -10px rgba(0,0,0,.18);
+          transform: rotate(-1.2deg); display: flex; flex-direction: column; }
+  .tape { position: absolute; top: -10px; left: 50%; width: 92px; height: 22px; transform: translateX(-50%) rotate(2deg);
+          background: color-mix(in srgb, var(--soft) 70%, transparent); border-radius: 2px;
+          box-shadow: 0 1px 0 rgba(0,0,0,.04); }
+  .label { font-size: 10px; letter-spacing: .32em; color: var(--sub); text-transform: uppercase; }
+  .text { flex: 1; margin-top: 8px; font-family: 'Nanum Pen Script', var(--serif), cursive; font-size: clamp(22px, 7vw, 30px);
+          line-height: 30px; color: var(--ink); white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere;
+          outline: none; min-height: 90px; cursor: text;
+          background: repeating-linear-gradient(to bottom, transparent 0 29px, color-mix(in srgb, var(--line) 60%, transparent) 29px 30px); }   /* 쓴 줄마다 밑줄 */
+  .text:empty::before { content: attr(data-ph); color: var(--sub); }
+  .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 10px; color: var(--sub); letter-spacing: .04em; }
+  .foot button { font-size: 10px; padding: 3px 9px; }
+  @media (max-width: 340px) { .note { padding: 26px 16px 14px; } }
+</style>
+</head>
+<body>
+<div class="note">
+  <span class="tape" aria-hidden="true"></span>
+  <div class="label" id="label">REMINDER</div>
+  <div class="text" id="t" contenteditable="plaintext-only" spellcheck="false" data-ph=""></div>
+  <div class="foot"><span id="hint">눌러서 고쳐 써요 · 이 기기에 저장</span><button type="button" id="reset">처음 글로</button></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  // What is written here stays on this device (like the memo widget) — a note to yourself, not a record.
+  // Empty → today's gentle line from the list below, so the note is never blank. Text is set with textContent only.
+  var LINES = [
+    '오늘 한 만큼도\n충분히 잘했어요',
+    '천천히,\n그래도 꾸준히',
+    '완벽보다\n오늘 한 칸',
+    '물 한 잔 마시고\n숨 한 번 고르기',
+    '작은 것부터\n하나씩 끝내기',
+    '스스로에게\n칭찬 한 번',
+    '쉬는 것도\n계획의 일부'
+  ];
+  var TITLE = 'REMINDER', FIXED = '', KEY = '';
+  function readOpts() {
+    TITLE = IDP.opt('reminder', 'title', IDP.q.get('label') || 'REMINDER');
+    FIXED = IDP.opt('reminder', 'text', IDP.q.get('text') || '');
+    KEY = 'idarchive.reminder.' + (IDP.q.get('id') || 'main');
+  }
+  function today() {
+    var d = new Date(Date.now() - 5 * 3600e3);   // the planner's day starts at 05:00
+    return Math.floor((d.getTime() - d.getTimezoneOffset() * 60e3) / 86400e3);
+  }
+  function saved() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
+  var t = document.getElementById('t');
+  function render() {
+    document.getElementById('label').textContent = TITLE;
+    var s = saved();
+    t.textContent = (s !== null && s.trim()) ? s : (FIXED || LINES[today() % LINES.length]);
+    document.getElementById('reset').hidden = !(s !== null && s.trim());
+  }
+  t.addEventListener('input', function () { try { localStorage.setItem(KEY, t.textContent); } catch (e) {} document.getElementById('reset').hidden = !t.textContent.trim(); });
+  t.addEventListener('blur', function () { if (!t.textContent.trim()) { try { localStorage.removeItem(KEY); } catch (e) {} render(); } });
+  document.getElementById('reset').onclick = function () { try { localStorage.removeItem(KEY); } catch (e) {} render(); };
+  readOpts();
+  IDP.options('reminder', [
+    { k: 'title', label: '제목', ph: 'REMINDER' },
+    { k: 'text', label: '고정 문장(비우면 날마다 바뀌는 한 줄)', ph: '' }
+  ], function () { readOpts(); render(); });
+  render();
+</script>
+</body>
+</html>
