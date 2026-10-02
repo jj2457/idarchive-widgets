@@ -15,7 +15,17 @@
   .dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--line); display: block; }
   .dots i.on { background: var(--deep); }
   .cap { margin-top: 10px; font-size: 11px; color: var(--sub); letter-spacing: .04em; text-align: center; }
+  /* 핀 꽂은 사진(인박스 REQ-186 「내가 넣은 사진을 핀한 것처럼 벽에 붙은 것같이」) — ?look=pin. 폴라로이드 · 테이프 · 살짝 기울기 · 그림자 */
+  [hidden] { display: none !important; }
+  .wall { margin-top: 10px; flex: 1; min-height: 160px; position: relative; display: grid; grid-template-columns: repeat(var(--cols, 2), 1fr); gap: 14px 12px; padding: 8px 4px 4px; align-content: start; }
+  .pol { position: relative; background: #fffdf8; padding: 6px 6px 18px; border-radius: 2px; box-shadow: 0 6px 14px -8px rgba(60,45,30,.45), 0 1px 2px rgba(60,45,30,.12); transform: rotate(var(--rot, 0deg)); }
+  .pol img { width: 100%; aspect-ratio: 1 / 1.12; object-fit: cover; display: block; background: var(--tint); }
+  .pol i { position: absolute; left: 0; right: 0; bottom: 3px; text-align: center; font-style: normal; font-family: 'Nanum Pen Script', cursive; font-size: 14px; color: #6b6158; line-height: 1; }
+  .pol .tape { position: absolute; top: -8px; left: 50%; width: 44%; height: 14px; transform: translateX(-50%) rotate(var(--trot, -3deg)); background: color-mix(in srgb, var(--soft) 70%, #fff); opacity: .85; box-shadow: 0 1px 1px rgba(0,0,0,.06); }
+  .pol .pin { position: absolute; top: -6px; left: 50%; width: 11px; height: 11px; margin-left: -5.5px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff 0 18%, var(--deep) 26% 100%); box-shadow: 0 2px 3px rgba(0,0,0,.25); }
+  .wall .empty2 { grid-column: 1 / -1; text-align: center; font-size: 11px; line-height: 1.7; color: var(--sub); padding: 30px 12px; }
 </style>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="card" style="display:flex;flex-direction:column">
@@ -23,18 +33,41 @@
   <div class="stage" id="stage"><div class="empty" id="empty">⚙ 에서 이미지 주소를 넣으면<br>이 자리에서 번갈아 보여줍니다</div></div>
   <div class="dots" id="dots"></div>
   <div class="cap" id="cap"></div>
+  <div class="wall" id="wall" hidden></div>
 </div>
 <script src="config/themes.js"></script>
 <script src="assets/core.js"></script>
 <script>
   // A vision board that actually sits on the dashboard: image links, rotated slowly.
+  // look=pin: the same photos pinned to the wall like polaroids (REQ-186) — photos from 「사진 고르기」 or links, each with a short caption
   var urls = [], every = 8, i = 0, tick = null, TITLE = 'MOODBOARD';
+  var PIN = IDP.opt('moodboard', 'look', IDP.q.get('look') || '') === 'pin', pins = [];
   function readOpts() {
-    TITLE = IDP.opt('moodboard', 'title', 'MOODBOARD');
+    PIN = String(IDP.opt('moodboard', 'look', IDP.q.get('look') || '')).trim() === 'pin';
+    TITLE = IDP.opt('moodboard', 'title', PIN ? 'VISION BOARD' : 'MOODBOARD');
     every = Math.max(2, +IDP.opt('moodboard', 'seconds', 8) || 8);
     urls = String(IDP.opt('moodboard', 'urls', '')).split(/[\s,]+/).filter(function (u) { return /^https?:\/\//.test(u); });
+    pins = IDP.listParse(IDP.opt('moodboard', 'pins', ''), 2).filter(function (r) { return r[0]; }).map(function (r) { return { src: IDP.photo(r[0]), cap: r[1] || '' }; });
+    if (!pins.length) pins = urls.slice(0, 6).map(function (u) { return { src: u, cap: '' }; });
+  }
+  function renderPin() {
+    document.getElementById('badge').textContent = TITLE;
+    document.getElementById('n').textContent = '';
+    ['stage', 'dots', 'cap'].forEach(function (id) { document.getElementById(id).hidden = true; });
+    var wall = document.getElementById('wall'); wall.hidden = false; wall.innerHTML = '';
+    wall.style.setProperty('--cols', pins.length <= 1 ? 1 : pins.length <= 4 ? 2 : 3);
+    if (!pins.length) { wall.innerHTML = '<div class="empty2">⚙ 에서 「사진 고르기」로 사진을 넣으면<br>벽에 핀으로 꽂은 것처럼 보여요</div>'; return; }
+    var ROT = [-3.2, 2.4, -1.4, 3, -2.2, 1.6];
+    pins.forEach(function (p, k) {
+      var d = document.createElement('div'); d.className = 'pol'; d.style.setProperty('--rot', ROT[k % 6] + 'deg'); d.style.setProperty('--trot', (k % 2 ? 4 : -3) + 'deg');
+      d.innerHTML = (k % 3 === 1 ? '<span class="pin"></span>' : '<span class="tape"></span>') + '<img alt="" src="' + String(p.src).replace(/"/g, '&quot;') + '"><i></i>';
+      d.querySelector('i').textContent = p.cap;
+      wall.appendChild(d);
+    });
   }
   function render() {
+    if (PIN) return renderPin();
+    ['stage', 'dots', 'cap'].forEach(function (id) { document.getElementById(id).hidden = false; }); document.getElementById('wall').hidden = true;
     document.getElementById('badge').textContent = TITLE;
     document.getElementById('n').textContent = urls.length ? (i + 1) + ' / ' + urls.length : '';
     var stage = document.getElementById('stage');
@@ -53,10 +86,13 @@
   }
   function loop() {
     if (tick) clearInterval(tick);
+    if (PIN) return;
     if (urls.length > 1) tick = setInterval(function () { i = (i + 1) % urls.length; render(); }, every * 1000);
   }
   document.getElementById('stage').onclick = function () { if (urls.length > 1) { i = (i + 1) % urls.length; render(); loop(); } };
   IDP.options('moodboard', [
+    { k: 'look', label: '모양 (비우면 넘기기 · pin = 벽에 꽂은 사진)', ph: 'pin' },
+    { k: 'pins', t: 'list', label: '꽂을 사진 (최대 6장)', max: 6, fields: [{ label: '사진 — 고르거나 사진 주소(https://…)', url: true, photo: true, ph: 'https://…jpg' }, { label: '한마디(선택)', ph: '2027 · 바다 앞 작업실' }] },
     { k: 'title', label: '제목', ph: 'MOODBOARD' },
     { k: 'urls', label: '이미지 주소 (쉼표로 구분)', ph: 'https://…' },
     { k: 'seconds', t: 'number', label: '넘기는 간격(초)', ph: '8' },
