@@ -80,10 +80,10 @@
   function disconnect() { var p = api('POST', '/disconnect').catch(function () {}); forget(); return p; }
   // 연결한 페이지에 플래너가 여럿일 때(choose_planner) — 위젯 안에서 바로 고른다(2026-10-02). 노션 안 위젯은 저장소가 따로라
   // Theme Studio 에서 고른 것이 이 위젯 연결에 닿지 않는다. 서버가 판매본 · DEMO 는 거절한다. done() = 고른 뒤 다시 읽기
-  function choosePlanner(el, done, code) {
+  function choosePlanner(el, done, code, again) {
     var box = document.createElement('div'); box.style.cssText = 'margin-top:10px;display:flex;flex-direction:column;gap:6px;align-items:center';
     box.textContent = '플래너 목록을 불러오는 중…'; el.appendChild(box);
-    api('GET', '/v1/planner', null, code).then(function (d) {
+    api('GET', '/v1/planner' + (again ? '?refresh=1' : ''), null, code).then(function (d) {
       box.textContent = '';
       var list = d.candidates || [];
       if (!list.length) { box.textContent = '플래너를 찾지 못했어요. 노션 연결에서 플래너 페이지를 골라 주세요.'; return; }
@@ -93,6 +93,10 @@
         b.onclick = function () { box.textContent = '고르는 중…'; api('POST', '/v1/planner', { id: c.id }, code).then(function () { done(); }, function (e) { box.textContent = e.message || '고르지 못했어요'; }); };
         box.appendChild(b);
       });
+      // 방금 허용한 플래너는 노션 검색에 늦게 나올 때가 있다 — 다시 찾기
+      var r = document.createElement('a'); r.href = '#'; r.textContent = '찾는 플래너가 없나요? 다시 찾기'; r.style.cssText = 'font-size:10.5px;color:var(--sub);margin-top:4px';
+      r.onclick = function (ev) { ev.preventDefault(); box.remove(); choosePlanner(el, done, code, true); };
+      box.appendChild(r);
     }, function (e) { box.textContent = e.message || '플래너 목록을 읽지 못했어요'; });
   }
 
