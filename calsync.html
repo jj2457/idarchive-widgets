@@ -33,6 +33,17 @@
   .it.done span { color: var(--sub); text-decoration: line-through; }
   .it span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .empty-day { font-size: 11px; color: var(--sub); padding: 4px; }
+  /* 분류 색 띠(REQ-025 · 131) — 날짜 밑 짧은 띠 · 분류 칩 · 날짜별 일정 묶음. 색은 테마 진한 색에 섞은 파스텔(테마가 바뀌면 같이) */
+  td .bars { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 3px; }
+  td .bars b { display: block; width: 18px; height: 3px; border-radius: 2px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chips button { border: 1px solid var(--line); background: var(--paper); color: var(--sub); border-radius: 999px; padding: 3px 10px; font-size: 10.5px; letter-spacing: .02em; text-transform: none; display: inline-flex; align-items: center; gap: 5px; }
+  .chips button i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .chips button.on { color: var(--ink); border-color: color-mix(in srgb, var(--deep) 55%, transparent); background: var(--tint); }
+  .grp { margin-top: 6px; }
+  .grp .gh { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 7px; color: #3a3a3a; }
+  .grp .gh small { font-weight: 400; color: #6a6a6a; }
+  .it .tm { flex: none; font-size: 10.5px; color: var(--sub); font-variant-numeric: tabular-nums; }
   .gate { margin-top: 12px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
   .gate button { margin-top: 10px; padding: 9px 18px; border-radius: 999px; background: var(--deep); color: #fff; border: 0; font-size: 12px; letter-spacing: .04em; text-transform: none; }
   .state { font-size: 9.5px; color: var(--sub); text-align: center; margin-top: 8px; letter-spacing: .04em; min-height: 12px; }
@@ -46,6 +57,7 @@
       <div class="row" style="gap:2px"><button class="nav" id="prev" aria-label="이전 달">‹</button><button class="nav" id="next" aria-label="다음 달">›</button></div>
     </div>
     <div class="title serif" style="margin-top:12px" id="title"></div>
+    <div class="chips" id="chips" hidden></div>
     <table id="grid"></table>
     <div class="day" id="day" hidden></div>
     <div class="gate" id="gate" hidden></div>
@@ -59,12 +71,21 @@
 <script>
   // 노션 할 일 표(TASKS)와 이어지는 달력 — 테마 색을 따르고(노션 달력은 색을 못 바꿈, REQ-010), 할 일이 있는 날에 점,
   // 날짜를 누르면 그날 할 일이 아래에 보이고 ○ 로 끝낼 수 있다(노션 「완료」). 원본은 노션 표 — 위젯은 따로 저장하지 않는다.
-  // 점: ● 남은 일 있음 · ◐ 일부 끝냄 · ○ 다 끝냄. ?demo=1 은 견본.
+  // 점: ● 남은 일 있음 · ◐ 일부 끝냄 · ○ 다 끝냄. 「영역」이 있으면 점 대신 분류 색 띠(3개까지) + 위에 분류 칩(ALL · 분류) + 아래 날짜별 일정을 분류로 묶고 시간 순(REQ-025 · 131).
+  // 열면 오늘이 골라져 있다(달력 + 그날 일정이 한 장). ?demo=1 은 견본.
   var S = IDP.sync;
   var DEMO = IDP.q.get('demo') === '1';
   var mon = IDP.weekStart === 'mon';
   var now = IDP.now(), y = now.getFullYear(), m = now.getMonth();
-  var days = {}, sel = null, items = [], seq = 0, dseq = 0, dayLoading = false;
+  var days = {}, sel = null, items = [], seq = 0, dseq = 0, dayLoading = false, only = null;
+  // 분류 → 색: 테마 진한 색에 여섯 가지 결을 섞는다(같은 이름은 늘 같은 색)
+  var TONES = ['#e07a8a', '#6fa3d8', '#7cc4a0', '#e8b46a', '#a58ad6', '#7fc6c9'];
+  // 플래너 기본 영역은 서로 다른 결로 고정(같은 달에 두 분류가 같은 색이 되지 않게), 구매자가 새로 만든 영역은 이름으로 고른다
+  var FIXED = { '일': '#6fa3d8', '공부': '#a58ad6', '건강': '#7cc4a0', '집': '#e8b46a', '관계': '#e07a8a', '나': '#7fc6c9', '콘텐츠': '#d98fc4', '미팅': '#8aa0e0' };
+  function tone(name) { if (FIXED[name]) return FIXED[name]; var h = 0; for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0; return TONES[h % TONES.length]; }
+  function areaColor(name, a) { return 'color-mix(in srgb, ' + tone(name) + ' ' + (a || 72) + '%, var(--deep))'; }
+  function areaSoft(name) { return 'color-mix(in srgb, ' + tone(name) + ' 22%, var(--paper))'; }
+  function hhmm(iso) { var d = new Date(iso); return isNaN(d) ? '' : IDP.pad(d.getHours()) + ':' + IDP.pad(d.getMinutes()); }
   function $(id) { return document.getElementById(id); }
   if (S.popup()) throw new Error('popup');
   S.onConnect(function () { load(); });
@@ -91,12 +112,25 @@
         var cls = hol ? 'hol' : w === 0 ? 'sun' : w === 6 ? 'sat' : '';
         if (k === IDP.iso(now)) cls += ' today';
         if (k === sel) cls += ' sel';
-        var dot = info.n ? '<u class="' + (info.done >= info.n ? 'all' : info.done ? 'part' : '') + '"></u>' : '';
+        var ar = (info.areas || []).filter(function (x) { return !only || x === only; });
+        var dot = ar.length ? '<span class="bars">' + ar.slice(0, 3).map(function (x) { return '<b style="background:' + areaColor(x) + '"></b>'; }).join('') + '</span>'
+          : (info.n && !only) ? '<u class="' + (info.done >= info.n ? 'all' : info.done ? 'part' : '') + '"></u>' : '';
         html += '<td class="' + cls + '" data-k="' + k + '" title="' + (hol ? hol + ' · ' : '') + (info.n ? '할 일 ' + info.n + ' · 끝냄 ' + info.done : '') + '"><i>' + IDP.pad(d) + '</i>' + dot + '</td>';
       }
       html += '</tr>';
     }
     $('grid').innerHTML = html;
+    var all = []; Object.keys(days).forEach(function (k) { (days[k].areas || []).forEach(function (x) { if (all.indexOf(x) < 0) all.push(x); }); });
+    if (only && all.indexOf(only) < 0) only = null;
+    $('chips').hidden = all.length < 2;
+    $('chips').innerHTML = '';
+    if (all.length >= 2) [null].concat(all).forEach(function (x) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = only === x ? 'on' : '';
+      if (x) { var i = document.createElement('i'); i.style.background = areaColor(x); b.appendChild(i); }
+      b.appendChild(document.createTextNode(x || 'ALL'));
+      b.onclick = function () { only = x; render(); drawDay(); };
+      $('chips').appendChild(b);
+    });
     [].forEach.call($('grid').querySelectorAll('td[data-k]'), function (td) { td.onclick = function () { pick(td.getAttribute('data-k')); }; });
   }
   function drawDay() {
@@ -108,13 +142,31 @@
     if (hol) { var s = document.createElement('small'); s.textContent = hol; h.appendChild(s); }
     D.appendChild(h);
     if (!items.length) { var e = document.createElement('div'); e.className = 'empty-day'; e.textContent = dayLoading ? '불러오는 중…' : '이 날 할 일이 없어요.'; D.appendChild(e); return; }
-    items.forEach(function (it) {
-      var row = document.createElement('div'); row.className = 'it' + (it.done ? ' done' : '');
-      var b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-label', it.title + (it.done ? ' 끝내기 취소' : ' 끝내기'));
-      b.onclick = function () { toggle(it); };
-      var t = document.createElement('span'); t.textContent = it.title || '(제목 없음)';
-      row.appendChild(b); row.appendChild(t); D.appendChild(row);
+    var list = items.filter(function (it) { return !only || it.area === only; }).slice().sort(function (p, q) { var x = p.start || '9', y2 = q.start || '9'; return x < y2 ? -1 : x > y2 ? 1 : 0; });
+    var groups = [], by = {};
+    list.forEach(function (it) { var g = it.area || ''; if (!by[g]) { by[g] = []; groups.push(g); } by[g].push(it); });
+    groups.forEach(function (g) {
+      var box = document.createElement('div'); box.className = 'grp';
+      if (g || groups.length > 1) {
+        var gh = document.createElement('div'); gh.className = 'gh';
+        gh.style.background = g ? areaSoft(g) : 'var(--tint)';
+        gh.style.boxShadow = g ? 'inset 3px 0 0 ' + areaColor(g) : 'none';
+        var nm = document.createElement('span'); nm.textContent = g || '기타';
+        var ct = document.createElement('small'); ct.textContent = by[g].length;
+        gh.appendChild(nm); gh.appendChild(ct); box.appendChild(gh);
+      }
+      by[g].forEach(function (it) {
+        var row = document.createElement('div'); row.className = 'it' + (it.done ? ' done' : '');
+        var b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-label', it.title + (it.done ? ' 끝내기 취소' : ' 끝내기'));
+        b.onclick = function () { toggle(it); };
+        row.appendChild(b);
+        if (it.start) { var tm = document.createElement('span'); tm.className = 'tm'; tm.textContent = hhmm(it.start); row.appendChild(tm); }
+        var t = document.createElement('span'); t.textContent = it.title || '(제목 없음)';
+        row.appendChild(t); box.appendChild(row);
+      });
+      D.appendChild(box);
     });
+    if (!list.length) { var e2 = document.createElement('div'); e2.className = 'empty-day'; e2.textContent = '이 분류의 일정이 없어요.'; D.appendChild(e2); }
   }
   function pick(k) {
     sel = sel === k ? null : k; render();
@@ -136,12 +188,19 @@
   function load() {
     $('gate').hidden = true; render();
     if (DEMO) {
-      var a = key(1), b = key(Math.min(now.getDate(), 28)), c = key(Math.min(now.getDate() + 3, 28));
-      days = {}; days[a] = { n: 2, done: 2 }; days[b] = { n: 3, done: 1 }; days[c] = { n: 1, done: 0 };
-      DEMO_ITEMS[a] = [{ id: 'x1', title: '월세 이체', done: true }, { id: 'x2', title: '분리수거', done: true }];
-      DEMO_ITEMS[b] = [{ id: 'y1', title: '상세페이지 초안 마무리', done: true }, { id: 'y2', title: '헬스 PT', done: false }, { id: 'y3', title: '엄마 생신 선물 고르기', done: false }];
-      DEMO_ITEMS[c] = [{ id: 'z1', title: '치과 정기검진', done: false }];
-      render(); state('견본 · 노션과 연결하면 내 할 일이 달력에 보여요'); return;
+      var a = key(1), b = key(Math.min(now.getDate(), 28)), c = key(Math.min(now.getDate() + 3, 28)), d2 = key(Math.max(now.getDate() - 4, 2)), e3 = key(Math.min(now.getDate() + 7, 28));
+      var at = function (k, h, mi) { return k + 'T' + IDP.pad(h) + ':' + IDP.pad(mi) + ':00'; };
+      days = {}; days[a] = { n: 2, done: 2, areas: ['집'] }; days[b] = { n: 4, done: 1, areas: ['일', '건강', '관계'] }; days[c] = { n: 1, done: 0, areas: ['건강'] };
+      days[d2] = { n: 2, done: 2, areas: ['일', '공부'] }; days[e3] = { n: 1, done: 0, areas: ['관계'] };
+      DEMO_ITEMS[a] = [{ id: 'x1', title: '월세 이체', done: true, area: '집' }, { id: 'x2', title: '분리수거', done: true, area: '집' }];
+      DEMO_ITEMS[b] = [{ id: 'y1', title: '팀 주간 회의', done: true, area: '일', start: at(b, 10, 0) }, { id: 'y2', title: '상세페이지 초안 쓰기', done: false, area: '일', start: at(b, 20, 0) },
+        { id: 'y3', title: '러닝 5km', done: false, area: '건강', start: at(b, 19, 0) }, { id: 'y4', title: '엄마 생신 선물 고르기', done: false, area: '관계' }];
+      DEMO_ITEMS[c] = [{ id: 'z1', title: '치과 정기검진', done: false, area: '건강', start: at(c, 14, 30) }];
+      DEMO_ITEMS[d2] = [{ id: 'w1', title: '분기 보고서 제출', done: true, area: '일' }, { id: 'w2', title: '영어 공부', done: true, area: '공부', start: at(d2, 7, 0) }];
+      DEMO_ITEMS[e3] = [{ id: 'v1', title: '친구 결혼식', done: false, area: '관계', start: at(e3, 12, 0) }];
+      render(); state('견본 · 노션과 연결하면 내 할 일 · 일정이 달력에 보여요');
+      if (!sel && monthKey() === IDP.iso(now).slice(0, 7)) pick(IDP.iso(now));
+      return;
     }
     if (!S.base) return gate('노션 연결 준비 중이에요.');
     if (!S.wid()) return gate('노션 할 일 표와 이어지는 달력이에요.<br>할 일이 있는 날에 점이 찍히고, 날짜를 누르면 그날 할 일을 끝낼 수 있어요.', '노션과 연결하기');
@@ -149,6 +208,7 @@
     return S.api('GET', '/v1/todo/month?month=' + monthKey() + '&tz=' + new Date().getTimezoneOffset()).then(function (d) {
       if (my !== seq) return; days = d.days || {}; state(''); render();
       if (sel && sel.slice(0, 7) === monthKey()) { var s0 = sel; sel = null; pick(s0); }
+      else if (!sel && monthKey() === IDP.iso(now).slice(0, 7)) pick(IDP.iso(now));   // 오늘 일정이 바로 보이게
     }).catch(function (e) {
       if (my !== seq) return; state('');
       if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기'); if (e.code === 'choose_planner') { gate('연결된 플래너가 여러 개예요. 이 위젯이 쓸 플래너를 골라 주세요.'); return S.choosePlanner($('gate'), load); }
