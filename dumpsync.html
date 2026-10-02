@@ -24,6 +24,10 @@
   .n a { flex: 1; min-width: 0; font-size: 13px; color: var(--ink); text-decoration: none; line-height: 1.45; word-break: break-word; }
   .n.done a { color: var(--sub); text-decoration: line-through; }
   .n time { flex: none; font-size: 9.5px; color: var(--sub); margin-top: 3px; }
+  /* 메모 → 오늘 할 일(2026-10-02 · 다시 적지 않기) — 정리 전 줄마다 작은 「할 일로」 */
+  .n .to { flex: none; margin-top: -1px; padding: 2px 8px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--deep) 40%, transparent); background: var(--paper); color: var(--deep); font-size: 10px; text-transform: none; letter-spacing: 0; cursor: pointer; }
+  .n .to:disabled { opacity: .45; }
+  .state .undo { margin-left: 6px; padding: 0; border: 0; background: none; font-size: inherit; color: var(--deep); text-decoration: underline; text-transform: none; letter-spacing: 0; cursor: pointer; }
   .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
   .foot button { padding: 0; border: 0; background: none; font-size: 10.5px; color: var(--sub); text-transform: none; letter-spacing: .02em; }
   .foot button:hover { color: var(--deep); }
@@ -85,7 +89,9 @@
       ck.onclick = function () { toggle(x); };
       var a = document.createElement('a'); a.textContent = x.text || '(빈 메모)'; if (x.url) { a.href = x.url; a.target = '_blank'; a.rel = 'noopener'; }
       var tm = document.createElement('time'); tm.textContent = when(x.created);
-      row.appendChild(ck); row.appendChild(a); row.appendChild(tm); L.appendChild(row);
+      row.appendChild(ck); row.appendChild(a); row.appendChild(tm);
+      if (!x.done && (x.text || '').trim()) { var to = document.createElement('button'); to.type = 'button'; to.className = 'to'; to.textContent = '할 일로'; to.setAttribute('aria-label', '「' + x.text + '」 오늘 할 일로 옮기기'); to.onclick = function () { to.disabled = true; toTask(x, true); }; row.appendChild(to); }
+      L.appendChild(row);
     });
     if (!items.length) L.innerHTML = '<div class="empty">' + (show === 'all' ? IDP.archie('empty') + '아직 적은 것이 없어요.' : IDP.archie('done') + '정리할 것이 없어요. 떠오르는 것을 위에 적어 두세요.') + '</div>';
   }
@@ -95,6 +101,34 @@
     S.api('PATCH', '/v1/notes/' + x.id, { done: x.done }).then(function () {
       if (show === 'open' && x.done) { items = items.filter(function (y) { return y !== x; }); render(); }
     }).catch(function (e) { x.done = before; render(); state(e.message || '노션에 저장하지 못했어요'); });
+  }
+  // 메모 → 오늘 할 일: TASKS 에 오늘 할 일(글 그대로) + 이 메모 「정리함」. 되돌리기 = 그 할 일 휴지통 + 메모 다시 정리 전.
+  // 할 일만 생기고 메모 정리가 실패하면 둘 다 남긴다(지우지 않음). 적는 동안 다른 줄 버튼은 받지 않는다(TODAY 와 같은 저장 보호)
+  var acting = false;
+  function toTask(x, forward) {
+    if (acting && !DEMO) return;
+    function after() {
+      var st = $('state'); st.textContent = '「' + x.text.slice(0, 20) + (x.text.length > 20 ? '…' : '') + '」 ' + (forward ? '오늘 할 일로 옮겼어요' : '메모로 돌렸어요');
+      if (forward) { var u = document.createElement('button'); u.type = 'button'; u.className = 'undo'; u.textContent = '되돌리기'; u.onclick = function () { u.disabled = true; toTask(x, false); }; st.appendChild(u); }
+    }
+    function place() {
+      if (forward) { x.done = true; if (show === 'open') items = items.filter(function (y) { return y !== x; }); }
+      else { x.done = false; if (items.indexOf(x) < 0) items.unshift(x); }
+      render(); after();
+    }
+    if (DEMO) { x.task = x.task || 'demo'; return place(); }
+    acting = true; state('노션에 적는 중…');
+    var p = forward
+      ? S.api('POST', '/v1/todo', { title: x.text.trim().slice(0, 200), date: IDP.iso(IDP.now()) }).then(function (t) {
+          x.task = t.id;
+          return S.api('PATCH', '/v1/notes/' + x.id, { done: true }).catch(function (e) { e.half = true; throw e; });
+        })
+      : S.api('DELETE', '/v1/todo/' + x.task).then(function () { return S.api('PATCH', '/v1/notes/' + x.id, { done: false }); });
+    p.then(function () { acting = false; place(); })
+      .catch(function (e) {
+        acting = false; render();
+        state(e.half ? '할 일은 만들었어요 — 메모 정리는 노션에서 한 번 더 해 주세요' : (e.message || '노션에 저장하지 못했어요 — 다시 눌러 주세요'));
+      });
   }
   $('add').onsubmit = function (ev) {
     ev.preventDefault();
