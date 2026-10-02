@@ -27,6 +27,10 @@
   .bar { margin-top: 6px; height: 5px; border-radius: 999px; background: var(--tint); overflow: hidden; }
   .bar i { display: block; height: 100%; width: 0; background: var(--deep); border-radius: 999px; transition: width .25s; }
   .meta { margin-top: 4px; font-size: 9.5px; color: var(--sub); letter-spacing: .02em; }
+  .pg { flex: none; padding: 1px 8px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--deep) 30%, transparent); background: var(--paper); font-size: 10px; letter-spacing: 0; text-transform: none; color: color-mix(in srgb, var(--deep) 80%, #2a2a2a); }
+  .pgform { display: flex; align-items: center; gap: 6px; margin: -2px 10px 4px; font-size: 11px; color: var(--sub); }
+  .pgform input { width: 76px; padding: 5px 8px; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--deep) 30%, transparent); font: inherit; font-size: 12px; color: var(--ink); background: var(--paper); }
+  .pgform button { padding: 5px 12px; border-radius: 999px; border: 0; background: var(--deep); color: #fff; font-size: 11px; text-transform: none; letter-spacing: 0; }
   .gate { margin-top: 16px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
   .gate button { margin-top: 10px; padding: 9px 18px; border-radius: 999px; background: var(--deep); color: #fff; border: 0; font-size: 12px; letter-spacing: .04em; text-transform: none; }
   .state { font-size: 9.5px; color: var(--sub); text-align: center; margin-top: 8px; letter-spacing: .04em; min-height: 12px; }
@@ -106,8 +110,37 @@
       m.textContent = [g.period, g.area, g.type, g.status, g.page != null && g.pages ? g.page + ' / ' + g.pages + '쪽' : '', g.due ? '마감 ' + g.due.slice(5).replace('-', '/') : ''].filter(Boolean).join(' · ') || KINDS[kind].hint;
       a.appendChild(row); a.appendChild(bar); a.appendChild(m);
       L.appendChild(a);
+      // 책: 읽은 쪽을 여기서 바로 적기 — 노션 「현재 쪽」에 저장되고 진도율은 노션 수식이 다시 계산한다
+      if (kind === 'books' && g.status !== KINDS.books.done) {
+        var pb = document.createElement('button'); pb.type = 'button'; pb.className = 'pg'; pb.textContent = '쪽';
+        pb.setAttribute('aria-label', g.title + ' 읽은 쪽 적기');
+        pb.onclick = function (ev) { ev.preventDefault(); ev.stopPropagation(); pageForm(a, g); };
+        row.appendChild(pb);
+      }
     });
     if (!goals.length) L.innerHTML = '<div class="gate">' + (period === 'all' ? KINDS[kind].none : KINDS[kind].noneTab) + '</div>';
+  }
+  function pageForm(a, g) {
+    if (a.nextSibling && a.nextSibling.className === 'pgform') { a.parentNode.removeChild(a.nextSibling); return; }
+    var f = document.createElement('form'); f.className = 'pgform';
+    var inp = document.createElement('input'); inp.type = 'number'; inp.min = '0'; inp.inputMode = 'numeric'; inp.placeholder = '지금 쪽';
+    if (g.page != null) inp.value = g.page;
+    var of = document.createElement('span'); of.textContent = g.pages ? '/ ' + g.pages + '쪽' : '쪽';
+    var b = document.createElement('button'); b.type = 'submit'; b.textContent = '저장';
+    f.appendChild(inp); f.appendChild(of); f.appendChild(b);
+    f.onsubmit = function (ev) {
+      ev.preventDefault();
+      var n = Number(inp.value);
+      if (!Number.isInteger(n) || n < 0) { state('쪽은 0 이상의 숫자로 적어 주세요'); return; }
+      if (g.pages && n > g.pages) n = g.pages;
+      b.disabled = true;
+      var done = function (item) { Object.assign(g, item); state(''); render(); };
+      if (DEMO) return done({ page: n, progress: g.pages ? n / g.pages : g.progress });
+      state('노션에 적는 중…');
+      S.api('PATCH', '/v1/progress/books/' + g.id, { page: n }).then(done).catch(function (e) { b.disabled = false; state(e.message || '노션에 저장하지 못했어요'); });
+    };
+    a.parentNode.insertBefore(f, a.nextSibling);
+    inp.focus();
   }
   function load() {
     $('gate').hidden = true; drawTabs();
