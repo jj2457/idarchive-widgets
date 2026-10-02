@@ -18,27 +18,35 @@
 </head>
 <body>
 <div class="card">
-  <div class="row"><div class="badge">Focus</div><span class="caps" id="round"></span></div>
+  <div class="row"><div class="badge" id="badge">Focus</div><span class="caps" id="round"></span></div>
   <div class="grow center">
     <div class="ring">
       <svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="45"/><circle class="fill" id="arc" cx="50" cy="50" r="45"/></svg>
       <div class="in center"><div class="t serif" id="t"></div><div class="caps" id="phase" style="margin-top:6px"></div></div>
     </div>
     <div class="btns"><button id="go">Start</button><button id="reset">Reset</button></div>
+    <div class="caps" id="hint" style="margin-top:10px;text-align:center" hidden></div>
   </div>
 </div>
 <script src="config/themes.js"></script>
 <script src="assets/core.js"></script>
 <script>
   // focus=25&rest=5 (minutes). Counts from the wall clock so a throttled background tab stays accurate.
-  var FOCUS = (+IDP.q.get('focus') || 25) * 60, REST = (+IDP.q.get('rest') || 5) * 60;
+  // mode=reading — 독서 타이머(REQ-048, 2026-10-02): 30분 읽기 · 5분 쉬기, 한 번 끝나면 「현재 쪽」 적기를 알려 준다(기록은 노션 BOOKS 에만)
+  var READING = IDP.q.get('mode') === 'reading';
+  var FOCUS = (+IDP.q.get('focus') || (READING ? 30 : 25)) * 60, REST = (+IDP.q.get('rest') || 5) * 60;
+  var WORK = READING ? 'Reading' : 'Focus';
+  document.getElementById('badge').textContent = WORK;
   var C = 2 * Math.PI * 45, arc = document.getElementById('arc');
   arc.style.strokeDasharray = C;
   var resting = false, left = FOCUS, endAt = 0, timer = null, rounds = 0;
   function total() { return resting ? REST : FOCUS; }
   function draw() {
     document.getElementById('t').textContent = IDP.pad(Math.floor(left / 60)) + ':' + IDP.pad(left % 60);
-    document.getElementById('phase').textContent = resting ? 'Break' : 'Focus';
+    document.getElementById('phase').textContent = resting ? 'Break' : WORK;
+    var hint = document.getElementById('hint');
+    hint.hidden = !(READING && rounds);
+    hint.textContent = '읽은 쪽은 책 페이지 「현재 쪽」에 적어 두세요';
     document.getElementById('round').textContent = rounds ? rounds + ' done' : '';
     arc.style.strokeDashoffset = C * (1 - left / total());
     document.getElementById('go').textContent = timer ? 'Pause' : 'Start';
