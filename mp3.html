@@ -7,6 +7,21 @@
 <link rel="stylesheet" href="assets/core.css">
 <style>
   .device [hidden] { display: none !important; }
+  /* 사진 카드(look=card · REQ-138 「가운데 플레이리스트 위젯 — 내 사진 넣고」 · 2026-10-02): 사진이 크게, 아래에 얇은 조작 줄.
+     사진이 없으면 테마의 무드 사진(우리 그림) — 구매자가 ⚙ 에서 자기 사진으로 바꾼다 */
+  [data-look="card"] .stage, [data-look="card"] #dots { display: none !important; }
+  .pc { display: none; }
+  [data-look="card"] .pc { display: block; margin-top: 8px; }
+  .pc .ph { position: relative; aspect-ratio: 4 / 3; border-radius: 14px; overflow: hidden; background: var(--tint); cursor: pointer; }
+  .pc .ph img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .pc .ov { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; align-items: center; gap: 14px;
+            padding: 6px 14px; border-radius: 999px; background: color-mix(in srgb, var(--paper) 82%, transparent); backdrop-filter: blur(6px); }
+  .pc .ov button { border: 0; background: none; padding: 2px; color: color-mix(in srgb, var(--deep) 70%, #2a2a2a); letter-spacing: 0; display: flex; }
+  .pc .ov .pl { width: 30px; height: 30px; border-radius: 50%; background: var(--deep); color: #fff; align-items: center; justify-content: center; }
+  .pc .ct { margin-top: 10px; font-family: var(--serif); font-size: 15px; color: var(--ink); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pc .ch { margin-top: 2px; font-size: 10.5px; color: var(--sub); text-align: center; letter-spacing: .04em; }
+  .pc .pb { margin: 9px auto 0; width: 70%; height: 3px; border-radius: 3px; background: color-mix(in srgb, var(--deep) 16%, transparent); overflow: hidden; }
+  .pc .pb i { display: block; height: 100%; background: var(--deep); border-radius: 3px; transition: width .3s; }
   .stage { display: flex; justify-content: center; align-items: flex-start; padding-top: 8px; }
   .device { width: 216px; border-radius: 30px; padding: 14px 14px 18px;
             background: linear-gradient(160deg, color-mix(in srgb, var(--soft) 70%, #fff) 0%, var(--soft) 55%, color-mix(in srgb, var(--soft) 80%, var(--deep)) 100%);
@@ -50,6 +65,17 @@
 <body>
 <div class="card">
   <div class="row"><div class="badge" id="badge">MY PLAYER</div><span class="caps" id="count"></span></div>
+  <div class="pc" id="pc">
+    <div class="ph" id="cph" role="button" tabindex="0" aria-label="지금 곡 열기"><img id="cimg" alt="">
+      <div class="ov">
+        <button id="cprev" aria-label="이전"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M11 6 3 12l8 6zM21 6l-8 6 8 6z"/></svg></button>
+        <button class="pl" id="cplay" aria-label="열기"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+        <button id="cnext" aria-label="다음"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="m13 6 8 6-8 6zM3 6l8 6-8 6z"/></svg></button>
+      </div>
+    </div>
+    <div class="ct" id="ct"></div><div class="ch" id="ch"></div>
+    <div class="pb"><i id="cbar"></i></div>
+  </div>
   <div class="grow"><div class="stage">
     <div class="device">
       <div class="screen" id="screen" role="button" tabindex="0" aria-label="지금 곡 열기">
@@ -78,6 +104,10 @@
   // Nothing is played or recorded here — ▶ opens the link in a new tab. ◀◀ ▶▶ turn to the previous / next photo and link.
   // A photo picked from the device stays in this browser; a photo address travels with the widget's link.
   var LIST = [], cur = 0, listOpen = false;
+  var CARD = IDP.q.get('look') === 'card' || !!IDP.opt('mp3', 'look', '');
+  if (CARD) document.body.dataset.look = 'card';
+  var TK = IDP.q.get('theme'), MOODK = ['beige', 'blue', 'green', 'grey', 'lavender', 'peach', 'pink', 'sky'];
+  var DEFAULT_PIC = 'mood/mood-' + (MOODK.indexOf(TK) >= 0 ? TK : 'green') + '.jpg';   // 우리 무드 사진(9색 중 yellow 는 green)
   function readOpts() {
     LIST = IDP.listParse(IDP.opt('mp3', 'items', ''), 3).map(function (f) {
       return /^https?:\/\//.test(f[1]) ? { n: f[0] || '플레이리스트', u: f[1], img: f[2] } : null;
@@ -111,6 +141,12 @@
       box.appendChild(row);
     });
     $('topL').textContent = listOpen ? 'PLAYLIST' : 'NOW PLAYING';
+    if (CARD) {
+      $('cimg').src = src || DEFAULT_PIC;
+      $('ct').textContent = has ? l.n : '오늘의 플레이리스트';
+      $('ch').textContent = has ? (host(l.u) + ' · ' + (cur + 1) + ' / ' + LIST.length) : '⚙ 에서 제목 · 링크 · 사진을 넣어 주세요';
+      $('cbar').style.width = has ? Math.round((cur + 1) / LIST.length * 100) + '%' : '0';
+    }
   }
   function step(d) { if (LIST.length) { cur = (cur + d + LIST.length) % LIST.length; listOpen = false; render(); } }
   $('prev').onclick = function () { step(-1); };
@@ -118,12 +154,17 @@
   $('menu').onclick = function () { listOpen = !listOpen; render(); };
   $('play').onclick = $('pp').onclick = function () { open(cur); };
   $('screen').onclick = function () { if (!listOpen) open(cur); };
+  $('cprev').onclick = function (e) { e.stopPropagation(); step(-1); };
+  $('cnext').onclick = function (e) { e.stopPropagation(); step(1); };
+  $('cplay').onclick = function (e) { e.stopPropagation(); open(cur); };
+  $('cph').onclick = function () { open(cur); };
   $('screen').onkeydown = function (e) { if (e.key === 'Enter') open(cur); if (e.key === 'ArrowRight') step(1); if (e.key === 'ArrowLeft') step(-1); };
   var sx = null;
   $('screen').addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, { passive: true });
   $('screen').addEventListener('touchend', function (e) { if (sx == null) return; var dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) > 40) { e.preventDefault(); step(dx < 0 ? 1 : -1); } });
   IDP.options('mp3', [
     { k: 'label', label: '제목', ph: 'MY PLAYER' },
+    { k: 'look', t: 'check', label: '사진 카드 모양 (사진 크게 · 아래 조작 줄)' },
     { k: 'items', t: 'list', label: '곡 · 플레이리스트 (최대 12개)', max: 12,
       fields: [{ label: '제목', ph: '책 읽을 때 피아노' }, { label: '링크 — 유튜브 · 스포티파이 · 멜론 주소', url: true, ph: 'https://youtube.com/…' },
                { label: '사진 — 고르거나 사진 주소(https://…)', url: true, photo: true, ph: 'https://…jpg' }],
