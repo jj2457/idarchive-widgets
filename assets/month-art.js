@@ -59,7 +59,7 @@ function moduleSvg({ soft, deep, name, year = 2027, font, sans }) {
   soft = norm(soft); deep = norm(deep);
   const paint = (ink, s) => g.replace(/\{INK\}/g, ink).replace(/\{SOFT\}/g, s).replace(/\{TINT\}/g, mix(s, '#ffffff', 0.35)).replace(/\{WHITE\}/g, '#ffffff');
   return frame({ soft, deep, far: mix(mix(deep, '#ffffff', 0.3), '#ffffff', 0.3), font, sans, art: paint(mix(deep, '#2a2a2a', 0.5), soft),
-    ghost: solid(paint(deep, deep), deep), word, caption: 'ID ARCHIVE PLANNER ' + year });
+    ghost: solid(paint(deep, deep), deep), word, caption: ((G.moduleCaptions || {})[name] || 'ID ARCHIVE PLANNER 2027').replace('2027', String(year)) });
 }
 
 window.IDP_MONTH_ART = { MONTH_NAMES: MONTH_NAMES, monthColor: monthColor, glyph: glyph, monthSvg: monthSvg, mix: mix };
