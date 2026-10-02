@@ -19,6 +19,17 @@
   .info dt { color: color-mix(in srgb, var(--deep) 80%, #2a2a2a); font-weight: 600; white-space: nowrap; }
   .info dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
   .go { display: block; margin-top: 12px; text-align: center; font-size: 11px; letter-spacing: .08em; padding: 8px; border-radius: 999px; background: var(--tint); color: color-mix(in srgb, var(--deep) 70%, #2a2a2a); text-decoration: none; }
+  /* look=blog (기본, 오너 2026-10-02 REQ-154 「왼쪽 프로필을 블로그처럼 깔끔하게」): 아치 사진 · 이름 · 한 줄 · NOW · 문장 — 가운데 정렬, 장식 없음 */
+  body.blog .card { padding-top: 14px; }
+  body.blog .pf { max-width: 230px; text-align: center; }
+  body.blog .ph { width: 72%; margin: 0 auto; aspect-ratio: 4 / 5; border-radius: 50% 50% 12px 12px / 38% 38% 12px 12px; }
+  body.blog .today { display: none; }
+  body.blog .nm { justify-content: center; flex-direction: column; align-items: center; gap: 2px; font-family: var(--serif); font-weight: 400; font-size: 17px; letter-spacing: .06em; }
+  body.blog .bio { font-size: 11.5px; }
+  body.blog .info { display: none; }
+  .now { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; font-size: 11px; color: var(--ink); line-height: 1.55; }
+  .now b { display: block; font-size: 9px; font-weight: 500; letter-spacing: .24em; color: color-mix(in srgb, var(--deep) 75%, #2a2a2a); margin-bottom: 2px; }
+  .qt { margin-top: 8px; font-family: var(--serif); font-style: italic; font-size: 11.5px; color: var(--sub); line-height: 1.55; }
   .empty { margin-top: 10px; font-size: 11px; color: var(--sub); text-align: center; line-height: 1.7; }
 </style>
 </head>
@@ -28,6 +39,8 @@
     <div class="ph"><div class="ph0" id="ph0"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></div><img id="pic" alt="" hidden><span class="today" id="today"></span></div>
     <div class="nm"><span id="name"></span><small id="tag"></small></div>
     <div class="bio" id="bio"></div>
+    <div class="now" id="now" hidden><b>NOW</b><span id="nowT"></span></div>
+    <div class="qt" id="qt" hidden></div>
     <dl class="info" id="info"></dl>
     <a class="go" id="go" target="_blank" rel="noopener noreferrer" hidden></a>
     <div class="empty" id="empty" hidden>⚙ 에서 사진 · 닉네임 · 한 줄 소개 · 중요한 정보를 적으면<br>나만의 프로필 창이 돼요.</div>
@@ -41,6 +54,11 @@
   function $(id) { return document.getElementById(id); }
   var W = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
   function render() {
+    var look = IDP.q.get('look') || 'blog'; // look=card → 예전 넓은 카드(정보 줄 보임)
+    document.body.classList.toggle('blog', look !== 'card');
+    var focus = IDP.opt('profile', 'focus', ''), quote = IDP.opt('profile', 'quote', '');
+    $('now').hidden = !focus; $('nowT').textContent = focus;
+    $('qt').hidden = !quote; $('qt').textContent = quote ? '“' + quote + '”' : '';
     var name = IDP.opt('profile', 'name', ''), bio = IDP.opt('profile', 'bio', ''), tag = IDP.opt('profile', 'tag', '');
     var ph = IDP.listParse(IDP.opt('profile', 'photo', ''), 1)[0], src = ph ? IDP.photo(ph[0]) : '';
     $('pic').hidden = !src; if (src) $('pic').src = src; else $('pic').removeAttribute('src');
@@ -55,12 +73,14 @@
     var link = IDP.listParse(IDP.opt('profile', 'link', ''), 2)[0];
     $('go').hidden = !(link && /^https?:\/\//.test(link[1]));
     if (link && /^https?:\/\//.test(link[1])) { $('go').href = link[1]; $('go').textContent = (link[0] || '바로 가기') + ' →'; }
-    $('empty').hidden = !!(name || bio || info.length || src);
+    $('empty').hidden = !!(name || bio || info.length || src || focus);
   }
   IDP.options('profile', [
     { k: 'name', label: '닉네임', ph: '아카이브' },
     { k: 'tag', label: '작은 글씨(선택)', ph: 'SINCE 2027' },
     { k: 'bio', label: '한 줄 소개 · 올해 목표', ph: '하고 싶은 일로 먹고살기' },
+    { k: 'focus', label: 'NOW · 요즘 집중하는 것', ph: '매일 30분 글쓰기' },
+    { k: 'quote', label: '좋아하는 문장(선택)', ph: '적을수록 채워진다' },
     { k: 'photo', t: 'list', label: '사진', max: 1, fields: [{ label: '사진 — 고르거나 사진 주소(https://…)', url: true, photo: true, ph: 'https://…jpg' }],
       note: '기기에서 고른 사진은 이 기기에서만 보여요. 다른 기기에서도 같은 사진을 보려면 사진 주소를 넣어 주세요.' },
     { k: 'info', t: 'list', label: '중요한 정보 (최대 6줄)', max: 6, fields: [{ label: '항목', ph: '목표' }, { label: '내용', ph: '10km 50분 안에 완주' }] },
