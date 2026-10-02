@@ -78,6 +78,23 @@
       }, function () { var e = new Error('인터넷 연결을 확인해 주세요'); e.code = 'offline'; throw e; });
   }
   function disconnect() { var p = api('POST', '/disconnect').catch(function () {}); forget(); return p; }
+  // 연결한 페이지에 플래너가 여럿일 때(choose_planner) — 위젯 안에서 바로 고른다(2026-10-02). 노션 안 위젯은 저장소가 따로라
+  // Theme Studio 에서 고른 것이 이 위젯 연결에 닿지 않는다. 서버가 판매본 · DEMO 는 거절한다. done() = 고른 뒤 다시 읽기
+  function choosePlanner(el, done, code) {
+    var box = document.createElement('div'); box.style.cssText = 'margin-top:10px;display:flex;flex-direction:column;gap:6px;align-items:center';
+    box.textContent = '플래너 목록을 불러오는 중…'; el.appendChild(box);
+    api('GET', '/v1/planner', null, code).then(function (d) {
+      box.textContent = '';
+      var list = d.candidates || [];
+      if (!list.length) { box.textContent = '플래너를 찾지 못했어요. 노션 연결에서 플래너 페이지를 골라 주세요.'; return; }
+      list.forEach(function (c) {
+        var b = document.createElement('button'); b.type = 'button'; b.textContent = c.title || '이름 없는 플래너';
+        b.style.cssText = 'text-transform:none;letter-spacing:0;font-size:11.5px;padding:7px 14px;border-radius:999px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+        b.onclick = function () { box.textContent = '고르는 중…'; api('POST', '/v1/planner', { id: c.id }, code).then(function () { done(); }, function (e) { box.textContent = e.message || '고르지 못했어요'; }); };
+        box.appendChild(b);
+      });
+    }, function (e) { box.textContent = e.message || '플래너 목록을 읽지 못했어요'; });
+  }
 
   // 다른 기기에서 노션에 적용한 테마를 따른다 — 서버 테마가 「바뀌었을 때만」(이 기기에서 ⚙ 로 고른 색은 다음 적용 전까지 존중), 10분에 한 번
   function follow() {
@@ -127,7 +144,7 @@
     });
   }
 
-  IDP.sync = { base: BASE, on: !!BASE, popup: popup, wid: wid, forget: forget, onConnect: onConnect, connect: connect, api: api, disconnect: disconnect, follow: follow, seen: seen, notice: notice, syncLayers: syncLayers, connectHere: connectHere };
+  IDP.sync = { base: BASE, on: !!BASE, popup: popup, wid: wid, forget: forget, onConnect: onConnect, connect: connect, api: api, disconnect: disconnect, choosePlanner: choosePlanner, follow: follow, seen: seen, notice: notice, syncLayers: syncLayers, connectHere: connectHere };
 
   // 연결된 위젯을 열면 저절로 — 올릴 것이 있으면 바로, 아니면 10분에 한 번(서버를 두드리지 않게)
   if (BASE && wid() && IDP.layers && IDP.q.get('lock') !== '1') {

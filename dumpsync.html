@@ -117,7 +117,7 @@
       if (my !== seq) return;
       state('');
       if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기');
-      if (e.code === 'choose_planner') return gate('연결된 플래너가 여러 개예요. Theme Studio 에서 플래너를 먼저 골라 주세요.');
+      if (e.code === 'choose_planner') { gate('연결된 플래너가 여러 개예요. 이 위젯이 쓸 플래너를 골라 주세요.'); return S.choosePlanner($('gate'), load); }
       if (e.code === 'no_table' || e.code === 'not_shared') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
       state(e.message);
     });

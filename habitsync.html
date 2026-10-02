@@ -201,7 +201,7 @@
       if (!wid()) return gate('노션의 습관 표(HABITS)와 이어지는 위젯이에요.<br>그날 지킨 습관이 많을수록 진한 색으로 한 달이 보여요.', '노션과 연결하기');
       if (monthKey !== k) { monthData = null; render(); state('불러오는 중…'); }
       return api('GET', '/v1/habits/month?month=' + k).then(function (d) { monthData = d; monthKey = k; state(''); render(); }).catch(function (e) {
-        if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기');
+        if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기'); if (e.code === 'choose_planner') { gate('연결된 플래너가 여러 개예요. 이 위젯이 쓸 플래너를 골라 주세요.'); return S.choosePlanner($('gate'), load); }
         if (e.code === 'not_shared' || e.code === 'no_habits') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
         state(e.message);
       });
@@ -217,7 +217,7 @@
       if (!d.day) state('이 날짜의 기록 페이지(DAYS)가 없어서 체크할 수 없어요.');
     }).catch(function (e) {
       if (!items.length) $('list').innerHTML = '';
-      if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기');
+      if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기'); if (e.code === 'choose_planner') { gate('연결된 플래너가 여러 개예요. 이 위젯이 쓸 플래너를 골라 주세요.'); return S.choosePlanner($('gate'), load); }
       if (e.code === 'not_shared' || e.code === 'no_habits') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
       state(e.message);
     });
