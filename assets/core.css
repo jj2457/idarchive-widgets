@@ -87,8 +87,10 @@ button {
 }
 button:hover { background: var(--soft); }
 
-/* ⚙ theme panel — hidden until the widget is hovered or tapped */
-.idp-gear { position: fixed; top: 10px; right: 10px; width: 26px; height: 26px; padding: 0; border-radius: 50%;
+/* ⚙ theme panel — hidden until the widget is hovered or tapped.
+   (2026-10-03) bottom-LEFT: Notion puts its own 「⋯」 block menu on the embed's top-right corner and resize handles on the
+   right edge · bottom centre · bottom-right, so a top-right ⚙ could not be clicked in Notion */
+.idp-gear { position: fixed; bottom: 10px; left: 10px; width: 26px; height: 26px; padding: 0; border-radius: 50%;
   font-size: 13px; letter-spacing: 0; line-height: 24px; opacity: 0; transition: opacity .2s; z-index: 5; background: var(--paper); }
 body:hover .idp-gear, .idp-gear:focus-visible, .idp-panel:not([hidden]) ~ .idp-gear { opacity: .85; }
 @media (hover: none) { .idp-gear { opacity: .5; } }
