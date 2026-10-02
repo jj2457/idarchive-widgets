@@ -39,7 +39,7 @@
     return best;
   }
   // 노션 글자 · 바탕색 이름(sync/theme.mjs NOTION_COLOR 와 같은 짝)
-  var NATIVE = { ivory: ['갈색', 'Brown'], green: ['초록', 'Green'], blue: ['파랑', 'Blue'], sky: ['파랑', 'Blue'], lavender: ['보라', 'Purple'], pink: ['분홍', 'Pink'],
+  var NATIVE = { ivory: ['회색 바탕 · 갈색 글자', 'Gray bg · Brown text'], green: ['초록', 'Green'], blue: ['파랑', 'Blue'], sky: ['파랑', 'Blue'], lavender: ['보라', 'Purple'], pink: ['분홍', 'Pink'],
     beige: ['갈색', 'Brown'], grey: ['회색', 'Gray'], peach: ['주황', 'Orange'], yellow: ['노랑', 'Yellow'] };
   g.IDP_NEAREST = { nearest: nearest, customOf: customOf, native: NATIVE };
 })(typeof window !== 'undefined' ? window : globalThis);
