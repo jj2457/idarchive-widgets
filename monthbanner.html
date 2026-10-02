@@ -6,49 +6,42 @@
 <title>ID PLANNER · This Month</title>
 <link rel="stylesheet" href="assets/core.css">
 <style>
-  /* 이달의 계절 배너(오너 2026-10-02 「먼슬리가 바뀌면 위쪽이 달별로 자동으로」) — 노션 커버는 날짜로 바뀌지 않으므로,
-     MONTHLY 맨 위에 이 위젯을 두면 오늘 날짜의 달 그림이 저절로 보인다. 연결 · 무료 요금제 상관없음. 그림 = 계절 커버와 같은 것 */
+  /* 이달의 계절 배너(오너 2026-10-02 「먼슬리가 바뀌면 위쪽이 달별로 자동으로」).
+     역할은 하나 — 지금 몇 월인지 바로 느끼게. 달력 · 할 일 · 날씨 같은 것을 넣지 않는다(또 하나의 대시보드 금지).
+     MONTHLY 맨 위(이번 달)에만 둔다. 1월 · 2월 … 각 달 페이지는 자기 달 커버(고정)를 그대로 — 7월에 1월 페이지를 열어도 1월.
+     날짜 = IDP.now(): 판매본은 기기의 오늘, DEMO 는 다른 위젯과 같은 주소의 now=2027-03-15(촬영일) — 그림을 3월로 박아 두지 않는다.
+     색 = 지금 칠해진 테마(저장한 테마 · 주소 · 나만의 색) HEX 그대로 + 달 파스텔(별도 층). 그림은 sync/month-art.mjs 와 같은 것 */
   html, body { height: 100%; }
-  body { margin: 0; background: transparent; }
-  .wrap { position: relative; width: 100%; height: 100%; min-height: 120px; overflow: hidden; border-radius: var(--radius, 18px); background: var(--tint); }
+  body { margin: 0; padding: 0; background: transparent; }
+  .wrap { position: relative; width: 100%; height: 100%; min-height: 96px; overflow: hidden; border-radius: var(--radius, 18px); background: var(--tint); }
   [data-frame="none"] .wrap { border-radius: 0; }
-  .wrap img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; display: block; opacity: 0; transition: opacity .35s ease; }
-  .wrap img.on { opacity: 1; }
+  .wrap svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 </style>
 </head>
 <body>
-<div class="wrap" id="wrap"><img id="img" alt=""></div>
+<div class="wrap" id="wrap" role="img"></div>
 <script src="config/themes.js"></script>
 <script src="assets/core.js"></script>
+<script src="assets/month-art.js"></script>
 <script>
-  // 어느 테마 그림을 쓸지 — 지금 칠해진 색(저장한 테마 · 주소의 테마 · 나만의 색)에 가장 가까운 기본 9색
-  function rgb(h) { h = String(h || '').trim().replace('#', ''); if (h.length === 3) h = h.replace(/./g, '$&$&'); return [0, 2, 4].map(function (i) { return parseInt(h.substr(i, 2), 16) || 0; }); }
-  function nearest() {
-    var cs = getComputedStyle(document.documentElement), s = rgb(cs.getPropertyValue('--soft')), d = rgb(cs.getPropertyValue('--deep'));
-    var best = null, bd = Infinity;
-    Object.keys(IDP.THEMES).forEach(function (k) {
-      var t = IDP.THEMES[k], a = rgb(t.soft), b = rgb(t.deep);
-      var dist = [0, 1, 2].reduce(function (n, i) { return n + Math.pow(a[i] - s[i], 2) + 0.5 * Math.pow(b[i] - d[i], 2); }, 0);
-      if (dist < bd) { bd = dist; best = k; }
-    });
-    return best || 'green';
-  }
-  var shown = '';
+  var A = window.IDP_MONTH_ART, shown = '';
   function draw() {
-    var now = IDP.now(), m = IDP.q.get('m') ? Math.max(1, Math.min(12, parseInt(IDP.q.get('m'), 10) || 1)) : now.getMonth() + 1;
-    var src = 'covers/' + nearest() + '/month-' + IDP.pad(m) + '.png?v=7';
-    if (src === shown) return;
-    shown = src;
-    var img = document.getElementById('img');
-    img.className = '';
-    img.onload = function () { img.className = 'on'; };
-    img.alt = IDP.MONTHS ? IDP.MONTHS[m - 1] : '';
-    img.src = src;
+    var cs = getComputedStyle(document.documentElement);
+    var soft = cs.getPropertyValue('--soft').trim(), deep = cs.getPropertyValue('--deep').trim();
+    var now = IDP.now(), m = now.getMonth() + 1, y = now.getFullYear();
+    var key = [soft, deep, m, y].join('|');
+    if (key === shown) return;
+    var svg = A.monthSvg({ soft: soft, deep: deep, month: m, year: y });
+    if (!svg) return;
+    shown = key;
+    var w = document.getElementById('wrap');
+    w.innerHTML = svg;
+    w.setAttribute('aria-label', A.MONTH_NAMES[m - 1] + ' ' + y);
+    w.dataset.month = String(m);
   }
   draw();
-  // 달이 바뀌는 자정을 넘겨 켜 둔 화면도 다음 달로 · 테마를 바꾸면 그 색으로
-  setInterval(draw, 60 * 1000);
-  window.addEventListener('storage', function () { setTimeout(draw, 50); });
+  setInterval(draw, 60 * 1000);                                   // 자정을 넘겨 켜 둔 화면도 다음 달로
+  window.addEventListener('storage', function () { setTimeout(draw, 50); });   // 다른 위젯 ⚙ 에서 색을 바꾸면
   document.addEventListener('visibilitychange', function () { if (!document.hidden) draw(); });
 </script>
 </body>
