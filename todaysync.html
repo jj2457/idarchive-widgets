@@ -102,7 +102,7 @@
     if (!d) return { k: '메모', v: '—', quiet: true, s: '메모 목록을 찾지 못했어요' };
     var n = (d.items || []).length;
     if (!n) return { k: '메모', v: '0', unit: '개', quiet: true, s: '정리할 메모가 없어요 — 깔끔해요' };
-    return { k: '메모', v: String(n), unit: '개 정리 전', s: d.items[0].text || '' };
+    return { k: '메모', v: n >= 30 ? '30+' : String(n), unit: '개 정리 전', s: d.items[0].text || '' };   // 서버는 최근 30개까지 돌려준다
   }
   function render() {
     $('title').textContent = IDP.opt('todaysync', 'label', '') || 'TODAY';
