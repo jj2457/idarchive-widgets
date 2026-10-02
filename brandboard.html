@@ -31,7 +31,7 @@
   .tf .fn { margin-top: 6px; font-size: 11px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tf .us { font-size: 9.5px; letter-spacing: .14em; color: var(--sub); }
   .md { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-  .md div { aspect-ratio: 16 / 10; max-height: 104px; border-radius: 10px; background: var(--tint); overflow: hidden; }
+  .md div { height: clamp(64px, 18vw, 104px); border-radius: 10px; background: var(--tint); overflow: hidden; }
   .md img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .tip { margin-top: 10px; font-size: 10.5px; color: var(--sub); text-align: center; min-height: 14px; }
   @media (max-width: 420px) { .pal { grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); } .sw i { height: 40px; } .tf .aa { font-size: 24px; } .top { grid-template-columns: 72px minmax(0, 1fr); } .logo { width: 72px; height: 72px; } }
