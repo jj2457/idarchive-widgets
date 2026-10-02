@@ -32,6 +32,16 @@
   .gate { margin-top: 16px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
   .gate button { margin-top: 10px; padding: 9px 18px; border-radius: 999px; background: var(--deep); color: #fff; border: 0; font-size: 12px; letter-spacing: .04em; text-transform: none; }
   .state { font-size: 9.5px; color: var(--sub); text-align: center; margin-top: 8px; letter-spacing: .04em; min-height: 12px; }
+  .addrow { display: flex; justify-content: flex-end; margin-top: 8px; }
+  .addrow button { padding: 4px 12px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--deep) 30%, transparent); background: var(--paper); color: color-mix(in srgb, var(--deep) 80%, #2a2a2a); font-size: 11px; letter-spacing: 0; text-transform: none; }
+  .entry { display: grid; grid-template-columns: auto 1fr; gap: 6px; margin-top: 8px; padding: 10px; border-radius: 10px; background: var(--tint); }
+  .entry .seg { display: flex; gap: 2px; }
+  .entry .seg button { padding: 6px 10px; border-radius: 8px; border: 0; background: var(--paper); color: var(--sub); font-size: 11.5px; text-transform: none; letter-spacing: 0; }
+  .entry .seg button.on { background: var(--deep); color: #fff; }
+  .entry input, .entry select { min-width: 0; padding: 6px 8px; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--deep) 22%, transparent); background: var(--paper); font: inherit; font-size: 12px; color: var(--ink); }
+  .entry #ttl, .entry #cat { grid-column: 1 / -1; }
+  .entry button[type=submit] { grid-column: 1 / -1; padding: 8px; border-radius: 999px; border: 0; background: var(--deep); color: #fff; font-size: 12px; text-transform: none; letter-spacing: .02em; }
+  .entry button[disabled] { opacity: .5; }
 </style>
 </head>
 <body>
@@ -44,6 +54,14 @@
         <div class="num"><b>지출</b><span id="expense">—</span></div>
         <div class="num" id="balBox"><b>남은 금액</b><span id="balance">—</span></div>
       </div>
+      <div class="addrow"><button type="button" id="addBtn">+ 적기</button></div>
+      <form class="entry" id="entry" hidden autocomplete="off">
+        <div class="seg" id="seg"><button type="button" data-t="지출" class="on">지출</button><button type="button" data-t="수입">수입</button></div>
+        <input id="amt" type="number" inputmode="numeric" min="1" placeholder="금액(원)" aria-label="금액">
+        <input id="ttl" maxlength="100" placeholder="무엇에(안 적어도 돼요)" aria-label="항목">
+        <select id="cat" aria-label="카테고리"></select>
+        <button type="submit" id="save">노션에 적기</button>
+      </form>
       <div class="budget" id="budget"></div>
       <div class="sub" id="catHead" hidden>많이 쓴 카테고리</div>
       <div class="cats" id="cats"></div>
@@ -112,7 +130,7 @@
   }
   function load() {
     $('gate').hidden = true; head();
-    if (DEMO) { data = { income: 2780000, expense: 898900, balance: 1881100, budget: 1150000, used: .782, count: 23, top: [{ name: '주거', amount: 600000, budget: 700000 }, { name: '식비', amount: 186400, budget: 300000 }, { name: '카페', amount: 62500, budget: 50000 }], uncategorized: 0 }; render(); state('견본 · 노션과 연결하면 내 가계부가 보여요'); return; }
+    if (DEMO) { data = { income: 2780000, expense: 898900, balance: 1881100, budget: 1150000, used: .782, count: 23, categories: [{ id: 'd1', name: '식비', kind: '지출' }, { id: 'd2', name: '카페', kind: '지출' }, { id: 'd3', name: '주거', kind: '지출' }, { id: 'd4', name: '급여', kind: '수입' }], top: [{ name: '주거', amount: 600000, budget: 700000 }, { name: '식비', amount: 186400, budget: 300000 }, { name: '카페', amount: 62500, budget: 50000 }], uncategorized: 0 }; render(); state('견본 · 노션과 연결하면 내 가계부가 보여요'); return; }
     if (!S.base) return gate('노션 연결 준비 중이에요.');
     if (!S.wid()) return gate('노션 가계부 · 예산 표와 이어지는 위젯이에요.<br>노션 가계부에 적으면 이번 달 수입 · 지출 · 남은 금액이 저절로 바뀌어요.', '노션과 연결하기');
     var my = ++seq;
@@ -126,6 +144,35 @@
       state(e.message);
     });
   }
+  // ── 한 줄 빠르게 적기 — 노션 가계부(LEDGER)에 새 줄. 카테고리는 이 플래너 「예산」 표의 것만 고를 수 있다(서버도 확인)
+  var etype = '지출';
+  function fillCats() {
+    var sel = $('cat'), cats = ((data || {}).categories || []).filter(function (c) { return c.kind === etype; });
+    sel.innerHTML = '<option value="">카테고리 없이</option>';
+    cats.forEach(function (c) { var o = document.createElement('option'); o.value = c.id; o.textContent = c.name; sel.appendChild(o); });
+  }
+  [].forEach.call($('seg').querySelectorAll('button'), function (b) {
+    b.onclick = function () { etype = b.getAttribute('data-t'); [].forEach.call($('seg').querySelectorAll('button'), function (x) { x.className = x === b ? 'on' : ''; }); fillCats(); };
+  });
+  $('addBtn').onclick = function () { var f = $('entry'); f.hidden = !f.hidden; if (!f.hidden) { fillCats(); $('amt').focus(); } };
+  $('entry').onsubmit = function (ev) {
+    ev.preventDefault();
+    var amount = Number($('amt').value);
+    if (!Number.isInteger(amount) || amount <= 0) { state('금액을 1원 이상 숫자로 적어 주세요'); return; }
+    var body = { date: today, type: etype, amount: amount, title: $('ttl').value, category: $('cat').value || null };
+    var reset = function () { $('amt').value = ''; $('ttl').value = ''; $('entry').hidden = true; $('save').disabled = false; };
+    if (DEMO) { var d = data; if (etype === '수입') d.income += amount; else d.expense += amount; d.balance = d.income - d.expense; if (d.budget) d.used = d.expense / d.budget; d.count++; reset(); render(); state('견본 · 실제로는 노션 가계부에 한 줄이 생겨요'); return; }
+    $('save').disabled = true; state('노션에 적는 중…');
+    S.api('POST', '/v1/finance/entry', body).then(function () {
+      reset();
+      // 노션은 새 줄을 몇 초 늦게 읽어 줄 때가 있다 — 줄 수가 그대로면 한 번 더 읽는다
+      var before = month === today.slice(0, 7) && data ? data.count : null;
+      if (month !== today.slice(0, 7)) month = today.slice(0, 7);
+      Promise.resolve(load()).then(function () {
+        if (before != null && data && data.count <= before) return new Promise(function (r) { setTimeout(r, 2500); }).then(load);
+      }).then(function () { state('노션 가계부에 적었어요'); });
+    }).catch(function (e) { $('save').disabled = false; state(e.message || '노션에 저장하지 못했어요 — 적은 것은 그대로 두었어요'); });
+  };
   $('prev').onclick = function () { month = shift(month, -1); data = null; load(); };
   $('next').onclick = function () { if (month < today.slice(0, 7)) { month = shift(month, 1); data = null; load(); } };
   // 노션에서 적고 돌아오면 다시 읽는다
