@@ -86,7 +86,7 @@
     });
     var moods = IDP.listParse(IDP.opt('brandboard', 'moods', ''), 1).map(function (f) { return IDP.photo(f[0]); }).filter(Boolean).slice(0, 3);
     var M = $('md'); M.innerHTML = '';
-    var tk = IDP.q.get('theme'), MK = ['beige', 'blue', 'green', 'grey', 'lavender', 'peach', 'pink', 'sky'];
+    var tk = IDP.q.get('theme'), MK = ['ivory', 'beige', 'blue', 'green', 'grey', 'lavender', 'peach', 'pink', 'sky'];
     if (!moods.length) moods = sample ? ['mood/mood-' + (MK.indexOf(tk) >= 0 ? tk : 'green') + '.jpg', 'mood/mood-beige.jpg', 'mood/mood-grey.jpg'] : [];
     $('mdS').hidden = !moods.length;
     moods.forEach(function (u) { var d = document.createElement('div'), im = document.createElement('img'); im.alt = ''; im.src = u; d.appendChild(im); M.appendChild(d); });

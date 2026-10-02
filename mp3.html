@@ -106,7 +106,7 @@
   var LIST = [], cur = 0, listOpen = false;
   var CARD = IDP.q.get('look') === 'card' || !!IDP.opt('mp3', 'look', '');
   if (CARD) document.body.dataset.look = 'card';
-  var TK = IDP.q.get('theme'), MOODK = ['beige', 'blue', 'green', 'grey', 'lavender', 'peach', 'pink', 'sky'];
+  var TK = IDP.q.get('theme'), MOODK = ['ivory', 'beige', 'blue', 'green', 'grey', 'lavender', 'peach', 'pink', 'sky'];
   var DEFAULT_PIC = 'mood/mood-' + (MOODK.indexOf(TK) >= 0 ? TK : 'green') + '.jpg';   // 우리 무드 사진(9색 중 yellow 는 green)
   function readOpts() {
     LIST = IDP.listParse(IDP.opt('mp3', 'items', ''), 3).map(function (f) {

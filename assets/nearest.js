@@ -23,7 +23,12 @@
     var c = customOf(soft, deep); if (!c) return null;
     var k = lch(c.soft);
     if (k.C < 0.012) return 'grey';
-    if (k.C < 0.022 && k.h >= 20 && k.h <= 110) return 'beige';
+    // 채도 낮은 따뜻한 색 — 아이보리(크림)와 베이지(라떼) 중 가까운 쪽(sync/custom.mjs warmPick 과 같다)
+    if (k.C < 0.022 && k.h >= 20 && k.h <= 110) {
+      if (!themes.ivory) return 'beige';
+      var wd = function (n) { var t = lch(hex(themes[n].soft)); return Math.abs(k.h - t.h) + 100 * Math.abs(k.L - t.L); };
+      return wd('ivory') < wd('beige') ? 'ivory' : 'beige';
+    }
     var best = null, bd = Infinity;
     Object.keys(themes).forEach(function (name) {
       if (name === 'grey') return;
@@ -34,7 +39,7 @@
     return best;
   }
   // 노션 글자 · 바탕색 이름(sync/theme.mjs NOTION_COLOR 와 같은 짝)
-  var NATIVE = { green: ['초록', 'Green'], blue: ['파랑', 'Blue'], sky: ['파랑', 'Blue'], lavender: ['보라', 'Purple'], pink: ['분홍', 'Pink'],
+  var NATIVE = { ivory: ['갈색', 'Brown'], green: ['초록', 'Green'], blue: ['파랑', 'Blue'], sky: ['파랑', 'Blue'], lavender: ['보라', 'Purple'], pink: ['분홍', 'Pink'],
     beige: ['갈색', 'Brown'], grey: ['회색', 'Gray'], peach: ['주황', 'Orange'], yellow: ['노랑', 'Yellow'] };
   g.IDP_NEAREST = { nearest: nearest, customOf: customOf, native: NATIVE };
 })(typeof window !== 'undefined' ? window : globalThis);
