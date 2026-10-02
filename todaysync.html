@@ -92,7 +92,7 @@
     var all = (d.items || []), left = all.filter(function (x) { return !x.done; });
     if (!all.length) return { k: '할 일', v: '아직 없어요', quiet: true, s: '눌러서 오늘 할 일 한 줄', archie: true, go: 'todo' };
     var first = left.filter(function (x) { return x.important; })[0] || left[0];
-    return { k: '할 일', v: left.length ? String(left.length) : '다 했어요', unit: left.length ? '개 남음' : '', s: first ? first.title : all.length + '개 모두 끝냈어요', pct: (all.length - left.length) / all.length };
+    return { k: '할 일', v: left.length ? String(left.length) : '다 했어요', unit: left.length ? '개 남음' : '', s: first ? first.title : all.length + '개 모두 끝냈어요', pct: (all.length - left.length) / all.length, archie: left.length ? null : 'done' };
   }
   function habitCard(d) {
     if (d === FAIL) return failCard('습관');
@@ -127,7 +127,7 @@
       var e = document.createElement('div'); e.className = 'c' + (c.quiet ? ' quiet' : '') + (c.over ? ' over' : '') + (c.wait ? ' wait' : '') + (c.soft ? ' soft' : '');
       var k = document.createElement('div'); k.className = 'k'; k.textContent = c.k;
       var v = document.createElement('div'); v.className = 'v'; v.textContent = c.v;
-      if (c.archie) v.insertAdjacentHTML('afterbegin', ARCHIE);   // 브랜드 캐릭터 아키(REQ-045) — 빈 칸에서만, 작게
+      if (c.archie) v.insertAdjacentHTML('afterbegin', c.archie === 'done' ? ARCHIE_DONE : ARCHIE);   // 브랜드 캐릭터 아키(REQ-045) — 빈 칸 · 다 끝낸 순간에만, 작게
       if (c.go) { e.className += ' go'; e.onclick = function () { openAdd(c.go); }; }
       if (c.unit) { var u = document.createElement('small'); u.textContent = c.unit; v.appendChild(u); }
       var s = document.createElement('div'); s.className = 's'; s.textContent = c.s || '';
@@ -141,6 +141,7 @@
   // 표가 없는 옛 복제본(no_table · not_shared) = null(그 칸만 「—」), 잠깐의 오류(노션 지연 · 인터넷) = FAIL(그 칸만 「잠시 뒤 다시」) — 둘을 섞지 않는다
   var FAIL = {};
   var ARCHIE = '<svg class="archie" viewBox="0 0 120 120" aria-hidden="true"><path d="M28 46 h64 v46 a10 10 0 0 1 -10 10 h-44 a10 10 0 0 1 -10 -10 z" style="fill:var(--tint)" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><path d="M22 36 h76 a4 4 0 0 1 4 4 v6 h-84 v-6 a4 4 0 0 1 4 -4 z" style="fill:var(--paper)" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><path d="M46 74 h8 M66 74 h8" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><circle cx="60" cy="86" r="3" fill="none" stroke="currentColor" stroke-width="4"/></svg>';
+  var ARCHIE_DONE = '<svg class="archie" viewBox="0 0 120 120" aria-hidden="true"><path d="M28 46 h64 v46 a10 10 0 0 1 -10 10 h-44 a10 10 0 0 1 -10 -10 z" style="fill:var(--tint)" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><path d="M22 36 h76 a4 4 0 0 1 4 4 v6 h-84 v-6 a4 4 0 0 1 4 -4 z" style="fill:var(--paper)" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><path d="M45 76 q5 -7 10 0 M65 76 q5 -7 10 0 M52 85 q8 8 16 0" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg>';   // 해냈어요 — 웃는 눈 · 입
   function soft(p) { return p.catch(function (e) { if (HARD[e.code]) throw e; return (e.code === 'no_table' || e.code === 'not_shared' || e.code === 'no_habits') ? null : FAIL; }); }
   function failCard(k) { return { k: k, v: '잠시 뒤 다시', soft: true, quiet: true, s: '노션이 잠깐 응답하지 않았어요 — 「새로 읽기」' }; }
   function waitCards() { return ['할 일', '습관', '이번 달 지출', '메모'].map(function (k) { return { k: k, v: '…', wait: true, s: '' }; }); }
