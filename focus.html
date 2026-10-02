@@ -14,12 +14,39 @@
   .ring .in { position: absolute; inset: 0; }
   .t { font-size: clamp(24px, 10vw, 38px); line-height: 1; }
   .btns { display: flex; gap: 8px; margin-top: 14px; }
+  /* look=studio (오너 2026-10-02 REQ-170 「오른쪽 타이머 스타일 — 깔끔하니 하나 더」): 큰 숫자 · 세션 길이 − / + · 프리셋 · 큰 시작 버튼. 모양은 ID ARCHIVE 결(테마 색 · 세리프 숫자) */
+  .st { display: none; width: 100%; max-width: 300px; margin: 0 auto; text-align: center; }
+  body.studio .st { display: block; } body.studio .classic { display: none !important; }
+  .st .k { font-size: 10px; letter-spacing: .32em; color: var(--sub); }
+  .st .big { font-family: var(--serif); font-weight: 400; font-size: clamp(46px, 19vw, 72px); line-height: 1.05; margin: 10px 0 14px; color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+  .st .len { display: flex; align-items: center; justify-content: space-between; margin: 8px auto 10px; padding: 6px 8px; border-radius: 999px; background: var(--paper); box-shadow: inset 0 0 0 1px var(--line); }
+  .st .len button { width: 34px; height: 34px; border-radius: 50%; padding: 0; font-size: 18px; line-height: 1; background: transparent; box-shadow: none; }
+  .st .len span { font-size: 14px; color: var(--ink); }
+  .st .pre { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .st .pre button { min-width: 38px; height: 34px; padding: 0 8px; border-radius: 999px; font-size: 12px; background: var(--paper); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); letter-spacing: 0; }
+  .st .pre button.on { background: var(--tint); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--deep) 45%, transparent); }
+  .st .goBig { width: 100%; height: 44px; border-radius: 999px; background: color-mix(in srgb, var(--deep) 82%, #6a6a66); color: #fff; font-size: 14px; letter-spacing: .06em; border: 0; }
+  .st .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .st .two button { height: 38px; border-radius: 999px; background: var(--paper); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); }
+  .st .cap { margin-top: 14px; font-size: 9.5px; letter-spacing: .24em; color: var(--sub); line-height: 1.6; }
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="row"><div class="badge" id="badge">Focus</div><span class="caps" id="round"></span></div>
-  <div class="grow center">
+  <div class="row classic"><div class="badge" id="badge">Focus</div><span class="caps" id="round"></span></div>
+  <div class="grow center st-wrap">
+    <div class="st" aria-label="focus timer">
+      <div class="k" id="stK">FOCUS TIMER</div>
+      <div class="big" id="stT">45:00</div>
+      <div class="k">SESSION LENGTH</div>
+      <div class="len"><button type="button" id="stMinus" aria-label="5분 줄이기">−</button><span id="stLen">45 min</span><button type="button" id="stPlus" aria-label="5분 늘리기">+</button></div>
+      <div class="pre" id="stPre"></div>
+      <button type="button" class="goBig" id="stGo">▶ Start</button>
+      <div class="two"><button type="button" id="stPause">Pause</button><button type="button" id="stReset">Reset</button></div>
+      <div class="cap" id="stCap">FOCUS ON PROGRESS, NOT PERFECTION.</div>
+    </div>
+  </div>
+  <div class="grow center classic">
     <div class="ring">
       <svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="45"/><circle class="fill" id="arc" cx="50" cy="50" r="45"/></svg>
       <div class="in center"><div class="t serif" id="t"></div><div class="caps" id="phase" style="margin-top:6px"></div></div>
@@ -65,6 +92,30 @@
     draw();
   };
   document.getElementById('reset').onclick = function () { stop(); resting = false; left = FOCUS; draw(); };
+  // ── look=studio ── 세션 길이(분)는 이 위젯 UI 설정이라 이 기기에만(기록 아님)
+  var STUDIO = IDP.q.get('look') === 'studio' || IDP.q.get('studio') === '1';
+  document.body.classList.toggle('studio', STUDIO);
+  if (STUDIO) {
+    var LK = 'idarchive.focus.len.v1', PRE = [15, 25, 45, 60, 90], $ = function (id) { return document.getElementById(id); };
+    var len = 45; try { len = +localStorage.getItem(LK) || +IDP.q.get('focus') || 45; } catch (e) { len = +IDP.q.get('focus') || 45; }
+    var sLeft = len * 60, sEnd = 0, sTimer = null;
+    if (READING) $('stK').textContent = 'READING TIMER';
+    var cap = IDP.q.get('cap'); if (cap !== null) { $('stCap').textContent = cap; $('stCap').hidden = !cap; }
+    function sDraw() {
+      $('stT').textContent = IDP.pad(Math.floor(sLeft / 60)) + ':' + IDP.pad(sLeft % 60);
+      $('stLen').textContent = len + ' min';
+      $('stGo').textContent = sTimer ? '● Focusing' : (sLeft < len * 60 ? '▶ Resume' : '▶ Start');
+      [].forEach.call($('stPre').children, function (b) { b.classList.toggle('on', +b.dataset.m === len); });
+    }
+    function setLen(m) { len = Math.max(5, Math.min(180, m)); try { localStorage.setItem(LK, String(len)); } catch (e) {} if (!sTimer) sLeft = len * 60; sDraw(); }
+    PRE.forEach(function (m) { var b = document.createElement('button'); b.type = 'button'; b.dataset.m = m; b.textContent = m; b.onclick = function () { setLen(m); }; $('stPre').appendChild(b); });
+    $('stMinus').onclick = function () { setLen(len - 5); };
+    $('stPlus').onclick = function () { setLen(len + 5); };
+    $('stGo').onclick = function () { if (sTimer) return; sEnd = Date.now() + sLeft * 1000; sTimer = setInterval(function () { sLeft = Math.max(0, Math.round((sEnd - Date.now()) / 1000)); if (!sLeft) { clearInterval(sTimer); sTimer = null; if (IDP.alert) IDP.alert('집중 끝', len + '분 집중했어요', { times: 2 }); sLeft = len * 60; } sDraw(); }, 500); sDraw(); };
+    $('stPause').onclick = function () { if (sTimer) { clearInterval(sTimer); sTimer = null; } sDraw(); };
+    $('stReset').onclick = function () { if (sTimer) { clearInterval(sTimer); sTimer = null; } sLeft = len * 60; sDraw(); };
+    sDraw();
+  }
   draw();
 </script>
 </body>
