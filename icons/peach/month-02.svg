@@ -3,5 +3,5 @@
         <circle cx="32" cy="23.5" r="7" fill="#ffffff"/>
         <path d="M24.5 31 Q32 34.5 39.5 31" stroke-width="3.2" stroke="#8a6a60"/>
         <path d="M38.5 31.5 L41 37" />
-        <path d="M27 17.2 H37 M28.8 17.2 V13.8 H35.2 V17.2" fill="#ffd8c9"/>
+        <path d="M27 17.2 H37 M28.8 17.2 V13.8 H35.2 V17.2" fill="#ddd9ef"/>
         <circle cx="29.6" cy="22.8" r="0.6" fill="#8a6a60"/><circle cx="34.4" cy="22.8" r="0.6" fill="#8a6a60"/></g></svg>
