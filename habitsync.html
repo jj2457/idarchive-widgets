@@ -97,6 +97,9 @@
   var VKEY = 'idarchive.habitsync.view';
   var VIEWS = ['list', 'ring', 'month', 'week'];
   var view = VIEWS.indexOf(IDP.q.get('view')) > 0 ? IDP.q.get('view') : (function () { try { var v = localStorage.getItem(VKEY); return VIEWS.indexOf(v) >= 0 ? v : 'list'; } catch (e) { return 'list'; } })();
+  // 습관 하나만(habit=책 읽기 · REQ-021 독서한 날): 그 습관을 체크한 날만 한 달 지도로 — 새로 적을 것 없이 「책 읽기」 체크가 곧 읽은 날
+  var ONE = (IDP.q.get('habit') || '').slice(0, 60);
+  if (ONE) view = 'month';
   var monthData = null, monthKey = '';   // 달 보기: { total, days: [{ date, done }] } — 노션 DAYS 에서 읽은 값(위젯은 저장 안 함)
   var RING_ALPHA = [1, .78, .6, .44, .3];
   var weekData = null, weekKey = '';   // 주 보기: { dates: [7], habits: [{ id, title, days: [true|false|null ×7] }] } — 노션 DAYS 에서 읽은 값
@@ -135,6 +138,7 @@
   }
   function drawViews() {
     var V = $('views'); V.innerHTML = '';
+    if (ONE) return;
     [['list', '목록'], ['ring', '링'], ['week', '주'], ['month', '달']].forEach(function (x) {
       var b = document.createElement('button'); b.type = 'button'; b.textContent = x[1]; if (x[0] === view) b.className = 'on';
       b.onclick = function () { var was = view; view = x[0]; try { localStorage.setItem(VKEY, view); } catch (e) {} render(); if (was !== view && (was === 'month' || view === 'month' || was === 'week' || view === 'week')) load(); };
@@ -172,6 +176,7 @@
   function drawMap() {
     var M = $('map'), show = view === 'month';
     M.hidden = !show; if (!show) return;
+    M.querySelector('.legend').hidden = !!ONE;   // 습관 하나면 진하기 단계가 없다(했다 · 안 했다)
     var H = $('heat'); H.innerHTML = '';
     ['월', '화', '수', '목', '금', '토', '일'].forEach(function (w) { var e = document.createElement('div'); e.className = 'wd'; e.textContent = w; H.appendChild(e); });
     var y = day.getFullYear(), m = day.getMonth(), first = new Date(y, m, 1), n = new Date(y, m + 1, 0).getDate();
@@ -189,10 +194,10 @@
       if (+date === +now) b.className += ' today';
       b.innerHTML = '<span></span>'; b.firstChild.textContent = dd;
       b.setAttribute('aria-label', (m + 1) + '월 ' + dd + '일 ' + (total ? done + '/' + total : ''));
-      if (date <= now) (function (dt) { b.onclick = function () { day = dt; view = 'list'; try { localStorage.setItem(VKEY, view); } catch (e) {} items = []; loaded = false; render(); load(); }; })(date);
+      if (date <= now && !ONE) (function (dt) { b.onclick = function () { day = dt; view = 'list'; try { localStorage.setItem(VKEY, view); } catch (e) {} items = []; loaded = false; render(); load(); }; })(date);
       H.appendChild(b);
     }
-    $('left').textContent = monthData ? '다 지킨 날 ' + full + '일' : '';
+    $('left').textContent = monthData ? (ONE ? ONE + ' ' + full + '일' : '다 지킨 날 ' + full + '일') : '';
   }
 
   if (S.popup()) throw new Error('popup');
@@ -249,11 +254,11 @@
     $('gate').hidden = true;
     if (view === 'month') {
       var k = mkey(day);
-      if (DEMO) { monthData = demoMonth(k); monthKey = k; render(); state('견본 · 노션과 연결하면 내 습관 지도가 보여요'); return; }
+      if (DEMO) { monthData = demoMonth(k); if (ONE) { monthData.total = 1; monthData.days = monthData.days.map(function (d) { return { date: d.date, done: d.done >= 3 ? 1 : 0 }; }); } monthKey = k; render(); state(ONE ? '견본 · 노션에서 「' + ONE + '」 체크한 날이 진하게 보여요' : '견본 · 노션과 연결하면 내 습관 지도가 보여요'); return; }
       if (!SYNC) return gate('노션 연결 준비 중이에요.');
       if (!wid()) return gate('노션의 습관 표(HABITS)와 이어지는 위젯이에요.<br>그날 지킨 습관이 많을수록 진한 색으로 한 달이 보여요.', '노션과 연결하기');
       if (monthKey !== k) { monthData = null; render(); state('불러오는 중…'); }
-      return api('GET', '/v1/habits/month?month=' + k).then(function (d) { monthData = d; monthKey = k; state(''); render(); }).catch(function (e) {
+      return api('GET', '/v1/habits/month?month=' + k + (ONE ? '&habit=' + encodeURIComponent(ONE) : '')).then(function (d) { monthData = d; monthKey = k; state(''); render(); }).catch(function (e) {
         if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기'); if (e.code === 'choose_planner') { gate('연결된 플래너가 여러 개예요. 이 위젯이 쓸 플래너를 골라 주세요.'); return S.choosePlanner($('gate'), load); }
         if (e.code === 'not_shared' || e.code === 'no_habits') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
         state(e.message);
