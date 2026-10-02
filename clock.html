@@ -24,12 +24,29 @@
   .bar .bc small { font-size: .55em; letter-spacing: .16em; color: var(--sub); margin-left: .25em; font-family: 'Roboto', sans-serif; }
   body.is-bar .card { padding-top: 10px; padding-bottom: 10px; }
   @media (max-width: 420px) { .bar { gap: 8px; } .bar .bd { font-size: 13px; } .bar .bc { font-size: 15px; } .bar .bt { font-size: 11.5px; } }
+  /* 레트로 플립 시계(인박스 REQ-186 「시계 위젯도 레트로한 거 하나」) — ?look=flip. 타일 색 = 테마 진한 색 + 웜 차콜, 숫자 = 종이색 */
+  .flip { display: flex; align-items: center; justify-content: center; gap: clamp(6px, 2.4vw, 12px); }
+  .flip .grp { display: flex; gap: clamp(3px, 1vw, 6px); }
+  .flip .t { position: relative; width: clamp(34px, 13vw, 62px); height: clamp(48px, 18vw, 86px); border-radius: 9px; perspective: 300px;
+    background: color-mix(in srgb, var(--deep) 30%, #2a2622); color: #f6f1e7; font-family: 'Roboto', 'Helvetica Neue', sans-serif; font-weight: 500;
+    font-size: clamp(30px, 12vw, 58px); display: grid; place-items: center; box-shadow: 0 2px 0 rgba(0,0,0,.18), inset 0 -1px 0 rgba(255,255,255,.06); }
+  .flip .t::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1.5px; background: rgba(0,0,0,.38); }
+  .flip .t::before { content: ''; position: absolute; inset: 0 0 50% 0; border-radius: 9px 9px 0 0; background: rgba(255,255,255,.045); }
+  .flip .t.go { animation: flipin .42s cubic-bezier(.3,.7,.3,1); }
+  @keyframes flipin { 0% { transform: rotateX(-80deg); opacity: .4; } 100% { transform: none; opacity: 1; } }
+  .flip .col { display: grid; gap: 9px; } .flip .col i { width: 6px; height: 6px; border-radius: 50%; background: color-mix(in srgb, var(--deep) 40%, #2a2622); }
+  .flip .ap { font-family: 'Roboto', sans-serif; font-size: 11px; letter-spacing: .2em; color: var(--sub); align-self: flex-end; margin-left: 2px; }
+  .fdate { margin-top: 14px; font-size: clamp(12px, 4vw, 15px); letter-spacing: .06em; }
+  .fdate b { font-weight: 400; color: var(--deep); margin-left: .5em; letter-spacing: .14em; font-size: .82em; }
+  .fdate b.sun { color: var(--red); } .fdate b.sat { color: var(--blue); }
+  @media (prefers-reduced-motion: reduce) { .flip .t.go { animation: none; } }
 </style>
 </head>
 <body>
 <div class="card">
   <div class="bar serif" id="bar" hidden><span class="bd" id="bd"></span><span class="bt" id="bt"></span><span class="bc" id="bc"></span></div>
   <div class="badge" id="badge">Today</div>
+  <div class="grow center" id="flipbox" hidden><div class="flip" id="flip"></div><div class="fdate serif" id="fdate"></div></div>
   <div class="grow center" id="full">
     <div class="time serif" id="time"></div>
     <div class="date serif" id="date"></div>
@@ -40,7 +57,20 @@
 <script src="config/themes.js"></script>
 <script src="assets/core.js"></script>
 <script>
-  var h24 = IDP.q.get('h24') === '1', BAR = IDP.q.get('bar') === '1';
+  var h24 = IDP.q.get('h24') === '1', BAR = IDP.q.get('bar') === '1', FLIP = !BAR && IDP.q.get('look') === 'flip';
+  if (FLIP) { document.getElementById('full').hidden = true; document.getElementById('flipbox').hidden = false; }
+  var shown = '';
+  function tickFlip(d) {   // 바뀐 숫자만 넘긴다(분이 바뀔 때 한 장)
+    var h = d.getHours(), hh = h24 ? IDP.pad(h) : IDP.pad(h % 12 || 12), mm = IDP.pad(d.getMinutes()), s = hh + mm;
+    var box = document.getElementById('flip');
+    if (!box.children.length) box.innerHTML = '<span class="grp"><span class="t"></span><span class="t"></span></span><span class="col"><i></i><i></i></span><span class="grp"><span class="t"></span><span class="t"></span></span>' + (h24 ? '' : '<span class="ap"></span>');
+    var tiles = box.querySelectorAll('.t');
+    for (var i = 0; i < 4; i++) if (s[i] !== shown[i]) { tiles[i].textContent = s[i]; if (shown) { tiles[i].classList.remove('go'); void tiles[i].offsetWidth; tiles[i].classList.add('go'); } }
+    shown = s;
+    if (!h24) box.querySelector('.ap').textContent = h < 12 ? 'AM' : 'PM';
+    var w = d.getDay();
+    document.getElementById('fdate').innerHTML = IDP.plannerDate(d) + '<b class="' + (w === 0 ? 'sun' : w === 6 ? 'sat' : '') + '">' + IDP.DOW[w] + '</b>';
+  }
   if (BAR) { document.body.classList.add('is-bar'); document.getElementById('bar').hidden = false; document.getElementById('badge').hidden = true; document.getElementById('full').hidden = true; }
   function esc(t) { var e = document.createElement('span'); e.textContent = t; return e.innerHTML; }
   function tickBar(d) {   // 날짜 · 내 문구(없으면 공휴일 · 기념일) · 시각
@@ -53,6 +83,7 @@
   function tick() {
     var d = IDP.now(), h = d.getHours();
     if (BAR) return tickBar(d);
+    if (FLIP) return tickFlip(d);
     var hh = h24 ? IDP.pad(h) : (h % 12 || 12);
     document.getElementById('time').innerHTML = hh + ':' + IDP.pad(d.getMinutes()) + (h24 ? '' : '<small>' + (h < 12 ? 'AM' : 'PM') + '</small>');
     var w = d.getDay();
