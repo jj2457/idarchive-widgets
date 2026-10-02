@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Brand Board</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  /* 브랜드 보드(오너 2026-10-02 REQ-145 「로고 · 브랜드 컬러 · 폰트 · 연락처가 한눈에」).
+     노션 색은 정해진 몇 가지뿐이라 브랜드 HEX 를 그대로 보여 줄 수 없어서 — 색 · 로고 · 글꼴 견본만 이 위젯이, 할 일 · 캠페인은 노션 표가 맡는다.
+     값은 ⚙ 에서(위젯 설정 — 기록이 아니라 보여 주는 정보). 비어 있으면 「MY BRAND」 견본(테마 색으로)이 보인다. 글은 textContent 로만 */
+  .wrap { max-width: 640px; margin: 0 auto; }
+  .top { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 16px; align-items: center; margin-top: 12px; }
+  .logo { width: 96px; height: 96px; border-radius: 22px; background: var(--tint); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .logo img { width: 100%; height: 100%; object-fit: cover; }
+  .logo span { font-family: var(--serif); font-size: 26px; letter-spacing: .06em; color: color-mix(in srgb, var(--deep) 70%, #2a2a2a); }
+  .nm { font-family: var(--serif); font-size: clamp(20px, 5vw, 28px); letter-spacing: .08em; color: var(--ink); overflow-wrap: anywhere; }
+  .sl { margin-top: 4px; font-size: 12.5px; color: var(--sub); line-height: 1.5; }
+  .sec { margin-top: 16px; }
+  .sec h4 { margin: 0 0 8px; font-size: 10px; font-weight: 500; letter-spacing: .24em; color: var(--sub); }
+  .pal { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+  .sw { border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: var(--paper); cursor: pointer; text-align: left; padding: 0; letter-spacing: 0; text-transform: none; }
+  .sw i { display: block; height: 52px; }
+  .sw b { display: block; padding: 6px 8px 0; font-size: 11px; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sw small { display: block; padding: 0 8px 7px; font-size: 10px; color: var(--sub); font-variant-numeric: tabular-nums; }
+  .ty { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tf { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--paper); min-width: 0; }
+  .tf .aa { font-size: 30px; line-height: 1.1; color: var(--ink); }
+  .tf .fn { margin-top: 6px; font-size: 11px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tf .us { font-size: 9.5px; letter-spacing: .14em; color: var(--sub); }
+  .ct { border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+  .ct div { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; padding: 7px 12px; font-size: 12px; border-top: 1px solid var(--line); }
+  .ct div:first-child { border-top: 0; }
+  .ct span:first-child { color: var(--sub); font-size: 10.5px; letter-spacing: .08em; }
+  .ct span:last-child { color: var(--ink); overflow-wrap: anywhere; }
+  .md { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .md div { aspect-ratio: 4 / 3; border-radius: 10px; background: var(--tint); overflow: hidden; }
+  .md img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .kw { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .kw span { font-size: 10.5px; padding: 3px 10px; border-radius: 999px; background: var(--tint); color: color-mix(in srgb, var(--deep) 70%, #2a2a2a); letter-spacing: .04em; }
+  .tip { margin-top: 10px; font-size: 10.5px; color: var(--sub); text-align: center; min-height: 14px; }
+  @media (max-width: 380px) { .ty { grid-template-columns: 1fr; } .top { grid-template-columns: 72px minmax(0, 1fr); } .logo { width: 72px; height: 72px; } }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="badge" id="badge">BRAND BOARD</div></div>
+  <div class="grow"><div class="wrap">
+    <div class="top"><div class="logo" id="logo"></div><div><div class="nm" id="nm"></div><div class="sl" id="sl"></div><div class="kw" id="kw"></div></div></div>
+    <div class="sec"><h4>COLOR PALETTE</h4><div class="pal" id="pal"></div></div>
+    <div class="sec"><h4>TYPOGRAPHY</h4><div class="ty" id="ty"></div></div>
+    <div class="sec" id="ctS"><h4>CONTACT</h4><div class="ct" id="ct"></div></div>
+    <div class="sec" id="mdS"><h4>MOOD</h4><div class="md" id="md"></div></div>
+    <div class="tip" id="tip"></div>
+  </div></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  function $(id) { return document.getElementById(id); }
+  var HEX = /^#?[0-9a-f]{6}$/i;
+  function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  function render() {
+    $('badge').textContent = IDP.opt('brandboard', 'label', '') || 'BRAND BOARD';
+    var name = IDP.opt('brandboard', 'name', ''), slogan = IDP.opt('brandboard', 'slogan', ''), sample = !name;
+    $('nm').textContent = name || 'MY BRAND';
+    $('sl').textContent = slogan || (sample ? '⚙ 에서 브랜드 이름 · 로고 · 색 · 글꼴 · 연락처를 넣어 주세요' : '');
+    var kw = (IDP.opt('brandboard', 'tone', '') || (sample ? 'CALM · WARM · STEADY' : '')).split(/[,·]/).map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 6);
+    var K = $('kw'); K.innerHTML = ''; kw.forEach(function (x) { var e = document.createElement('span'); e.textContent = x; K.appendChild(e); });
+    var logo = IDP.listParse(IDP.opt('brandboard', 'logo', ''), 1).map(function (f) { return IDP.photo(f[0]); }).filter(Boolean)[0];
+    var L = $('logo'); L.innerHTML = '';
+    if (logo) { var im = document.createElement('img'); im.alt = ''; im.src = logo; L.appendChild(im); }
+    else { var s = document.createElement('span'); s.textContent = (name || 'MB').replace(/\s+/g, '').slice(0, 2).toUpperCase(); L.appendChild(s); }
+    var cols = IDP.listParse(IDP.opt('brandboard', 'colors', ''), 2).filter(function (f) { return HEX.test((f[1] || '').trim()); }).slice(0, 8)
+      .map(function (f) { return [f[0] || '', '#' + f[1].trim().replace('#', '').toUpperCase()]; });
+    if (!cols.length) cols = [['MAIN', cssVar('--deep').toUpperCase()], ['SOFT', cssVar('--soft').toUpperCase()], ['PAPER', '#FCFCF9'], ['INK', '#3A3A38']];
+    var P = $('pal'); P.innerHTML = '';
+    cols.forEach(function (c) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'sw'; b.setAttribute('aria-label', c[0] + ' ' + c[1] + ' 복사');
+      var i = document.createElement('i'); i.style.background = c[1]; var n = document.createElement('b'); n.textContent = c[0] || ' '; var h = document.createElement('small'); h.textContent = c[1];
+      b.appendChild(i); b.appendChild(n); b.appendChild(h);
+      b.onclick = function () { try { navigator.clipboard.writeText(c[1]); $('tip').textContent = c[1] + ' 복사했어요'; } catch (e) { $('tip').textContent = c[1]; } setTimeout(function () { $('tip').textContent = ''; }, 1800); };
+      P.appendChild(b);
+    });
+    var fonts = IDP.listParse(IDP.opt('brandboard', 'fonts', ''), 2).filter(function (f) { return (f[1] || '').trim(); }).slice(0, 2);
+    if (!fonts.length) fonts = [['제목', 'Playfair Display'], ['본문', 'Noto Sans KR']];
+    var T = $('ty'); T.innerHTML = '';
+    fonts.forEach(function (f) {
+      var d = document.createElement('div'); d.className = 'tf';
+      var a = document.createElement('div'); a.className = 'aa'; a.textContent = 'Aa 가'; a.style.fontFamily = '"' + f[1].replace(/["\\]/g, '') + '", ' + (/serif|명조|playfair/i.test(f[1]) ? 'serif' : 'sans-serif');
+      var u = document.createElement('div'); u.className = 'us'; u.textContent = (f[0] || '').toUpperCase();
+      var n = document.createElement('div'); n.className = 'fn'; n.textContent = f[1];
+      d.appendChild(u); d.appendChild(a); d.appendChild(n); T.appendChild(d);
+    });
+    var ct = IDP.listParse(IDP.opt('brandboard', 'contact', ''), 2).filter(function (f) { return (f[0] || f[1]); }).slice(0, 6);
+    if (!ct.length && sample) ct = [['INSTAGRAM', '@yourbrand'], ['EMAIL', 'hello@yourbrand.com'], ['WEB', 'yourbrand.com']];
+    $('ctS').hidden = !ct.length; var C = $('ct'); C.innerHTML = '';
+    ct.forEach(function (f) { var r = document.createElement('div'), k = document.createElement('span'), v = document.createElement('span'); k.textContent = (f[0] || '').toUpperCase(); v.textContent = f[1] || ''; r.appendChild(k); r.appendChild(v); C.appendChild(r); });
+    var moods = IDP.listParse(IDP.opt('brandboard', 'moods', ''), 1).map(function (f) { return IDP.photo(f[0]); }).filter(Boolean).slice(0, 3);
+    var M = $('md'); M.innerHTML = '';
+    var tk = IDP.q.get('theme'), MK = ['beige', 'blue', 'green', 'grey', 'lavender', 'peach', 'pink', 'sky'];
+    if (!moods.length) moods = sample ? ['mood/mood-' + (MK.indexOf(tk) >= 0 ? tk : 'green') + '.jpg', 'mood/mood-beige.jpg', 'mood/mood-grey.jpg'] : [];
+    $('mdS').hidden = !moods.length;
+    moods.forEach(function (u) { var d = document.createElement('div'), im = document.createElement('img'); im.alt = ''; im.src = u; d.appendChild(im); M.appendChild(d); });
+  }
+  IDP.options('brandboard', [
+    { k: 'label', label: '제목', ph: 'BRAND BOARD' },
+    { k: 'name', label: '브랜드 이름', ph: 'ID ARCHIVE' },
+    { k: 'slogan', label: '한 줄 소개 · 슬로건', ph: '기록이 나를 만든다' },
+    { k: 'tone', label: '분위기 · 말투 키워드 (쉼표로)', ph: 'CALM, WARM, STEADY' },
+    { k: 'logo', t: 'list', label: '로고', max: 1, fields: [{ label: '로고 — 고르거나 사진 주소(https://…)', url: true, photo: true, ph: 'https://…png' }],
+      note: '기기에서 고른 그림은 이 기기에서만 보여요. 다른 기기에서도 보려면 그림 주소를 넣어 주세요.' },
+    { k: 'colors', t: 'list', label: '브랜드 색 (최대 8)', max: 8, fields: [{ label: '이름', ph: 'MAIN' }, { label: 'HEX', ph: '#B3A2C2' }] },
+    { k: 'fonts', t: 'list', label: '글꼴 (최대 2)', max: 2, fields: [{ label: '용도', ph: '제목' }, { label: '글꼴 이름', ph: 'Playfair Display' }] },
+    { k: 'contact', t: 'list', label: '연락처 · 채널 (최대 6)', max: 6, fields: [{ label: '항목', ph: 'INSTAGRAM' }, { label: '내용', ph: '@yourbrand' }] },
+    { k: 'moods', t: 'list', label: '무드 사진 (최대 3)', max: 3, fields: [{ label: '사진 — 고르거나 사진 주소(https://…)', url: true, photo: true, ph: 'https://…jpg' }] }
+  ], render);
+  render();
+</script>
+</body>
+</html>
