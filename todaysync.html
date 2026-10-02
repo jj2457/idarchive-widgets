@@ -29,6 +29,16 @@
   .foot button { padding: 0; border: 0; background: none; font-size: 10.5px; color: var(--sub); text-transform: none; letter-spacing: .02em; }
   .foot button:hover { color: var(--deep); }
   .state { font-size: 9.5px; color: var(--sub); letter-spacing: .04em; min-height: 12px; }
+  .hr { display: flex; align-items: center; gap: 8px; }
+  .plus { width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 0; background: var(--deep); color: #fff; font-size: 16px; line-height: 24px; text-transform: none; letter-spacing: 0; }
+  form.add { display: flex; gap: 5px; margin-top: 10px; align-items: center; }
+  form.add .seg { display: flex; flex: none; border-radius: 999px; background: var(--tint); padding: 2px; }
+  form.add .seg button { padding: 4px 9px; border: 0; border-radius: 999px; background: none; font-size: 11px; color: var(--sub); text-transform: none; letter-spacing: 0; }
+  form.add .seg button.on { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  form.add input { flex: 1; min-width: 0; padding: 7px 11px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--deep) 25%, transparent); background: var(--paper); font: inherit; font-size: 12.5px; color: var(--ink); }
+  form.add input:focus { outline: none; border-color: var(--deep); }
+  form.add .go { flex: none; padding: 0 12px; height: 30px; border-radius: 999px; border: 0; background: var(--deep); color: #fff; font-size: 11.5px; text-transform: none; letter-spacing: .02em; }
+  form.add .go:disabled { opacity: .5; }
   .c.wait .v { color: transparent; background: color-mix(in srgb, var(--deep) 10%, transparent); border-radius: 6px; width: 60%; }
   .c.soft .v { font-size: 14px; color: var(--sub); }
   /* 폰(좁은 폭) — 첫 화면을 덜 차지하게: 여백 · 글자 · 줄을 줄인다(오너 2026-10-02 「정보 밀도 · 목표를 밀어내지 않게」) */
@@ -45,7 +55,8 @@
 <body>
 <div class="card" id="card">
   <div class="grow"><div class="wrap">
-    <div class="head"><h2 id="title">TODAY</h2><span class="d" id="date"></span></div>
+    <div class="head"><h2 id="title">TODAY</h2><span class="hr"><span class="d" id="date"></span><button type="button" class="plus" id="plus" aria-label="할 일이나 메모 적기" hidden>+</button></span></div>
+    <form class="add" id="add" autocomplete="off" hidden><span class="seg" id="seg"><button type="button" data-k="todo" class="on">할 일</button><button type="button" data-k="note">메모</button></span><input id="text" maxlength="200" placeholder="오늘 할 일 한 줄" aria-label="적을 내용"><button type="submit" class="go" id="go">적기</button></form>
     <div class="grid" id="grid"></div>
     <div class="gate" id="gate" hidden></div>
     <div class="foot" id="foot"><span class="state" id="state"></span><button type="button" id="again">새로 읽기</button></div>
@@ -68,7 +79,7 @@
   S.onConnect(function () { load(); });
   function state(t) { $('state').textContent = t || ''; }
   function gate(html, btn) {
-    $('gate').hidden = false; $('grid').hidden = true; $('foot').hidden = true;
+    $('gate').hidden = false; $('grid').hidden = true; $('foot').hidden = true; $('plus').hidden = true; $('add').hidden = true;
     $('gate').innerHTML = html + (btn ? '<br><button type="button" id="cn">' + btn + '</button>' : '');
     if (btn) $('cn').onclick = function () { S.connect(); };
   }
@@ -108,7 +119,7 @@
     $('title').textContent = IDP.opt('todaysync', 'label', '') || 'TODAY';
     var t = IDP.now();
     $('date').textContent = t.getFullYear() + '. ' + pad(t.getMonth() + 1) + '. ' + pad(t.getDate()) + ' ' + W[t.getDay()];
-    $('gate').hidden = true; $('grid').hidden = false; $('foot').hidden = false;
+    $('gate').hidden = true; $('grid').hidden = false; $('foot').hidden = false; $('plus').hidden = false;
     var G = $('grid'); G.innerHTML = '';
     (cards || []).forEach(function (c) {
       var e = document.createElement('div'); e.className = 'c' + (c.quiet ? ' quiet' : '') + (c.over ? ' over' : '') + (c.wait ? ' wait' : '') + (c.soft ? ' soft' : '');
@@ -162,6 +173,23 @@
     });
   }
   $('again').onclick = function () { load(); };
+  // 바로 적기(2026-10-02) — 할 일은 노션 TASKS(오늘 날짜), 메모는 NOTES(머릿속 비우기)로. 적으면 DAILY · 달력 · 머릿속 비우기에도 그대로 보인다
+  var kind = 'todo', busy = false;
+  $('plus').onclick = function () { var f = $('add'); f.hidden = !f.hidden; if (!f.hidden) $('text').focus(); };
+  Array.prototype.forEach.call(document.querySelectorAll('#seg button'), function (b) {
+    b.onclick = function () { kind = b.getAttribute('data-k'); Array.prototype.forEach.call(document.querySelectorAll('#seg button'), function (x) { x.className = x === b ? 'on' : ''; }); $('text').placeholder = kind === 'todo' ? '오늘 할 일 한 줄' : '떠오른 생각 한 줄'; $('text').focus(); };
+  });
+  $('add').onsubmit = function (ev) {
+    ev.preventDefault();
+    var t = $('text').value.replace(/\s+/g, ' ').trim();
+    if (!t || busy) return;
+    if (DEMO) { var c = cards[kind === 'todo' ? 0 : 3]; var n = parseInt(c.v, 10) || 0; c.v = String(n + 1); c.unit = kind === 'todo' ? '개 남음' : '개 정리 전'; c.s = t; c.quiet = false; $('text').value = ''; render(); state(kind === 'todo' ? '견본 · 할 일에 더했어요' : '견본 · 메모에 더했어요'); return; }
+    busy = true; $('go').disabled = true; state('노션에 적는 중…');
+    var p = kind === 'todo' ? S.api('POST', '/v1/todo', { title: t, date: iso(IDP.now()) }) : S.api('POST', '/v1/notes', { text: t });
+    p.then(function () { $('text').value = ''; state(kind === 'todo' ? '오늘 할 일에 넣었어요' : '머릿속 비우기에 넣었어요'); setTimeout(load, 1200); })
+      .catch(function (e) { state(e.message || '노션에 저장하지 못했어요 — 글은 그대로 두었어요'); })
+      .then(function () { busy = false; $('go').disabled = false; });
+  };
   // 노션에서 적고 돌아오면 다시 읽는다
   document.addEventListener('visibilitychange', function () { if (!document.hidden && !DEMO && S.wid() && S.base) load(); });
   IDP.options('todaysync', [{ k: 'label', label: '제목', ph: 'TODAY' }], function () { render(); });
