@@ -31,6 +31,21 @@
   .rings { display: flex; justify-content: center; margin-top: 10px; }
   .rings svg { width: 132px; height: 132px; transform: rotate(-90deg); }
   .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--deep); }
+  /* 달(습관 지도) — 그날 지킨 습관 ÷ 지금 습관 수를 테마 색 진하기로 */
+  .heat { margin-top: 10px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .heat .wd { font-size: 9px; color: var(--sub); text-align: center; letter-spacing: .04em; padding-bottom: 2px; }
+  .heat button { position: relative; aspect-ratio: 1; padding: 0; border: 0; border-radius: 6px; background: var(--tint); min-width: 0; letter-spacing: 0; text-transform: none; }
+  .heat button span { position: absolute; left: 5px; top: 3px; font-size: 9px; color: var(--sub); }
+  .heat button.l1, .legend b.l1 { background: color-mix(in srgb, var(--deep) 30%, var(--tint)); }
+  .heat button.l2, .legend b.l2 { background: color-mix(in srgb, var(--deep) 55%, var(--tint)); }
+  .heat button.l3, .legend b.l3 { background: color-mix(in srgb, var(--deep) 78%, var(--tint)); }
+  .heat button.l4, .legend b.l4 { background: var(--deep); }
+  .heat button.l2 span, .heat button.l3 span, .heat button.l4 span { color: #fff; }
+  .heat button.future { background: transparent; box-shadow: inset 0 0 0 1px var(--tint); cursor: default; }
+  .heat button.today { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--deep) 80%, #2a2a2a); }
+  .heat i { aspect-ratio: 1; }
+  .legend { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 6px; font-size: 9px; color: var(--sub); }
+  .legend b { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--tint); }
   .gate { margin-top: 16px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
   .gate button { margin-top: 10px; padding: 9px 18px; border-radius: 999px; background: var(--deep); color: #fff; border: 0; font-size: 12px; letter-spacing: .04em; text-transform: none; }
   .state { font-size: 9.5px; color: var(--sub); text-align: center; margin-top: 8px; letter-spacing: .04em; min-height: 12px; }
@@ -46,6 +61,7 @@
     <div class="bar"><i id="barI"></i></div>
     <div class="views" id="views"></div>
     <div class="rings" id="rings" hidden></div>
+    <div id="map" hidden><div class="heat" id="heat"></div><div class="legend"><span>적게</span><b></b><b class="l1"></b><b class="l2"></b><b class="l3"></b><b class="l4"></b><span>다 지킴</span></div></div>
     <div class="list" id="list"></div>
     <div class="gate" id="gate" hidden></div>
     <div class="state" id="state"></div>
@@ -67,13 +83,15 @@
   var items = [], busy = 0, loaded = false, wrote = {};
   // 보기: 목록 | 링(REQ-017 — 습관마다 이번 주 횟수 ÷ 주간 목표를 겹친 링으로, 최대 5개). 이 기기의 보기 설정만 저장(기록 아님)
   var VKEY = 'idarchive.habitsync.view';
-  var view = IDP.q.get('view') === 'ring' ? 'ring' : (function () { try { return localStorage.getItem(VKEY) === 'ring' ? 'ring' : 'list'; } catch (e) { return 'list'; } })();
+  var VIEWS = ['list', 'ring', 'month'];
+  var view = VIEWS.indexOf(IDP.q.get('view')) > 0 ? IDP.q.get('view') : (function () { try { var v = localStorage.getItem(VKEY); return VIEWS.indexOf(v) >= 0 ? v : 'list'; } catch (e) { return 'list'; } })();
+  var monthData = null, monthKey = '';   // 달 보기: { total, days: [{ date, done }] } — 노션 DAYS 에서 읽은 값(위젯은 저장 안 함)
   var RING_ALPHA = [1, .78, .6, .44, .3];
   function drawViews() {
     var V = $('views'); V.innerHTML = '';
-    [['list', '목록'], ['ring', '링']].forEach(function (x) {
+    [['list', '목록'], ['ring', '링'], ['month', '달']].forEach(function (x) {
       var b = document.createElement('button'); b.type = 'button'; b.textContent = x[1]; if (x[0] === view) b.className = 'on';
-      b.onclick = function () { view = x[0]; try { localStorage.setItem(VKEY, view); } catch (e) {} render(); };
+      b.onclick = function () { var was = view; view = x[0]; try { localStorage.setItem(VKEY, view); } catch (e) {} render(); if ((was === 'month') !== (view === 'month')) load(); };
       V.appendChild(b);
     });
   }
@@ -99,6 +117,38 @@
     R.appendChild(svg);
   }
 
+  function mkey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1); }
+  function demoMonth(k) {   // 견본: 날짜로 정해지는 값(새로고침해도 같은 그림)
+    var y = +k.slice(0, 4), m = +k.slice(5, 7), n = new Date(y, m, 0).getDate(), out = [];
+    for (var i = 1; i <= n; i++) { var s = (i * 7 + m * 3) % 11; out.push({ date: k + '-' + pad(i), done: s > 8 ? 4 : s > 5 ? 3 : s > 2 ? 2 : s > 0 ? 1 : 0 }); }
+    return { month: k, total: 4, days: out };
+  }
+  function drawMap() {
+    var M = $('map'), show = view === 'month';
+    M.hidden = !show; if (!show) return;
+    var H = $('heat'); H.innerHTML = '';
+    ['월', '화', '수', '목', '금', '토', '일'].forEach(function (w) { var e = document.createElement('div'); e.className = 'wd'; e.textContent = w; H.appendChild(e); });
+    var y = day.getFullYear(), m = day.getMonth(), first = new Date(y, m, 1), n = new Date(y, m + 1, 0).getDate();
+    var lead = (first.getDay() + 6) % 7, now = IDP.now(); now.setHours(0, 0, 0, 0);
+    for (var i = 0; i < lead; i++) H.appendChild(document.createElement('i'));
+    var by = {}, total = monthData ? monthData.total : 0;
+    (monthData ? monthData.days : []).forEach(function (d) { by[d.date] = d.done; });
+    var full = 0;
+    for (var dd = 1; dd <= n; dd++) {
+      var date = new Date(y, m, dd), k = iso(date), b = document.createElement('button'); b.type = 'button';
+      var done = by[k] || 0, r = total ? done / total : 0;
+      if (date > now) b.className = 'future';
+      else b.className = r >= 1 ? 'l4' : r > .67 ? 'l3' : r > .34 ? 'l2' : r > 0 ? 'l1' : '';
+      if (total && done >= total && date <= now) full++;
+      if (+date === +now) b.className += ' today';
+      b.innerHTML = '<span></span>'; b.firstChild.textContent = dd;
+      b.setAttribute('aria-label', (m + 1) + '월 ' + dd + '일 ' + (total ? done + '/' + total : ''));
+      if (date <= now) (function (dt) { b.onclick = function () { day = dt; view = 'list'; try { localStorage.setItem(VKEY, view); } catch (e) {} items = []; loaded = false; render(); load(); }; })(date);
+      H.appendChild(b);
+    }
+    $('left').textContent = monthData ? '다 지킨 날 ' + full + '일' : '';
+  }
+
   if (S.popup()) throw new Error('popup');
   function wid() { return S.wid(IDP.opt('habitsync', 'code', '')); }
   S.onConnect(function () { load(); });
@@ -116,13 +166,16 @@
 
   function render(skipList) {
     $('title').textContent = IDP.opt('habitsync', 'label', 'HABIT');
-    $('day').textContent = (day.getMonth() + 1) + '월 ' + day.getDate() + '일 (' + W[day.getDay()] + ')';
+    $('day').textContent = view === 'month' ? day.getFullYear() + '년 ' + (day.getMonth() + 1) + '월' : (day.getMonth() + 1) + '월 ' + day.getDate() + '일 (' + W[day.getDay()] + ')';
     var done = items.filter(function (i) { return i.done; }).length, n = items.length;
     $('left').textContent = n ? done + ' / ' + n : '';
     $('barI').style.width = n ? Math.round(done / n * 100) + '%' : '0';
     if (skipList) return;
     drawViews(); drawRings();
     var L = $('list'); L.innerHTML = '';
+    $('barI').parentNode.hidden = view === 'month';
+    drawMap();
+    if (view === 'month') return;
     items.forEach(function (it, i) {
       var row = document.createElement('div'); row.className = 'it' + (it.done ? ' done' : '');
       if (view === 'ring' && i < 5) { var dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = 'color-mix(in srgb, var(--deep) ' + Math.round(RING_ALPHA[i] * 100) + '%, transparent)'; row.appendChild(dot); }
@@ -141,6 +194,18 @@
 
   function load() {
     $('gate').hidden = true;
+    if (view === 'month') {
+      var k = mkey(day);
+      if (DEMO) { monthData = demoMonth(k); monthKey = k; render(); state('견본 · 노션과 연결하면 내 습관 지도가 보여요'); return; }
+      if (!SYNC) return gate('노션 연결 준비 중이에요.');
+      if (!wid()) return gate('노션의 습관 표(HABITS)와 이어지는 위젯이에요.<br>그날 지킨 습관이 많을수록 진한 색으로 한 달이 보여요.', '노션과 연결하기');
+      if (monthKey !== k) { monthData = null; render(); state('불러오는 중…'); }
+      return api('GET', '/v1/habits/month?month=' + k).then(function (d) { monthData = d; monthKey = k; state(''); render(); }).catch(function (e) {
+        if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기');
+        if (e.code === 'not_shared' || e.code === 'no_habits') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
+        state(e.message);
+      });
+    }
     if (DEMO) { loaded = true; if (!items.length) items = [{ id: 'a', title: '책 20쪽 읽기', done: true, week: 3, goal: 5, streak: 4, dots: '●●●○○' }, { id: 'b', title: '물 2L', done: false, week: 5, goal: 7, streak: 0, dots: '●●●●●○○' }, { id: 'c', title: '스트레칭', done: false, week: 1, goal: 3, streak: 0, dots: '●○○' }]; render(); state('견본 · 노션과 연결하면 내 습관이 보여요'); return; }
     if (!SYNC) return gate('노션 연결 준비 중이에요.');
     if (!wid()) return gate('노션의 습관 표(HABITS)와 이어지는 위젯이에요.<br>여기서 체크하면 노션에도, 노션에서 체크하면 여기에도 보여요.', '노션과 연결하기');
@@ -164,7 +229,10 @@
       .then(function () { wrote[it.id + '|' + iso(day)] = { done: it.done, until: Date.now() + 20000 }; return load(); })   // 이번 주 · 연속은 노션 수식이 다시 계산한 값으로
       .catch(function (e) { it.done = before; render(); state(e.code === 'no_day' ? '이 날짜의 기록 페이지(DAYS)가 없어요.' : e.message); });
   }
-  function move(n) { day.setDate(day.getDate() + n); if (!DEMO) { items = []; loaded = false; } render(); load(); }
+  function move(n) {
+    if (view === 'month') { if (n) { day.setDate(1); day.setMonth(day.getMonth() + n); } monthData = null; render(); return load(); }
+    day.setDate(day.getDate() + n); if (!DEMO) { items = []; loaded = false; } render(); load();
+  }
   $('prev').onclick = function () { move(-1); };
   $('next').onclick = function () { move(1); };
   $('day').onclick = function () { day = IDP.now(); day.setHours(0, 0, 0, 0); move(0); };
