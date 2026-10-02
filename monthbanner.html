@@ -10,7 +10,7 @@
      MONTHLY 맨 위에 이 위젯을 두면 오늘 날짜의 달 그림이 저절로 보인다. 연결 · 무료 요금제 상관없음. 그림 = 계절 커버와 같은 것 */
   html, body { height: 100%; }
   body { margin: 0; background: transparent; }
-  .wrap { position: relative; height: 100%; min-height: 120px; overflow: hidden; border-radius: var(--radius, 18px); background: var(--tint); }
+  .wrap { position: relative; width: 100%; height: 100%; min-height: 120px; overflow: hidden; border-radius: var(--radius, 18px); background: var(--tint); }
   [data-frame="none"] .wrap { border-radius: 0; }
   .wrap img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; display: block; opacity: 0; transition: opacity .35s ease; }
   .wrap img.on { opacity: 1; }
