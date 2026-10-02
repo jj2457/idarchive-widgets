@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Section Title</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  /* 구역 제목(오너 2026-10-02 REQ-134 「가운데 정렬 제목 · 구분선 색 · 포장도 중요」 · REQ-133 「위젯 넣는 자리 틀」).
+     노션 글은 가운데 정렬이 안 되고 색을 테마에 맞춰 바꿀 수 없어서, 구역 머리만 이 작은 위젯으로 — 9색 · 나만의 색 · 저장한 색 · 테마 적용을 그대로 따른다.
+     t = 제목(영문 대문자 권장) · s = 아래 작은 한 줄(선택) · style = mark(형광 밑줄, 기본) · line(양옆 선) · plain
+     글은 textContent 로만 넣는다(HTML 아님). 칸 하나에 꼭 맞게(가로 넘침 없음 · 폭 375 에서도 한 줄). */
+  html, body { height: 100%; background: transparent; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px 10px; overflow: hidden; }
+  .row { display: flex; align-items: center; gap: 14px; width: 100%; justify-content: center; }
+  .ln { flex: 1 1 0; max-width: 140px; height: 1px; background: color-mix(in srgb, var(--deep) 45%, transparent); display: none; }
+  [data-style="line"] .ln { display: block; }
+  .t { font-family: var(--serif); font-size: clamp(13px, 3.6vw, 17px); letter-spacing: .26em; text-transform: uppercase; white-space: nowrap;
+       color: color-mix(in srgb, var(--deep) 62%, #2f2f2f); padding: 0 .1em 0 .36em; position: relative; z-index: 0; }
+  [data-style="mark"] .t::after { content: ''; position: absolute; left: 0; right: 0; bottom: .08em; height: .52em; background: var(--soft); opacity: .75; z-index: -1; border-radius: 2px; }
+  .s { margin-top: 5px; font-size: 11.5px; letter-spacing: .04em; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .s:empty { display: none; }
+  .rule { width: 100%; height: 1px; margin-top: 9px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--deep) 35%, transparent) 18%, color-mix(in srgb, var(--deep) 35%, transparent) 82%, transparent); }
+  [data-style="line"] .rule, [data-style="plain"] .rule, [data-rule="0"] .rule { display: none; }
+  :root[data-mode="dark"] .t { color: color-mix(in srgb, var(--soft) 70%, #ffffff); }
+</style>
+</head>
+<body>
+<div class="row"><span class="ln"></span><span class="t" id="t"></span><span class="ln"></span></div>
+<div class="s" id="s"></div>
+<div class="rule"></div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  var st = IDP.q.get('style');
+  document.body.dataset.style = /^(mark|line|plain)$/.test(st || '') ? st : 'mark';
+  if (IDP.q.get('rule') === '0') document.body.dataset.rule = '0';
+  document.getElementById('t').textContent = (IDP.q.get('t') || 'TODAY').slice(0, 40);
+  document.getElementById('s').textContent = (IDP.q.get('s') || '').slice(0, 60);
+  document.title = 'ID PLANNER · ' + document.getElementById('t').textContent;
+</script>
+</body>
+</html>
