@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Energy (Notion)</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 520px; margin: 0 auto; }
+  [hidden] { display: none !important; }
+  .nav { display: flex; align-items: center; gap: 6px; }
+  .nav button { background: none; border: 0; padding: 4px 8px; font-size: 14px; color: var(--sub); letter-spacing: 0; }
+  .nav button:hover { background: var(--tint); color: var(--ink); }
+  .nav span { font-size: 11px; color: var(--sub); letter-spacing: .04em; min-width: 92px; text-align: center; }
+  svg.ch { display: block; width: 100%; height: 150px; margin-top: 10px; overflow: visible; }
+  .wd { display: grid; grid-template-columns: 34px repeat(7, 1fr); font-size: 10px; color: var(--sub); text-align: center; margin-top: 2px; }
+  .wd .on { color: color-mix(in srgb, var(--deep) 80%, #2a2a2a); font-weight: 700; }
+  .sum { margin-top: 8px; font-size: 11px; color: var(--sub); text-align: center; letter-spacing: .02em; }
+  .sum b { color: color-mix(in srgb, var(--deep) 80%, #2a2a2a); font-weight: 600; }
+  .pick { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+  .pick .q { font-size: 11px; color: var(--sub); text-align: center; margin-bottom: 8px; }
+  .pick .row5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+  .pick button { padding: 7px 0; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); font-size: 10px; letter-spacing: .06em; color: var(--sub); text-transform: none; }
+  .pick button.on { background: var(--deep); border-color: var(--deep); color: #fff; }
+  .gate { margin-top: 12px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
+  .gate button { margin-top: 10px; padding: 9px 18px; border-radius: 999px; background: var(--deep); color: #fff; border: 0; font-size: 12px; letter-spacing: .04em; text-transform: none; }
+  .state { font-size: 9.5px; color: var(--sub); text-align: center; margin-top: 8px; letter-spacing: .04em; min-height: 12px; }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="grow"><div class="wrap">
+    <div class="row">
+      <div class="badge" id="badge">Energy</div>
+      <div class="nav"><button id="prev" aria-label="지난주">‹</button><span id="wk"></span><button id="next" aria-label="다음 주">›</button></div>
+    </div>
+    <div id="body">
+      <svg class="ch" id="ch" viewBox="0 0 320 150" role="img"></svg>
+      <div class="wd" id="wdays"></div>
+      <div class="sum" id="sum"></div>
+      <div class="pick" id="pick"><div class="q" id="q">오늘 컨디션은?</div><div class="row5" id="row5"></div></div>
+    </div>
+    <div class="gate" id="gate" hidden></div>
+    <div class="state" id="state"></div>
+  </div></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script src="assets/sync.js"></script>
+<script>
+  // 에너지 그래프(REQ-029 · 132) — 하루 기록(DAYS)의 「컨디션」 한 칸을 한 주 선으로, 그날 지킨 습관 비율을 뒤에 옅은 막대로.
+  // 새로 적을 것은 없다: 컨디션은 하루 페이지의 그 칸, 습관은 「완료한 습관」 그대로(노션이 원본, 위젯은 저장하지 않음).
+  // 아래 다섯 칸을 누르면 오늘(고른 날) 컨디션이 노션 하루 페이지에 저장된다. ?demo=1 은 견본(저장 없음).
+  var S = IDP.sync, DEMO = IDP.q.get('demo') === '1';
+  var MOODS = ['GREAT', 'GOOD', 'OKAY', 'LOW', 'BAD'], SCORE = { GREAT: 5, GOOD: 4, OKAY: 3, LOW: 2, BAD: 1 };
+  var W = ['일', '월', '화', '수', '목', '금', '토'];
+  var day = IDP.now(); day.setHours(0, 0, 0, 0);
+  var data = null, seq = 0, wrote = {};
+  function $(id) { return document.getElementById(id); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function start(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() - (IDP.weekStart === 'sun' ? 0 : 1) + 7) % 7)); return x; }
+  function state(t) { $('state').textContent = t || ''; }
+  if (S.popup()) throw new Error('popup');
+  S.onConnect(function () { load(); });
+  function gate(html, btn) {
+    $('gate').hidden = false; $('body').hidden = true;
+    $('gate').innerHTML = html + (btn ? '<br><button type="button" id="go">' + btn + '</button>' : '');
+    if (btn) $('go').onclick = function () { S.connect(); };
+  }
+  function demo() {
+    var a = start(day), dates = [], now = IDP.now(); now.setHours(0, 0, 0, 0);
+    for (var i = 0; i < 7; i++) { var x = new Date(a); x.setDate(a.getDate() + i); dates.push(iso(x)); }
+    var m = ['GOOD', 'OKAY', 'GREAT', 'LOW', 'GOOD', 'GREAT', 'OKAY'], h = [[1, 1, 1, 0], [1, 0, 1, 0], [1, 1, 1, 1], [0, 0, 1, 0], [1, 1, 0, 1], [1, 1, 1, 1], [1, 0, 1, 0]];
+    var past = function (i) { return new Date(dates[i] + 'T00:00:00') <= now; };
+    return { dates: dates, moods: dates.map(function (d, i) { return past(i) ? m[i] : ''; }),
+      habits: [0, 1, 2, 3].map(function (k) { return { id: 'h' + k, days: dates.map(function (d, i) { return past(i) ? !!h[i][k] : false; }) }; }) };
+  }
+  function draw() {
+    $('badge').textContent = IDP.opt('energysync', 'label', '') || 'Energy';
+    var a = start(day), b = new Date(a); b.setDate(a.getDate() + 6);
+    $('wk').textContent = (a.getMonth() + 1) + '.' + a.getDate() + ' – ' + (b.getMonth() + 1) + '.' + b.getDate();
+    if (!data) return;
+    var svg0 = $('ch'), sel = iso(day), Wd = Math.max(220, Math.round(svg0.getBoundingClientRect().width) || 320), Hd = 150, L = 34, top = 10, bot = 10, cw = (Wd - L) / 7;
+    svg0.setAttribute('viewBox', '0 0 ' + Wd + ' ' + Hd);   // 글자가 늘어나지 않게 실제 폭으로
+    var y = function (s) { return top + (5 - s) / 4 * (Hd - top - bot); };
+    var NS = 'http://www.w3.org/2000/svg', svg = $('ch'); svg.innerHTML = '';
+    function el(n, at, st) { var e = document.createElementNS(NS, n); for (var k in at) e.setAttribute(k, at[k]); if (st) e.setAttribute('style', st); svg.appendChild(e); return e; }
+    [5, 3, 1].forEach(function (s, i) {
+      el('line', { x1: L, x2: Wd, y1: y(s), y2: y(s) }, 'stroke:var(--line);stroke-width:1;stroke-dasharray:' + (i === 1 ? '0' : '2 3'));
+      var t = el('text', { x: 0, y: y(s) + 3 }, 'font-size:9px;fill:var(--sub);letter-spacing:.06em'); t.textContent = ['HIGH', 'MID', 'LOW'][i];
+    });
+    var n = data.habits.length, ratios = data.dates.map(function (d, i) {
+      if (!n) return null; var on = 0; data.habits.forEach(function (h) { if (h.days[i] === true) on++; }); return data.moods[i] === null ? null : on / n;
+    });
+    ratios.forEach(function (r, i) {
+      if (r === null || !r) return;
+      var x = L + i * cw + cw * .3, h = r * (Hd - top - bot);
+      el('rect', { x: x, y: Hd - bot - h, width: cw * .4, height: h, rx: 4 }, 'fill:color-mix(in srgb, var(--deep) 20%, transparent)');
+    });
+    var pts = data.moods.map(function (m, i) { return m && SCORE[m] ? [L + i * cw + cw / 2, y(SCORE[m])] : null; });
+    var seg = [];
+    pts.forEach(function (p) { if (p) seg.push(p); });
+    if (seg.length > 1) {
+      el('path', { d: 'M' + seg.map(function (p) { return p[0] + ' ' + p[1]; }).join(' L') + ' L' + seg[seg.length - 1][0] + ' ' + (Hd - bot) + ' L' + seg[0][0] + ' ' + (Hd - bot) + ' Z' }, 'fill:color-mix(in srgb, var(--soft) 26%, transparent);stroke:none');
+      el('path', { d: 'M' + seg.map(function (p) { return p[0] + ' ' + p[1]; }).join(' L') }, 'fill:none;stroke:var(--deep);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke');
+    }
+    pts.forEach(function (p, i) { if (p) el('circle', { cx: p[0], cy: p[1], r: data.dates[i] === sel ? 4.5 : 3 }, 'fill:var(--paper);stroke:var(--deep);stroke-width:2;vector-effect:non-scaling-stroke'); });
+    svg.setAttribute('aria-label', data.dates.map(function (d, i) { return d.slice(5) + ' ' + (data.moods[i] || '기록 없음'); }).join(', '));
+    $('wdays').innerHTML = '<span></span>' + data.dates.map(function (d) { return '<span class="' + (d === sel ? 'on' : '') + '">' + W[new Date(d + 'T00:00:00').getDay()] + '</span>'; }).join('');
+    var ms = data.moods.filter(function (m) { return m && SCORE[m]; }), avg = ms.length ? ms.reduce(function (s, m) { return s + SCORE[m]; }, 0) / ms.length : 0;
+    var rs = ratios.filter(function (r) { return r !== null; }), hab = rs.length ? Math.round(rs.reduce(function (s, r) { return s + r; }, 0) / rs.length * 100) : null;
+    $('sum').innerHTML = '';
+    if (ms.length) { $('sum').appendChild(document.createTextNode('이번 주 평균 ')); var b1 = document.createElement('b'); b1.textContent = MOODS[5 - Math.round(avg)]; $('sum').appendChild(b1); }
+    if (hab !== null && n) { $('sum').appendChild(document.createTextNode((ms.length ? ' · ' : '') + '습관 ')); var b2 = document.createElement('b'); b2.textContent = hab + '%'; $('sum').appendChild(b2); }
+    var ix = data.dates.indexOf(sel), now = IDP.now(); now.setHours(0, 0, 0, 0);
+    var can = ix >= 0 && data.moods[ix] !== null && day <= now;
+    $('pick').hidden = !can;
+    $('q').textContent = (+day === +now ? '오늘' : (day.getMonth() + 1) + '월 ' + day.getDate() + '일') + ' 컨디션은?';
+    $('row5').innerHTML = '';
+    if (can) MOODS.forEach(function (m) {
+      var bt = document.createElement('button'); bt.type = 'button'; bt.textContent = m; if (data.moods[ix] === m) bt.className = 'on';
+      bt.onclick = function () { setMood(ix, data.moods[ix] === m ? '' : m); };
+      $('row5').appendChild(bt);
+    });
+  }
+  function setMood(ix, m) {
+    var before = data.moods[ix], date = data.dates[ix]; data.moods[ix] = m; draw();
+    if (DEMO) return;
+    S.api('POST', '/v1/habits/mood', { date: date, mood: m }).then(function () { wrote[date] = { m: m, until: Date.now() + 20000 }; })
+      .catch(function (e) { data.moods[ix] = before; draw(); state(e.code === 'no_day' ? '이 날짜의 기록 페이지가 없어요.' : e.code === 'no_mood' ? '하루 기록에 「컨디션」 칸이 없어요.' : (e.message || '노션에 저장하지 못했어요')); });
+  }
+  function load() {
+    $('gate').hidden = true; $('body').hidden = false; draw();
+    if (DEMO) { data = demo(); draw(); state('견본 · 노션과 연결하면 내 컨디션이 한 주 선으로 보여요'); return; }
+    if (!S.base) return gate('노션 연결 준비 중이에요.');
+    if (!S.wid()) return gate('하루 기록의 「컨디션」이 한 주 선으로 그려지고,<br>그날 지킨 습관이 뒤에 옅게 보여요. 아래에서 오늘 컨디션을 한 번 누르면 끝.', '노션과 연결하기');
+    var my = ++seq; state('불러오는 중…');
+    S.api('GET', '/v1/habits/week?date=' + iso(day) + '&start=' + (IDP.weekStart === 'sun' ? 'sun' : 'mon')).then(function (d) {
+      if (my !== seq) return;
+      var now = Date.now();
+      d.moods = (d.moods || d.dates.map(function () { return null; })).map(function (m, i) { var w = wrote[d.dates[i]]; return w && now < w.until && m !== null ? w.m : m; });
+      data = d; state(''); draw();
+    }).catch(function (e) {
+      if (my !== seq) return; state('');
+      if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기');
+      if (e.code === 'choose_planner') { gate('연결된 플래너가 여러 개예요. 이 위젯이 쓸 플래너를 골라 주세요.'); return S.choosePlanner($('gate'), load); }
+      if (e.code === 'not_shared' || e.code === 'no_habits') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
+      state(e.message);
+    });
+  }
+  function move(n) { day.setDate(day.getDate() + 7 * n); if (n === 0) { day = IDP.now(); day.setHours(0, 0, 0, 0); } data = DEMO ? null : data && null; load(); }
+  $('prev').onclick = function () { move(-1); };
+  $('next').onclick = function () { move(1); };
+  $('wk').onclick = function () { move(0); };
+  window.addEventListener('resize', function () { draw(); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && !DEMO && S.wid() && S.base) load(); });
+  IDP.options('energysync', [{ k: 'label', label: '제목', ph: 'Energy' }], function () { draw(); });
+  load();
+</script>
+</body>
+</html>
