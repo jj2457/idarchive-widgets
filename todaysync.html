@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID PLANNER · Today (Notion)</title>
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .wrap { max-width: 620px; margin: 0 auto; }
+  [hidden] { display: none !important; }
+  .head { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 4px; gap: 8px; }
+  .head h2 { margin: 0; font-size: 22px; letter-spacing: .02em; color: color-mix(in srgb, var(--deep) 75%, #2a2a2a); font-weight: 700; }
+  .head .d { font-family: var(--serif); font-size: 13px; color: var(--sub); letter-spacing: .06em; white-space: nowrap; }
+  .grid { margin-top: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  @media (min-width: 560px) { .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .c { padding: 10px 12px; border-radius: 12px; background: var(--tint); min-width: 0; }
+  .c .k { font-size: 9.5px; letter-spacing: .16em; color: var(--sub); }
+  .c .v { margin-top: 5px; font-family: var(--serif); font-size: 19px; line-height: 1.15; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .c .v small { font-size: .55em; letter-spacing: .04em; color: var(--sub); margin-left: .3em; font-family: 'Roboto', sans-serif; }
+  .c .s { margin-top: 3px; font-size: 10.5px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-height: 14px; }
+  .c .bar { margin-top: 7px; height: 4px; border-radius: 4px; background: color-mix(in srgb, var(--deep) 14%, var(--paper)); overflow: hidden; }
+  .c .bar i { display: block; height: 100%; width: 0; background: var(--deep); border-radius: 4px; transition: width .3s; }
+  .c.quiet { background: none; box-shadow: inset 0 0 0 1px var(--line); }
+  .c.quiet .v { color: var(--sub); font-size: 15px; }
+  .c.over .bar i { background: var(--red); }
+  .gate { margin-top: 12px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
+  .gate button { margin-top: 10px; padding: 9px 18px; border-radius: 999px; background: var(--deep); color: #fff; border: 0; font-size: 12px; letter-spacing: .04em; text-transform: none; }
+  .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+  .foot button { padding: 0; border: 0; background: none; font-size: 10.5px; color: var(--sub); text-transform: none; letter-spacing: .02em; }
+  .foot button:hover { color: var(--deep); }
+  .state { font-size: 9.5px; color: var(--sub); letter-spacing: .04em; min-height: 12px; }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="grow"><div class="wrap">
+    <div class="head"><h2 id="title">TODAY</h2><span class="d" id="date"></span></div>
+    <div class="grid" id="grid"></div>
+    <div class="gate" id="gate" hidden></div>
+    <div class="foot" id="foot"><span class="state" id="state"></span><button type="button" id="again">새로 읽기</button></div>
+  </div></div>
+</div>
+<script src="config/themes.js"></script>
+<script src="assets/core.js"></script>
+<script src="assets/sync.js"></script>
+<script>
+  // 오늘 한눈에(노션) — 다른 곳에서 적은 것을 다시 적지 않고 모아 본다: 할 일(TASKS) · 습관(HABITS · DAYS) · 이번 달 지출(LEDGER · BUDGET) · 정리 전 메모(NOTES).
+  // 읽기만 한다. 원본은 노션 표 — 위젯은 아무것도 저장하지 않는다. 표가 없는 칸(옛 복제본)은 그 칸만 「없음」, 연결 문제만 전체를 막는다. ?demo=1 은 견본.
+  var S = IDP.sync;
+  var DEMO = IDP.q.get('demo') === '1';
+  var W = ['일', '월', '화', '수', '목', '금', '토'], seq = 0, cards = null;
+  function $(id) { return document.getElementById(id); }
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function won(n) { return '₩' + Math.round(n || 0).toLocaleString('ko-KR'); }
+  if (S.popup()) throw new Error('popup');
+  S.onConnect(function () { load(); });
+  function state(t) { $('state').textContent = t || ''; }
+  function gate(html, btn) {
+    $('gate').hidden = false; $('grid').hidden = true; $('foot').hidden = true;
+    $('gate').innerHTML = html + (btn ? '<br><button type="button" id="cn">' + btn + '</button>' : '');
+    if (btn) $('cn').onclick = function () { S.connect(); };
+  }
+  // 칸 하나 = { k, v, unit, s, pct, quiet, over }
+  function todoCard(d) {
+    if (!d) return { k: '할 일', v: '없음', quiet: true, s: '할 일 표를 찾지 못했어요' };
+    var all = (d.items || []), left = all.filter(function (x) { return !x.done; });
+    if (!all.length) return { k: '할 일', v: '비어 있어요', quiet: true, s: '오늘 날짜의 할 일이 없어요' };
+    var first = left.filter(function (x) { return x.important; })[0] || left[0];
+    return { k: '할 일', v: left.length ? String(left.length) : '다 했어요', unit: left.length ? '개 남음' : '', s: first ? first.title : all.length + '개 모두 끝냈어요', pct: (all.length - left.length) / all.length };
+  }
+  function habitCard(d) {
+    if (!d) return { k: '습관', v: '없음', quiet: true, s: '습관 표를 찾지 못했어요' };
+    var hs = d.habits || [], done = hs.filter(function (h) { return h.done; }).length;
+    if (!hs.length) return { k: '습관', v: '비어 있어요', quiet: true, s: '습관을 하나 만들어 보세요' };
+    var next = hs.filter(function (h) { return !h.done; })[0];
+    return { k: '습관', v: done + ' / ' + hs.length, s: next ? '다음 · ' + (next.name || next.title || '') : '오늘 다 지켰어요', pct: done / hs.length };
+  }
+  function moneyCard(d) {
+    if (!d) return { k: '이번 달 지출', v: '없음', quiet: true, s: '가계부 표를 찾지 못했어요' };
+    if (!d.count) return { k: '이번 달 지출', v: won(0), quiet: true, s: '이번 달 적은 것이 없어요' };
+    var c = { k: '이번 달 지출', v: won(d.expense), s: d.budget ? '예산의 ' + Math.round((d.used || 0) * 100) + '%' : (d.income ? '수입 ' + won(d.income) : d.count + '건') };
+    if (d.budget) { c.pct = Math.min(1, d.used || 0); c.over = (d.used || 0) > 1; }
+    return c;
+  }
+  function noteCard(d) {
+    if (!d) return { k: '메모', v: '없음', quiet: true, s: '메모 표를 찾지 못했어요' };
+    var n = (d.items || []).length;
+    if (!n) return { k: '메모', v: '0', unit: '개', quiet: true, s: '정리할 메모가 없어요' };
+    return { k: '메모', v: String(n), unit: '개 정리 전', s: d.items[0].text || '' };
+  }
+  function render() {
+    $('title').textContent = IDP.opt('todaysync', 'label', '') || 'TODAY';
+    var t = IDP.now();
+    $('date').textContent = t.getFullYear() + '. ' + pad(t.getMonth() + 1) + '. ' + pad(t.getDate()) + ' ' + W[t.getDay()];
+    $('gate').hidden = true; $('grid').hidden = false; $('foot').hidden = false;
+    var G = $('grid'); G.innerHTML = '';
+    (cards || []).forEach(function (c) {
+      var e = document.createElement('div'); e.className = 'c' + (c.quiet ? ' quiet' : '') + (c.over ? ' over' : '');
+      var k = document.createElement('div'); k.className = 'k'; k.textContent = c.k;
+      var v = document.createElement('div'); v.className = 'v'; v.textContent = c.v;
+      if (c.unit) { var u = document.createElement('small'); u.textContent = c.unit; v.appendChild(u); }
+      var s = document.createElement('div'); s.className = 's'; s.textContent = c.s || '';
+      e.appendChild(k); e.appendChild(v); e.appendChild(s);
+      if (c.pct != null) { var b = document.createElement('div'); b.className = 'bar'; b.innerHTML = '<i></i>'; b.firstChild.style.width = Math.round(c.pct * 100) + '%'; e.appendChild(b); }
+      G.appendChild(e);
+    });
+  }
+  // 칸마다 따로 읽는다 — 표가 없는 칸은 null(그 칸만 「없음」). 연결 · 플래너 선택 문제는 위로 던져 전체 안내
+  var HARD = { not_connected: 1, notion_revoked: 1, choose_planner: 1, no_planner: 1, protected_planner: 1 };
+  function soft(p) { return p.catch(function (e) { if (HARD[e.code]) throw e; return null; }); }
+  function load() {
+    var t = IDP.now(), day = iso(t), month = day.slice(0, 7), tz = t.getTimezoneOffset();
+    if (DEMO) {
+      cards = [todoCard({ items: [{ title: '기획안 초안 보내기', done: false, important: true }, { title: '운동 30분', done: true }, { title: '장보기', done: false }, { title: '책 20쪽', done: true }, { title: '메일 정리', done: true }] }),
+        habitCard({ habits: [{ name: '운동', done: true }, { name: '물 마시기', done: true }, { name: '책 읽기', done: false }, { name: '일기 쓰기', done: false }] }),
+        moneyCard({ count: 23, expense: 412300, income: 0, budget: 800000, used: 0.515 }),
+        noteCard({ items: [{ text: '다음 달 여행 숙소 후보 3곳 비교' }, { text: '세탁소 맡긴 코트 찾기' }, { text: '블로그 글감 — 아침 루틴' }] })];
+      render(); state('견본 · 노션과 연결하면 내 플래너의 오늘이 보여요'); return;
+    }
+    if (!S.base) return gate('노션 연결 준비 중이에요.');
+    if (!S.wid()) return gate('노션에 적어 둔 할 일 · 습관 · 가계부 · 메모를<br>다시 적지 않고 여기서 한 번에 봐요.', '노션과 연결하기');
+    var my = ++seq;
+    state('불러오는 중…');
+    return Promise.all([
+      soft(S.api('GET', '/v1/todo?date=' + day + '&tz=' + tz)),
+      soft(S.api('GET', '/v1/habits?date=' + day)),
+      soft(S.api('GET', '/v1/finance?month=' + month + '&tz=' + tz)),
+      soft(S.api('GET', '/v1/notes?show=open'))
+    ]).then(function (r) {
+      if (my !== seq) return;
+      cards = [todoCard(r[0]), habitCard(r[1]), moneyCard(r[2]), noteCard(r[3])];
+      var d = new Date(); state('노션에서 읽음 ' + pad(d.getHours()) + ':' + pad(d.getMinutes())); render();
+    }).catch(function (e) {
+      if (my !== seq) return;
+      state('');
+      if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기');
+      if (e.code === 'choose_planner') { gate('연결된 플래너가 여러 개예요. 이 위젯이 쓸 플래너를 골라 주세요.'); return S.choosePlanner($('gate'), load); }
+      if (e.code === 'no_planner') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
+      if (e.code === 'protected_planner') return gate('이 플래너는 읽을 수 없어요.');
+      state(e.message);
+    });
+  }
+  $('again').onclick = function () { load(); };
+  // 노션에서 적고 돌아오면 다시 읽는다
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && !DEMO && S.wid() && S.base) load(); });
+  IDP.options('todaysync', [{ k: 'label', label: '제목', ph: 'TODAY' }], function () { render(); });
+  load();
+</script>
+</body>
+</html>
