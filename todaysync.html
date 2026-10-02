@@ -29,6 +29,17 @@
   .foot button { padding: 0; border: 0; background: none; font-size: 10.5px; color: var(--sub); text-transform: none; letter-spacing: .02em; }
   .foot button:hover { color: var(--deep); }
   .state { font-size: 9.5px; color: var(--sub); letter-spacing: .04em; min-height: 12px; }
+  .c.wait .v { color: transparent; background: color-mix(in srgb, var(--deep) 10%, transparent); border-radius: 6px; width: 60%; }
+  .c.soft .v { font-size: 14px; color: var(--sub); }
+  /* 폰(좁은 폭) — 첫 화면을 덜 차지하게: 여백 · 글자 · 줄을 줄인다(오너 2026-10-02 「정보 밀도 · 목표를 밀어내지 않게」) */
+  @media (max-width: 440px) {
+    .head h2 { font-size: 17px; } .head .d { font-size: 11.5px; }
+    .grid { margin-top: 8px; gap: 5px; }
+    .c { padding: 7px 10px; border-radius: 10px; }
+    .c .v { margin-top: 2px; font-size: 16px; } .c .s { margin-top: 1px; font-size: 10px; min-height: 0; }
+    .c .bar { margin-top: 5px; height: 3px; }
+    .foot { margin-top: 4px; }
+  }
 </style>
 </head>
 <body>
@@ -63,30 +74,34 @@
   }
   // 칸 하나 = { k, v, unit, s, pct, quiet, over }
   function todoCard(d) {
-    if (!d) return { k: '할 일', v: '없음', quiet: true, s: '할 일 표를 찾지 못했어요' };
+    if (d === FAIL) return failCard('할 일');
+    if (!d) return { k: '할 일', v: '—', quiet: true, s: '할 일 목록을 찾지 못했어요' };
     var all = (d.items || []), left = all.filter(function (x) { return !x.done; });
-    if (!all.length) return { k: '할 일', v: '비어 있어요', quiet: true, s: '오늘 날짜의 할 일이 없어요' };
+    if (!all.length) return { k: '할 일', v: '아직 없어요', quiet: true, s: '오늘 할 일이 아직 없어요' };
     var first = left.filter(function (x) { return x.important; })[0] || left[0];
     return { k: '할 일', v: left.length ? String(left.length) : '다 했어요', unit: left.length ? '개 남음' : '', s: first ? first.title : all.length + '개 모두 끝냈어요', pct: (all.length - left.length) / all.length };
   }
   function habitCard(d) {
-    if (!d) return { k: '습관', v: '없음', quiet: true, s: '습관 표를 찾지 못했어요' };
+    if (d === FAIL) return failCard('습관');
+    if (!d) return { k: '습관', v: '—', quiet: true, s: '습관 목록을 찾지 못했어요' };
     var hs = d.habits || [], done = hs.filter(function (h) { return h.done; }).length;
-    if (!hs.length) return { k: '습관', v: '비어 있어요', quiet: true, s: '습관을 하나 만들어 보세요' };
+    if (!hs.length) return { k: '습관', v: '아직 없어요', quiet: true, s: 'HABIT 에서 습관을 하나 만들어 보세요' };
     var next = hs.filter(function (h) { return !h.done; })[0];
     return { k: '습관', v: done + ' / ' + hs.length, s: next ? '다음 · ' + (next.name || next.title || '') : '오늘 다 지켰어요', pct: done / hs.length };
   }
   function moneyCard(d) {
-    if (!d) return { k: '이번 달 지출', v: '없음', quiet: true, s: '가계부 표를 찾지 못했어요' };
-    if (!d.count) return { k: '이번 달 지출', v: won(0), quiet: true, s: '이번 달 적은 것이 없어요' };
+    if (d === FAIL) return failCard('이번 달 지출');
+    if (!d) return { k: '이번 달 지출', v: '—', quiet: true, s: '가계부를 찾지 못했어요' };
+    if (!d.count) return { k: '이번 달 지출', v: won(0), quiet: true, s: '이번 달에 적은 지출이 아직 없어요' };
     var c = { k: '이번 달 지출', v: won(d.expense), s: d.budget ? '예산의 ' + Math.round((d.used || 0) * 100) + '%' : (d.income ? '수입 ' + won(d.income) : d.count + '건') };
     if (d.budget) { c.pct = Math.min(1, d.used || 0); c.over = (d.used || 0) > 1; }
     return c;
   }
   function noteCard(d) {
-    if (!d) return { k: '메모', v: '없음', quiet: true, s: '메모 표를 찾지 못했어요' };
+    if (d === FAIL) return failCard('메모');
+    if (!d) return { k: '메모', v: '—', quiet: true, s: '메모 목록을 찾지 못했어요' };
     var n = (d.items || []).length;
-    if (!n) return { k: '메모', v: '0', unit: '개', quiet: true, s: '정리할 메모가 없어요' };
+    if (!n) return { k: '메모', v: '0', unit: '개', quiet: true, s: '정리할 메모가 없어요 — 깔끔해요' };
     return { k: '메모', v: String(n), unit: '개 정리 전', s: d.items[0].text || '' };
   }
   function render() {
@@ -96,7 +111,7 @@
     $('gate').hidden = true; $('grid').hidden = false; $('foot').hidden = false;
     var G = $('grid'); G.innerHTML = '';
     (cards || []).forEach(function (c) {
-      var e = document.createElement('div'); e.className = 'c' + (c.quiet ? ' quiet' : '') + (c.over ? ' over' : '');
+      var e = document.createElement('div'); e.className = 'c' + (c.quiet ? ' quiet' : '') + (c.over ? ' over' : '') + (c.wait ? ' wait' : '') + (c.soft ? ' soft' : '');
       var k = document.createElement('div'); k.className = 'k'; k.textContent = c.k;
       var v = document.createElement('div'); v.className = 'v'; v.textContent = c.v;
       if (c.unit) { var u = document.createElement('small'); u.textContent = c.unit; v.appendChild(u); }
@@ -108,7 +123,11 @@
   }
   // 칸마다 따로 읽는다 — 표가 없는 칸은 null(그 칸만 「없음」). 연결 · 플래너 선택 문제는 위로 던져 전체 안내
   var HARD = { not_connected: 1, notion_revoked: 1, choose_planner: 1, no_planner: 1, protected_planner: 1 };
-  function soft(p) { return p.catch(function (e) { if (HARD[e.code]) throw e; return null; }); }
+  // 표가 없는 옛 복제본(no_table · not_shared) = null(그 칸만 「—」), 잠깐의 오류(노션 지연 · 인터넷) = FAIL(그 칸만 「잠시 뒤 다시」) — 둘을 섞지 않는다
+  var FAIL = {};
+  function soft(p) { return p.catch(function (e) { if (HARD[e.code]) throw e; return (e.code === 'no_table' || e.code === 'not_shared' || e.code === 'no_habits') ? null : FAIL; }); }
+  function failCard(k) { return { k: k, v: '잠시 뒤 다시', soft: true, quiet: true, s: '노션이 잠깐 응답하지 않았어요 — 「새로 읽기」' }; }
+  function waitCards() { return ['할 일', '습관', '이번 달 지출', '메모'].map(function (k) { return { k: k, v: '…', wait: true, s: '' }; }); }
   function load() {
     var t = IDP.now(), day = iso(t), month = day.slice(0, 7), tz = t.getTimezoneOffset();
     if (DEMO) {
@@ -121,6 +140,7 @@
     if (!S.base) return gate('노션 연결 준비 중이에요.');
     if (!S.wid()) return gate('노션에 적어 둔 할 일 · 습관 · 가계부 · 메모를<br>다시 적지 않고 여기서 한 번에 봐요.', '노션과 연결하기');
     var my = ++seq;
+    if (!cards) { cards = waitCards(); render(); }   // 처음엔 빈 칸 모양 — 「없어요」를 먼저 보여 주지 않는다
     state('불러오는 중…');
     return Promise.all([
       soft(S.api('GET', '/v1/todo?date=' + day + '&tz=' + tz)),
