@@ -46,6 +46,16 @@
   .heat i { aspect-ratio: 1; }
   .legend { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 6px; font-size: 10px; color: var(--sub); }
   .legend b { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--tint); }
+  /* 주(REQ-030 · 2026-10-02) — 습관 × 이번 주 7일. 칸을 누르면 그날 체크(노션 그날 DAYS 「완료한 습관」) */
+  .wk { margin-top: 10px; display: grid; grid-template-columns: minmax(0, 1fr) repeat(7, 26px); gap: 6px 4px; align-items: center; }
+  .wk .wd { font-size: 10px; color: var(--sub); text-align: center; letter-spacing: .02em; }
+  .wk .wd.on { color: color-mix(in srgb, var(--deep) 80%, #2a2a2a); font-weight: 700; }
+  .wk .nm { font-size: 12.5px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 4px; }
+  .wk button { width: 22px; height: 22px; margin: 0 auto; padding: 0; border-radius: 50%; border: 1.5px solid color-mix(in srgb, var(--deep) 45%, transparent); background: var(--paper); letter-spacing: 0; text-transform: none; }
+  .wk button.y { background: var(--deep); border-color: var(--deep); }
+  .wk button.na { border-style: dashed; border-color: var(--line); cursor: default; }
+  .wk button.later { border-color: var(--line); background: transparent; cursor: default; }
+  .wk button.sel { box-shadow: 0 0 0 2px color-mix(in srgb, var(--deep) 30%, transparent); }
   .gate { margin-top: 16px; text-align: center; font-size: 11.5px; color: var(--sub); line-height: 1.8; }
   .gate svg.archie { display: block; width: 40px; height: 40px; margin: 0 auto 4px; color: var(--deep); }
   .gate button { margin-top: 10px; padding: 9px 18px; border-radius: 999px; background: var(--deep); color: #fff; border: 0; font-size: 12px; letter-spacing: .04em; text-transform: none; }
@@ -63,6 +73,7 @@
     <div class="views" id="views"></div>
     <div class="rings" id="rings" hidden></div>
     <div id="map" hidden><div class="heat" id="heat"></div><div class="legend"><span>적게</span><b></b><b class="l1"></b><b class="l2"></b><b class="l3"></b><b class="l4"></b><span>다 지킴</span></div></div>
+    <div class="wk" id="wk" hidden></div>
     <div class="list" id="list"></div>
     <div class="gate" id="gate" hidden></div>
     <div class="state" id="state"></div>
@@ -84,15 +95,49 @@
   var items = [], busy = 0, loaded = false, wrote = {};
   // 보기: 목록 | 링(REQ-017 — 습관마다 이번 주 횟수 ÷ 주간 목표를 겹친 링으로, 최대 5개). 이 기기의 보기 설정만 저장(기록 아님)
   var VKEY = 'idarchive.habitsync.view';
-  var VIEWS = ['list', 'ring', 'month'];
+  var VIEWS = ['list', 'ring', 'month', 'week'];
   var view = VIEWS.indexOf(IDP.q.get('view')) > 0 ? IDP.q.get('view') : (function () { try { var v = localStorage.getItem(VKEY); return VIEWS.indexOf(v) >= 0 ? v : 'list'; } catch (e) { return 'list'; } })();
   var monthData = null, monthKey = '';   // 달 보기: { total, days: [{ date, done }] } — 노션 DAYS 에서 읽은 값(위젯은 저장 안 함)
   var RING_ALPHA = [1, .78, .6, .44, .3];
+  var weekData = null, weekKey = '';   // 주 보기: { dates: [7], habits: [{ id, title, days: [true|false|null ×7] }] } — 노션 DAYS 에서 읽은 값
+  function wkStart(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() - (IDP.weekStart === 'sun' ? 0 : 1) + 7) % 7)); return x; }
+  function demoWeek() {
+    var a = wkStart(day), dates = [], now = IDP.now(); now.setHours(0, 0, 0, 0);
+    for (var i = 0; i < 7; i++) { var x = new Date(a); x.setDate(a.getDate() + i); dates.push(iso(x)); }
+    var pat = [[1, 1, 0, 1, 1, 0, 1], [1, 1, 1, 1, 1, 1, 0], [0, 1, 0, 0, 1, 0, 0], [1, 0, 1, 1, 0, 1, 1]];
+    var names = ['아침 스트레칭', '물 2L', '책 20쪽 읽기', '일기 쓰기'];
+    return { dates: dates, habits: names.map(function (n, h) { return { id: 'd' + h, title: n, days: dates.map(function (dt, i) { return new Date(dt + 'T00:00:00') > now ? false : !!pat[h][i]; }) }; }) };
+  }
+  function drawWeek() {
+    var K = $('wk'), show = view === 'week';
+    K.hidden = !show; if (!show) return;
+    K.innerHTML = '';
+    var dates = weekData ? weekData.dates : [], sel = iso(day), now = IDP.now(); now.setHours(0, 0, 0, 0);
+    K.appendChild(document.createElement('span'));
+    dates.forEach(function (d) { var e = document.createElement('div'); e.className = 'wd' + (d === sel ? ' on' : ''); e.textContent = W[new Date(d + 'T00:00:00').getDay()]; K.appendChild(e); });
+    (weekData ? weekData.habits : []).forEach(function (h) {
+      var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = h.title; K.appendChild(nm);
+      h.days.forEach(function (v, i) {
+        var d = dates[i], later = new Date(d + 'T00:00:00') > now, b = document.createElement('button'); b.type = 'button';
+        b.className = (later ? 'later' : v === null ? 'na' : v ? 'y' : '') + (d === sel ? ' sel' : '');
+        b.setAttribute('aria-label', h.title + ' ' + d + (v ? ' 체크함' : ' 체크 안 함'));
+        if (!later && v !== null) b.onclick = function () { tickWeek(h, i); };
+        K.appendChild(b);
+      });
+    });
+  }
+  function tickWeek(h, i) {
+    var before = h.days[i], date = weekData.dates[i]; h.days[i] = !before; render();
+    if (DEMO) return;
+    api('POST', '/v1/habits/check', { habit: h.id, date: date, done: h.days[i] })
+      .then(function () { wrote[h.id + '|' + date] = { done: h.days[i], until: Date.now() + 20000 }; })
+      .catch(function (e) { h.days[i] = before; render(); state(e.code === 'no_day' ? '이 날짜의 기록 페이지(DAYS)가 없어요.' : e.message); });
+  }
   function drawViews() {
     var V = $('views'); V.innerHTML = '';
-    [['list', '목록'], ['ring', '링'], ['month', '달']].forEach(function (x) {
+    [['list', '목록'], ['ring', '링'], ['week', '주'], ['month', '달']].forEach(function (x) {
       var b = document.createElement('button'); b.type = 'button'; b.textContent = x[1]; if (x[0] === view) b.className = 'on';
-      b.onclick = function () { var was = view; view = x[0]; try { localStorage.setItem(VKEY, view); } catch (e) {} render(); if ((was === 'month') !== (view === 'month')) load(); };
+      b.onclick = function () { var was = view; view = x[0]; try { localStorage.setItem(VKEY, view); } catch (e) {} render(); if (was !== view && (was === 'month' || view === 'month' || was === 'week' || view === 'week')) load(); };
       V.appendChild(b);
     });
   }
@@ -167,7 +212,14 @@
 
   function render(skipList) {
     $('title').textContent = IDP.opt('habitsync', 'label', 'HABIT');
-    $('day').textContent = view === 'month' ? day.getFullYear() + '년 ' + (day.getMonth() + 1) + '월' : (day.getMonth() + 1) + '월 ' + day.getDate() + '일 (' + W[day.getDay()] + ')';
+    var ws = wkStart(day), we = new Date(ws); we.setDate(ws.getDate() + 6);
+    $('day').textContent = view === 'month' ? day.getFullYear() + '년 ' + (day.getMonth() + 1) + '월'
+      : view === 'week' ? (ws.getMonth() + 1) + '월 ' + ws.getDate() + '일 – ' + (we.getMonth() !== ws.getMonth() ? (we.getMonth() + 1) + '월 ' : '') + we.getDate() + '일'
+      : (day.getMonth() + 1) + '월 ' + day.getDate() + '일 (' + W[day.getDay()] + ')';
+    if (view === 'week' && weekData) {   // 위 막대 = 고른 날(기본 오늘) 지킨 습관 ÷ 습관 수
+      var ix = weekData.dates.indexOf(iso(day)), hs = weekData.habits;
+      items = hs.map(function (h) { return { id: h.id, title: h.title, done: ix >= 0 && h.days[ix] === true }; });
+    }
     var done = items.filter(function (i) { return i.done; }).length, n = items.length;
     $('left').textContent = n ? done + ' / ' + n : '';
     $('barI').style.width = n ? Math.round(done / n * 100) + '%' : '0';
@@ -175,8 +227,8 @@
     drawViews(); drawRings();
     var L = $('list'); L.innerHTML = '';
     $('barI').parentNode.hidden = view === 'month';
-    drawMap();
-    if (view === 'month') return;
+    drawMap(); drawWeek();
+    if (view === 'month' || view === 'week') return;
     items.forEach(function (it, i) {
       var row = document.createElement('div'); row.className = 'it' + (it.done ? ' done' : '');
       if (view === 'ring' && i < 5) { var dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = 'color-mix(in srgb, var(--deep) ' + Math.round(RING_ALPHA[i] * 100) + '%, transparent)'; row.appendChild(dot); }
@@ -207,6 +259,22 @@
         state(e.message);
       });
     }
+    if (view === 'week') {
+      var wk = iso(wkStart(day));
+      if (DEMO) { weekData = demoWeek(); weekKey = wk; loaded = true; render(); state('견본 · 노션과 연결하면 내 습관이 한 주로 보여요'); return; }
+      if (!SYNC) return gate('노션 연결 준비 중이에요.');
+      if (!wid()) return gate('노션의 습관 표(HABITS)와 이어지는 위젯이에요.<br>이번 주 7일에 지킨 습관이 한눈에 — 칸을 누르면 그날 체크돼요.', '노션과 연결하기');
+      if (weekKey !== wk) { weekData = null; render(); state('불러오는 중…'); }
+      return api('GET', '/v1/habits/week?date=' + iso(day) + '&start=' + (IDP.weekStart === 'sun' ? 'sun' : 'mon')).then(function (d) {
+        var now = Date.now();
+        d.habits.forEach(function (h) { h.days = h.days.map(function (v, i) { var p = wrote[h.id + '|' + d.dates[i]]; return p && now < p.until && v !== null ? p.done : v; }); });
+        weekData = d; weekKey = wk; loaded = true; state(''); render();
+      }).catch(function (e) {
+        if (e.code === 'not_connected' || e.code === 'notion_revoked') return gate('노션 연결이 끊겼어요.', '다시 연결하기'); if (e.code === 'choose_planner') { gate('연결된 플래너가 여러 개예요. 이 위젯이 쓸 플래너를 골라 주세요.'); return S.choosePlanner($('gate'), load); }
+        if (e.code === 'not_shared' || e.code === 'no_habits') return gate('플래너 페이지를 노션 연결 목록에 넣어 주세요.', '다시 연결하기');
+        state(e.message);
+      });
+    }
     if (DEMO) { loaded = true; if (!items.length) items = [{ id: 'a', title: '책 20쪽 읽기', done: true, week: 3, goal: 5, streak: 4, dots: '●●●○○' }, { id: 'b', title: '물 2L', done: false, week: 5, goal: 7, streak: 0, dots: '●●●●●○○' }, { id: 'c', title: '스트레칭', done: false, week: 1, goal: 3, streak: 0, dots: '●○○' }]; render(); state('견본 · 노션과 연결하면 내 습관이 보여요'); return; }
     if (!SYNC) return gate('노션 연결 준비 중이에요.');
     if (!wid()) return gate('노션의 습관 표(HABITS)와 이어지는 위젯이에요.<br>여기서 체크하면 노션에도, 노션에서 체크하면 여기에도 보여요.', '노션과 연결하기');
@@ -232,6 +300,7 @@
   }
   function move(n) {
     if (view === 'month') { if (n) { day.setDate(1); day.setMonth(day.getMonth() + n); } monthData = null; render(); return load(); }
+    if (view === 'week') { day.setDate(day.getDate() + 7 * n); render(); return load(); }
     day.setDate(day.getDate() + n); if (!DEMO) { items = []; loaded = false; } render(); load();
   }
   $('prev').onclick = function () { move(-1); };
