@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>ID PLANNER R2 Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+  /* Layout: one screen-first column — each view = short label + what to judge + the real Notion capture */
+  :root {
+    --bg: #fbf9f5; --panel: #ffffff; --ink: #2f2a25; --sub: #7c7368; --line: #e8e1d6; --accent: #9a7b55; --chip: #f3ede3;
+    --display: 'Cormorant Garamond', Georgia, serif; --body: 'Noto Sans KR', 'Malgun Gothic', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #1d1b18; --panel: #26231f; --ink: #ece6dc; --sub: #a99f92; --line: #3a352f; --accent: #c9a77c; --chip: #312c26; color-scheme: dark } }
+  :root[data-theme="dark"] { --bg: #1d1b18; --panel: #26231f; --ink: #ece6dc; --sub: #a99f92; --line: #3a352f; --accent: #c9a77c; --chip: #312c26; color-scheme: dark }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); line-height: 1.7; padding-inline: 16px; }
+  main { max-width: 1080px; margin: 0 auto; padding-block: 36px 80px; display: grid; gap: 30px; }
+  h1 { font-family: var(--display); font-weight: 600; font-size: clamp(30px, 5vw, 44px); letter-spacing: .04em; margin: 0; text-wrap: balance; }
+  h2 { font-size: 17px; margin: 0; text-wrap: balance; letter-spacing: .02em; }
+  .lead { color: var(--sub); max-width: 70ch; margin: 6px 0 0; font-size: 14px; }
+  .quick { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: grid; gap: 10px; }
+  .links { display: flex; flex-wrap: wrap; gap: 8px; }
+  .links a { font-size: 13px; padding: 5px 11px; border-radius: 999px; background: var(--chip); color: var(--ink); text-decoration: none; border: 1px solid var(--line); }
+  .links a:hover, .links a:focus-visible { border-color: var(--accent); outline: none; }
+  .toc { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; }
+  .toc a { color: var(--sub); }
+  .item { display: grid; gap: 10px; scroll-margin-top: 16px; }
+  .head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .idx { font-family: var(--display); font-size: 22px; color: var(--accent); font-variant-numeric: tabular-nums; min-width: 2ch; }
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--chip); color: var(--sub); }
+  .item p { margin: 0; color: var(--sub); max-width: 76ch; font-size: 14px; }
+  .pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; align-items: start; }
+  figure { margin: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel); min-width: 0; }
+  figure img { display: block; width: 100%; height: auto; }
+  figcaption { font-size: 12px; color: var(--sub); padding: 6px 10px; border-top: 1px solid var(--line); }
+  .tall { max-height: 900px; overflow-y: auto; }
+  footer { color: var(--sub); font-size: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>ID PLANNER · R2 REVIEW</h1>
+    <p class="lead">2026-10-06 디자인 패스. 🎬 DEMO 에만 반영 · 🛒 판매본 그대로. 판단할 것: 예쁜가 · 정돈됐나 · 쓰기 쉬운가 · 팔 만한가 · 페이지마다 목적이 보이는가. 고칠 점은 노션 「2️⃣ 노션 템플릿 자동화」에.</p>
+  </header>
+
+  <section class="quick" aria-label="바로 확인하기">
+    <h2>바로 확인하기 — DEMO</h2>
+    <div class="links">
+      <a href="https://app.notion.com/p/3df3570369b781ecb344e45e613e144a">HOME</a>
+      <a href="https://app.notion.com/p/8713570369b78326952b812ce2dbf60d">GOALS</a>
+      <a href="https://app.notion.com/p/6343570369b7825a9e5b01c9845f5d9b">MONTHLY</a>
+      <a href="https://app.notion.com/p/b3e3570369b783378c8c01e5500d47f1">WEEKLY</a>
+      <a href="https://app.notion.com/p/adb0d69da5744775b70ab9d80b557297">WORK · 프로젝트 폴더</a>
+      <a href="https://app.notion.com/p/2bf05d7e0eec49fc83590872d1fdef24">HOME 폰</a>
+      <a href="https://app.notion.com/p/3f03570369b781d280a5eb494e7affbc">🧪 테마 · 사진 시험 페이지</a>
+    </div>
+    <nav class="toc" aria-label="목차">
+      <a href="#home">HOME FULL</a><a href="#left">LEFT · CENTER · RIGHT</a><a href="#menu">TOP MENU</a>
+      <a href="#ivory">IVORY</a><a href="#themes">BLUE · LAVENDER · CUSTOM</a><a href="#custom">CUSTOM HEX</a><a href="#photo">USER PHOTO · RESET</a>
+      <a href="#monthly">MONTHLY</a><a href="#weekly">WEEKLY</a><a href="#goals">GOALS</a><a href="#mobile">MOBILE</a>
+    </nav>
+  </section>
+
+  <article class="item" id="home">
+    <div class="head"><span class="idx">1</span><h2>HOME · FULL</h2><span class="tag">DEMO 실제 화면</span></div>
+    <p>맨 위 페이지 사진 띠 → 메뉴 → 세 구역. 가운데는 DB 목록이 아니라 모듈 카드(작은 선 아이콘 · 제목 · 한 줄 요약 · 내용 · 그 일의 버튼). 세 열의 끝 높이를 맞췄습니다.</p>
+    <figure class="tall"><img src="home-full-desktop.jpg" alt="HOME 전체" loading="lazy"></figure>
+  </article>
+
+  <article class="item" id="left">
+    <div class="head"><span class="idx">2</span><h2>HOME · LEFT · CENTER · RIGHT</h2></div>
+    <p>LEFT = 프로필 · 빠른 버튼 3개 · 짧은 길잡이(메뉴 카드와 겹치는 링크 없음) · 밝은 MOOD 사진. CENTER = TODAY → HABIT → CURRENT GOAL · CURRENT FOCUS(각 모듈 안에 「+ 할 일 · + 습관 · + 목표」). RIGHT = 시계 · 미니 달력 · D-day · 진행률 · VISION — 큰 달 달력 · 날씨 · 음악 · 읽는 중은 HOME 에서 빼고 각 페이지로(휴지통 보관).</p>
+    <div class="pair">
+      <figure><img src="home-left.jpg" alt="왼쪽" loading="lazy"><figcaption>LEFT</figcaption></figure>
+      <figure><img src="home-center.jpg" alt="가운데" loading="lazy"><figcaption>CENTER</figcaption></figure>
+      <figure><img src="home-right.jpg" alt="오른쪽" loading="lazy"><figcaption>RIGHT</figcaption></figure>
+    </div>
+  </article>
+
+  <article class="item" id="menu">
+    <div class="head"><span class="idx">3</span><h2>TOP MENU DETAIL</h2></div>
+    <p>실측(1568px 창): 9장 모두 그림 가운데 = 카드 가운데(차이 0px), 이름 기준선 같은 높이(156px), 카드 273 × 186 동일. 이름은 노션 갤러리가 가운데 정렬을 못 해 왼쪽 같은 여백 — 우리 위젯 메뉴로 바꾸면 가운데가 되지만 「사진 눌러 바꾸기」와 노션 안 이동이 깨져서 노션 갤러리를 유지했습니다. 끝의 「+ 새 페이지」 칸도 노션이 숨기지 못하는 칸입니다.</p>
+    <figure><img src="menu-detail.jpg" alt="메뉴" loading="lazy"></figure>
+  </article>
+
+  <article class="item" id="ivory">
+    <div class="head"><span class="idx">4</span><h2>IVORY</h2></div>
+    <p>큰 면 = 흰색 · 아주 옅은 아이보리, 카드 = 거의 흰색, 테마 색은 아이콘 칩 · 오늘 날짜 · 띠의 포인트 선만. 왼쪽 MOOD 의 진한 모래색 사진을 밝은 책상 사진으로 바꿨습니다.</p>
+    <figure><img src="ivory-before-after.jpg" alt="아이보리 전후" loading="lazy"></figure>
+  </article>
+
+  <article class="item" id="themes">
+    <div class="head"><span class="idx">5</span><h2>IVORY · BLUE · LAVENDER · CUSTOM #8A5A3C</h2><span class="tag">BUYER QA 실제 노션</span></div>
+    <p>같은 시험 페이지를 테마만 바꿔 찍었습니다. 사진은 그대로, 면 · 포인트 · 메뉴 그림만 그 색. 구매자 사진(작은 침대 사진 · TRAVEL)은 그대로.</p>
+    <figure><img src="theme-compare.jpg" alt="테마 비교" loading="lazy"></figure>
+  </article>
+
+  <article class="item" id="custom">
+    <div class="head"><span class="idx">6</span><h2>CUSTOM HEX DETAIL</h2></div>
+    <p>포인트 = 고른 HEX 그대로(오늘 날짜 · 주간 칩 · 띠의 선 · 메뉴 그림 아치 밑 선) · 큰 면 = 그 HEX 에서 만든 아주 옅은 색 · 노션 블록 바탕만 가장 가까운 노션 색.</p>
+    <figure><img src="custom-hex-4.jpg" alt="나만의 색 4가지" loading="lazy"></figure>
+  </article>
+
+  <article class="item" id="photo">
+    <div class="head"><span class="idx">7</span><h2>USER PHOTO · RESET DEFAULT</h2></div>
+    <p>구매자 사진은 어떤 색에서도 그대로(사진 · 이름 · 누르면 가는 곳). 지우면 「지금 테마」의 기본 그림으로 — Custom → 파랑 → 아이보리 순서로 확인.</p>
+    <figure><img src="user-photo-reset.jpg" alt="사진 유지 · 되돌리기" loading="lazy"></figure>
+  </article>
+
+  <article class="item" id="monthly">
+    <div class="head"><span class="idx">8</span><h2>MONTHLY</h2></div>
+    <p>달력 카드는 큰 흰 면(회색 상자 아님) · 제목만 테마 색. 아래 부분은 HOME 과 같은 모듈 카드로 나눴습니다(THIS MONTH · 이 달의 목표 · 프로젝트 · 중요한 날 · 기록 · 돌아보기). 맨 위 큰 사진은 노션 AI 로 만든 업로드 파일(우리 자동화 아님)이라 그대로 두고, 겹치던 우리 띠는 MONTHLY 에서만 뺐습니다.</p>
+    <div class="pair">
+      <figure><img src="monthly-top.jpg" alt="MONTHLY 위" loading="lazy"><figcaption>위 · 달력 카드</figcaption></figure>
+      <figure><img src="monthly-modules.jpg" alt="MONTHLY 모듈" loading="lazy"><figcaption>아래 · 모듈 카드 + 관련 위젯</figcaption></figure>
+    </div>
+  </article>
+
+  <article class="item" id="weekly">
+    <div class="head"><span class="idx">9</span><h2>WEEKLY</h2></div>
+    <p>계획 리듬 사진 띠 · 이번 주 요일별 보드 카드(제목 한 번만) · 아래 섹션은 모듈 카드.</p>
+    <figure><img src="weekly.jpg" alt="WEEKLY" loading="lazy"></figure>
+  </article>
+
+  <article class="item" id="goals">
+    <div class="head"><span class="idx">10</span><h2>GOALS</h2></div>
+    <p>지평선 사진 띠 · GOAL OVERVIEW 모듈 · 오른쪽은 목표 진행률 · D-day · FOCUS · VISION(핀 사진) · 로드맵. 왼쪽 「이 페이지」 목록은 각 모듈로 가는 링크.</p>
+    <figure class="tall"><img src="goals.jpg" alt="GOALS" loading="lazy"></figure>
+  </article>
+
+  <article class="item" id="mobile">
+    <div class="head"><span class="idx">11</span><h2>MOBILE 390</h2></div>
+    <p id="mobile-note">오늘 디자인 변경 뒤 다시 검사: 폰 페이지 5개 + 데스크톱 HOME · GOALS · MONTHLY · WEEKLY 를 375 · 390 · 430 에서 — 가로로 넘치는 요소 0(옆으로 넘기는 보드 · 갤러리 안은 노션이 일부러 옆으로 넘김). 폰 페이지의 회색 소제목 막대 46개를 데스크톱과 같은 모듈 머리(아이콘 · 제목)로 바꿨습니다.</p>
+    <figure><img src="mobile-390.jpg" alt="폰 390" loading="lazy"></figure>
+  </article>
+
+  <footer>기술 검사(짧게): 테마 E2E 97/97 · Custom HEX 4색 70/70 · 사진 유지/되돌리기 42/42 · 자동 테스트 230. 사진 권리: CC0(StockSnap) — docs/MOOD_PHOTO_MANIFEST.md.</footer>
+</main>
+</body>
+</html>
