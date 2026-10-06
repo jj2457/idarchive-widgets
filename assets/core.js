@@ -387,6 +387,8 @@
           return;
         }
         if (!confirm('플래너 전체를 ' + gname(sp) + '(으)로 바꿀까요?\n커버 · 맨 위 이미지 · 메뉴 그림 · 아이콘 · 위젯 · 달력 색이 함께 바뀌어요.\n내가 넣은 사진 · 기록은 그대로예요.')) return;
+        // 이 기기에서 새로 넣는 위젯(＋ ADD WIDGET · 색이 안 적힌 위젯)도 같은 색을 따르게 이 기기의 전체 색도 함께 저장
+        try { var cur = saved() || {}; cur.theme = sp.custom ? '' : sp.theme; cur.soft = sp.custom ? sp.custom.deep.slice(1) : ''; cur.deep = cur.soft; localStorage.setItem(STORE, JSON.stringify(cur)); } catch (e) {}
         gbusy = true; gnote('플래너 전체를 바꾸는 중…');
         S.applyGlobal(sp.custom ? { custom: sp.custom } : { theme: sp.theme }, function (d) {
           var p = d.progress || {};
