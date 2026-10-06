@@ -57,8 +57,10 @@
     document.getElementById('n').textContent = '';
     ['stage', 'dots', 'cap'].forEach(function (id) { document.getElementById(id).hidden = true; });
     var wall = document.getElementById('wall'); wall.hidden = false; wall.innerHTML = '';
-    // R6 (2026-10-06): 좁은 칸(HOME 오른쪽 ≈ 230px)에서는 여섯 장도 두 줄 — 세 줄이면 사진이 우표만 해진다
-    wall.style.setProperty('--cols', pins.length <= 1 ? 1 : (pins.length <= 4 || window.innerWidth < 300) ? 2 : 3);
+    // R6 (2026-10-06): 칸 수는 상자에 맞는지로 정한다 — 넓은 페이지(VISION)는 세 줄, 좁은 칸(HOME 오른쪽)은 두 줄을 먼저 해 보고
+    // 상자 높이를 넘을 때만 세 줄(노션 임베드 높이는 고정 · 폭만 화면 따라 바뀜 → 폭만 보고 정하면 1920px 에서 사진이 우표만 해짐)
+    var prefer = pins.length <= 1 ? 1 : pins.length <= 4 ? 2 : (window.innerWidth < 420 ? 2 : 3);
+    wall.style.setProperty('--cols', prefer);
     if (!pins.length) { wall.innerHTML = '<div class="empty2">⚙ 에서 「사진 고르기」로 사진을 넣으면<br>벽에 핀으로 꽂은 것처럼 보여요</div>'; return; }
     var ROT = [-3.2, 2.4, -1.4, 3, -2.2, 1.6];
     pins.forEach(function (p, k) {
@@ -67,6 +69,20 @@
       d.querySelector('i').textContent = p.cap;
       wall.appendChild(d);
     });
+    if (prefer === 2 && pins.length > 4) {
+      var fits = function () { var l = wall.lastElementChild; return !l || l.getBoundingClientRect().bottom <= window.innerHeight - 6; };
+      var imgs = wall.querySelectorAll('img'), left = imgs.length;
+      // 두 줄이 넘치면 사진을 줄여 상자 높이에 맞춘다(세 줄로 바꾸면 넓은 화면에서 아래가 비어 보임)
+      var check = function () {
+        if (fits()) return;
+        var rows = Math.ceil(pins.length / 2), avail = window.innerHeight - wall.getBoundingClientRect().top - 12;
+        var rowH = (avail - (rows - 1) * 14) / rows, w = Math.floor((rowH - 24) / 1.12 + 12);
+        if (w < 70) { wall.style.setProperty('--cols', 3); return; }
+        wall.style.gridTemplateColumns = 'repeat(2, ' + w + 'px)'; wall.style.justifyContent = 'center';
+      };
+      check();
+      imgs.forEach(function (im) { if (im.complete) { left--; return; } im.addEventListener('load', function () { if (--left <= 0) check(); }); });
+    }
   }
   function render() {
     if (PIN) return renderPin();
