@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
-<title>ID PLANNER R2 Review</title>
+<title>ID PLANNER Review</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@400;500;700&display=swap">
 <style>
@@ -37,12 +37,20 @@
   figcaption { font-size: 12px; color: var(--sub); padding: 6px 10px; border-top: 1px solid var(--line); }
   .tall { max-height: 900px; overflow-y: auto; }
   footer { color: var(--sub); font-size: 12px; }
+  .r5 { display: grid; gap: 30px; padding: 22px 0 8px; border-bottom: 1px solid var(--line); }
+  .r5head h2 { font-size: 20px; }
+  .tag.ok { background: color-mix(in srgb, #4f8a5b 14%, var(--chip)); color: color-mix(in srgb, #2f6b3c 80%, var(--ink)); }
+  .crit { border-collapse: collapse; width: 100%; font-size: 13px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .crit th, .crit td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .crit th { color: var(--sub); font-weight: 500; }
+  .crit td:nth-child(2) { white-space: nowrap; font-weight: 500; }
+  @media (max-width: 560px) { .crit td:nth-child(3) { min-width: 160px; } }
 </style>
 </head>
 <body>
 <main>
   <header>
-    <h1>ID PLANNER · R2 REVIEW</h1>
+    <h1>ID PLANNER · REVIEW</h1>
     <p class="lead">2026-10-06 디자인 패스. 🎬 DEMO 에만 반영 · 🛒 판매본 그대로. 판단할 것: 예쁜가 · 정돈됐나 · 쓰기 쉬운가 · 팔 만한가 · 페이지마다 목적이 보이는가. 고칠 점은 노션 「2️⃣ 노션 템플릿 자동화」에.</p>
   </header>
 
@@ -56,12 +64,107 @@
       <a href="https://app.notion.com/p/adb0d69da5744775b70ab9d80b557297">WORK · 프로젝트 폴더</a>
       <a href="https://app.notion.com/p/2bf05d7e0eec49fc83590872d1fdef24">HOME 폰</a>
       <a href="https://app.notion.com/p/3f03570369b781d280a5eb494e7affbc">🧪 테마 · 사진 시험 페이지</a>
+      <a href="https://app.notion.com/p/71f3570369b78341b5a1014afab1d2e0">VISION</a>
+      <a href="https://app.notion.com/p/3ed3570369b781a08178dae33da22b57">FITNESS</a>
+      <a href="https://app.notion.com/p/8ac3570369b7824aa14c81f41f6fbd49">CUSTOM · HOME 추가 모듈</a>
+      <a href="https://app.notion.com/p/df522555e56a403a9266524b12dbbc00">🧪 메뉴 시제품 (사진 섞기)</a>
     </div>
     <nav class="toc" aria-label="목차">
+      <a href="#r5-menu">R5 MENU A→C</a><a href="#r5-photo">USER PHOTO</a><a href="#r5-fitness">FITNESS</a><a href="#r5-vision">VISION</a><a href="#r5-mobile">R5 MOBILE</a><a href="#r5-critique">HOME 검토</a><a href="#r5-modules">뺀 위젯</a>
       <a href="#home">HOME FULL</a><a href="#left">LEFT · CENTER · RIGHT</a><a href="#menu">TOP MENU</a>
       <a href="#ivory">IVORY</a><a href="#themes">BLUE · LAVENDER · CUSTOM</a><a href="#custom">CUSTOM HEX</a><a href="#photo">USER PHOTO · RESET</a>
       <a href="#monthly">MONTHLY</a><a href="#weekly">WEEKLY</a><a href="#goals">GOALS</a><a href="#mobile">MOBILE</a>
     </nav>
+  </section>
+
+  <section class="r5" id="r5" aria-label="R5">
+    <div class="r5head">
+      <h2>R5 · 2026-10-06 — 메뉴 가운데 정렬 · VISION · FITNESS · 폰</h2>
+      <p class="lead">🎬 DEMO 에만 반영 · 🛒 판매본 그대로(승인 전 옮기지 않음). 아래 R2 화면은 그 전 기록입니다.</p>
+    </div>
+
+    <article class="item" id="r5-menu">
+      <div class="head"><span class="idx">R5·1</span><h2>MENU · 지금(A) → 새 그림 메뉴(C)</h2><span class="tag ok">그림 가운데 = 이름 가운데 = 칸 가운데</span></div>
+      <p>A(갤러리)는 이름이 왼쪽에 붙고 「+ 새 페이지」 · 파란 「새로 만들기」가 늘 보였습니다. C는 노션 그림 블록(누르면 그 페이지로 · 복제해도 새 페이지를 따라감) + 가운데 이름표. 10칸 모두 칸 가운데와 0px 차이(데스크톱), 폰 375 · 390 · 430 에서도 0px. 아래 확대: A 는 이름이 칸 가운데보다 70px 왼쪽, C 는 0.5px.</p>
+      <figure><img src="r5-menu-zoom.jpg" alt="메뉴 정렬 확대 비교" loading="lazy"><figcaption>초록 = 칸 가운데 · 주황 = 이름 글자 가운데</figcaption></figure>
+      <div class="pair">
+        <figure><img src="r5-menu-a.jpg" alt="A 지금 갤러리" loading="lazy"><figcaption>A · 지금(갤러리)</figcaption></figure>
+        <figure><img src="r5-menu-c.jpg" alt="C 새 그림 메뉴" loading="lazy"><figcaption>C · DEFAULT MENU (DEMO HOME)</figcaption></figure>
+      </div>
+    </article>
+
+    <article class="item" id="r5-photo">
+      <div class="head"><span class="idx">R5·2</span><h2>USER PHOTO MIX · ALL USER PHOTO</h2><span class="tag ok">사진 바꾸기 → 끝</span></div>
+      <p>사진 바꾸기: 그림에 마우스 → ⋯ → 「바꾸기」 → 내 사진. 이름 · 누르면 가는 곳 · 가운데 · 칸 크기 그대로. 칸은 4:3 — 가로 사진(폰 가로 4:3 · 3:2 · 16:9)은 꽉 차고 가운데. <b>세로 사진은 노션 그림 블록이 자르기를 못 해서 칸보다 좁게 · 왼쪽으로</b> 보입니다(FINANCE 칸이 세로 사진 예). 기본 그림으로 되돌리기: 그 사진 설명에 「기본」을 적고 테마 적용 → 지금 테마의 그 칸 그림으로(BUYER QA 실제 시험 통과).</p>
+      <div class="pair">
+        <figure><img src="r5-photo-mix.jpg" alt="사진 섞임" loading="lazy"><figcaption>USER PHOTO MIX (BUYER QA)</figcaption></figure>
+        <figure><img src="r5-photo-all.jpg" alt="모두 사진" loading="lazy"><figcaption>ALL USER PHOTO — FINANCE 만 세로 사진</figcaption></figure>
+      </div>
+      <div class="pair">
+        <figure><img src="r5-menu-blue.jpg" alt="파랑 테마" loading="lazy"><figcaption>테마 파랑 적용 — 기본 그림 · 이름표 색이 따라가고 사진은 그대로</figcaption></figure>
+        <figure><img src="r5-menu-phone.jpg" alt="폰" loading="lazy"><figcaption>폰 375 · 390 · 430 — 그림이 칸을 꽉 채워 이름과 같은 가운데</figcaption></figure>
+      </div>
+    </article>
+
+    <article class="item" id="r5-fitness">
+      <div class="head"><span class="idx">R5·3</span><h2>FITNESS — 움직임 페이지</h2><span class="tag">DEMO</span></div>
+      <p>왼쪽 흰 안내 칸을 빼고, 맨 위를 「오늘 운동 · 이번 주 움직임 · ACTIVITY DAYS(운동한 날 달력)」 한 줄로. 그 아래 건강 목표 진행률, 운동 기록 · 한 달씩.</p>
+      <div class="pair">
+        <figure><img src="r5-fitness-top.jpg" alt="FITNESS 위" loading="lazy"></figure>
+        <figure><img src="r5-fitness-low.jpg" alt="FITNESS 아래" loading="lazy"></figure>
+      </div>
+    </article>
+
+    <article class="item" id="r5-vision">
+      <div class="head"><span class="idx">R5·4</span><h2>VISION — 꿈 · 장면 페이지</h2><span class="tag">DEMO</span></div>
+      <p>페이지 전체 폭. 큰 핀 무드보드(6장 · 삶의 영역별 한 장, 카드 없이 벽에 꽂힌 모양) + 목표 진행률, 그 아래 LIFE AREAS 사진 카드 띠, 1 · 5 · 10년 목표(예시 목표의 잎 그림 표지 → 뜻에 맞는 CC0 사진).</p>
+      <div class="pair">
+        <figure><img src="r5-vision.jpg" alt="VISION LIFE AREAS · 목표" loading="lazy"><figcaption>LIFE AREAS 띠 · 1년 목표(사진 표지)</figcaption></figure>
+        <figure><img src="r5-vision-pins.jpg" alt="핀 무드보드" loading="lazy"><figcaption>핀 무드보드 — 카드 없이 벽에 꽂힌 모양(위젯 단독 화면)</figcaption></figure>
+      </div>
+      <p>HOME 오른쪽 위 시계는 같은 플립 모양의 밝은 버전으로 바꿨습니다(노션 쪽 반영 완료 — 화면 캡처는 다음 확인 때 함께).</p>
+    </article>
+
+    <article class="item" id="r5-mobile">
+      <div class="head"><span class="idx">R5·5</span><h2>MOBILE · 6 페이지 다시 보기 (375 · 390 · 430)</h2><span class="tag ok">넘침 0 · 6쪽 × 3폭</span></div>
+      <p>TODAY · HABIT · WORK · FINANCE · UNIV · ARCHIVE 모두 옆 넘침 없음. 고친 것: FINANCE 「남은 예산」 숫자가 375 · 390 에서 잘려 「2414」처럼 보이던 것(실제 241,400) → 칸 폭을 맞춰 끝까지 보임 · 옆 칸 금액 조각(「₩40」)이 안 보이게. 한글 모듈 제목 자간(「작 은 습 관」 → 「작은 습관」). GOALS 실천 보드 · 목표 보드 · 프로젝트는 칸을 좁혀 375 에서 다음 칸이 살짝 보이게(옆으로 밀 수 있다는 표시).</p>
+      <div class="pair">
+        <figure><img src="r5-mobile-finance.jpg" alt="FINANCE 폰" loading="lazy"><figcaption>FINANCE — 241400 · 합계 431100 끝까지</figcaption></figure>
+        <figure><img src="r5-mobile-goals-board.jpg" alt="GOALS 보드 폰" loading="lazy"><figcaption>GOALS 실천 보드 — 375 에서 다음 칸이 보임</figcaption></figure>
+      </div>
+      <div class="pair">
+        <figure><img src="r5-mobile-daily.jpg" alt="DAILY 폰" loading="lazy"><figcaption>TODAY(DAILY) 첫 화면</figcaption></figure>
+        <figure><img src="r5-mobile-habit.jpg" alt="HABIT 폰" loading="lazy"><figcaption>HABIT</figcaption></figure>
+        <figure><img src="r5-mobile-work.jpg" alt="WORK 폰" loading="lazy"><figcaption>WORK</figcaption></figure>
+        <figure><img src="r5-mobile-univ.jpg" alt="UNIV 폰" loading="lazy"><figcaption>UNIV</figcaption></figure>
+        <figure><img src="r5-mobile-archive.jpg" alt="ARCHIVE 폰" loading="lazy"><figcaption>ARCHIVE</figcaption></figure>
+      </div>
+    </article>
+
+    <article class="item" id="r5-critique">
+      <div class="head"><span class="idx">R5·6</span><h2>HOME 자체 검토 — KEEP · WEAK · FIX</h2></div>
+      <table class="crit">
+        <tr><th>항목</th><th>판정</th><th>R5</th></tr>
+        <tr><td>첫 화면</td><td>KEEP</td><td>제목 · 사진 띠 · 메뉴 첫 줄. 메뉴가 갤러리보다 약 190px 높아 TODAY 가 조금 아래로</td></tr>
+        <tr><td>L · C · R 위계</td><td>KEEP</td><td>왼쪽 나 · 빠르게 적기 · 길잡이 / 가운데 TODAY · HABIT · 목표 · 포커스 / 오른쪽 시계 · 달력 · D-day · 진행률 · VISION</td></tr>
+        <tr><td>시선 중심</td><td>FIX</td><td>짙은 차콜 플립 시계가 페이지에서 가장 어두운 덩어리 → 같은 플립 모양의 밝은 버전(테마 옅은 면 · 진한 숫자)</td></tr>
+        <tr><td>빈 공간 · 열 끝</td><td>KEEP</td><td>세 열 끝 높이 차 30px 안쪽</td></tr>
+        <tr><td>카드 밀도</td><td>KEEP</td><td>TODAY 두 목록 + 버튼</td></tr>
+        <tr><td>사진 배치</td><td>KEEP</td><td>위(띠) · 왼쪽 아래(MOOD) · 오른쪽 아래(VISION)</td></tr>
+        <tr><td>모듈 리듬</td><td>KEEP</td><td>큰 TODAY → 가로 HABIT → 반반 GOAL · FOCUS</td></tr>
+        <tr><td>오른쪽 무게</td><td>WEAK→FIX</td><td>시계 밝게(위)</td></tr>
+        <tr><td>메뉴 크기</td><td>WEAK</td><td>노션 임베드 최소 높이 100px 때문에 이름표 칸이 큼 — 아래 여백이 줄 사이 숨 고르기가 되도록 이름을 위로</td></tr>
+        <tr><td>글자</td><td>FIX</td><td>한글 제목 자간</td></tr>
+        <tr><td>정렬</td><td>KEEP</td><td>세 열 사이 56 · 57px · 메뉴 0px</td></tr>
+        <tr><td>고급스러움</td><td>WEAK</td><td>DB 목록의 파란 「새로 만들기」가 화면에서 가장 센 색 — 노션 기본 버튼이라 숨길 수 없음(플랫폼 한계 · 기록)</td></tr>
+      </table>
+    </article>
+
+    <article class="item" id="r5-modules">
+      <div class="head"><span class="idx">R5·7</span><h2>HOME 에서 뺀 위젯 — 휴지통 보관 안 함</h2></div>
+      <p>큰 달력(이번 달 일정) · 읽는 중(BOOKS) → <b>다시 쓸 수 있는 모듈</b>: CUSTOM 페이지 맨 아래 「HOME 추가 모듈」로 옮김(끌어서 HOME 에 다시 놓으면 됨). 날씨 · 음악 → 같은 위젯이 이미 WIDGET LIBRARY 「오늘」 · 「도구」에 있어 HOME 사본만 정리. 예전 갤러리 메뉴(MENU 표 보기)도 지우지 않고 「HOME 추가 모듈」에.</p>
+      <figure><img src="r5-custom-modules.jpg" alt="HOME 추가 모듈" loading="lazy"></figure>
+    </article>
   </section>
 
   <article class="item" id="home">
