@@ -20,7 +20,6 @@
   .foot { margin-top: 8px; font-size: 10px; color: var(--red); min-height: 13px; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* R6 (2026-10-06) 좁은 칸(HOME 오른쪽 · 1280px 화면에서 약 170px): 주 번호를 빼고 숫자 · 제목을 줄여 날짜끼리 붙지 않게 */
-  @media (max-width: 240px) { th.wk, td.wk { display: none; } td { font-size: 10px; letter-spacing: -.02em; } .title { font-size: 13px; letter-spacing: .05em; } .title span { margin-left: .3em; } }
 
   /* style=editorial — the planner's own monthly page: a big serif month, hairline rows, holidays named under the grid */
   body.editorial .title { font-size: 26px; letter-spacing: .14em; }
@@ -71,6 +70,8 @@
   .pri .tick { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--line); flex: none; background: none; padding: 0; position: relative; cursor: pointer; }
   .pri .r.on .tick { background: var(--soft); border-color: var(--soft); }
   .pri .r.on .tick::after { content: ''; position: absolute; left: 4.5px; top: 1.5px; width: 4px; height: 8px; border: solid color-mix(in srgb, var(--deep) 60%, #2a2a2a); border-width: 0 1.6px 1.6px 0; transform: rotate(45deg); }
+  @media (max-width: 240px) { th.wk, td.wk { display: none; } td { font-size: 10px; letter-spacing: -.02em; } .title { font-size: 13px; letter-spacing: .05em; } .title span { margin-left: .3em; } }
+  @media (max-width: 240px) { body.editorial .title { font-size: 17px; letter-spacing: .06em; } body.editorial td { font-size: 11px; height: 28px; } body.editorial td i { width: 22px; line-height: 22px; } }
 </style>
 </head>
 <body>
