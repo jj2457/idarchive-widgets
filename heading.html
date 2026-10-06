@@ -48,6 +48,17 @@
   /* R6 (2026-10-06) 1280px 화면(칸 약 120px)에서 「VISION BOARD」가 「ISION BOAR」로 잘림 → 좁은 칸은 글자 · 자간을 줄인다 */
   @media (max-width: 190px) { [data-style="label"] .t { font-size: 11px; letter-spacing: .16em; padding-left: .16em; } [data-style="label"] .s { font-size: 9.5px; letter-spacing: 0; } }
   @media (max-width: 135px) { [data-style="label"] .t { font-size: 10px; letter-spacing: .08em; padding-left: .08em; } }
+  /* R6.1 한 줄 메뉴(오너 2026-10-07 「2줄 → 1줄 · 작게」) row=1: 칸이 60~100px — 이름은 두 줄까지 감싸고(VISION / BOARD) 작은 한 줄(s)은 숨긴다.
+     폰(칸이 세로로 쌓여 위젯이 넓어짐)에서는 노션이 그림을 왼쪽에 붙이므로 이름도 그림 폭(lw)만큼 왼쪽 상자 가운데에 */
+  [data-row="1"] .row { max-width: 100%; }
+  [data-row="1"] .t { white-space: normal; text-align: center; line-height: 1.3; font-size: 10.5px; letter-spacing: .16em; padding-left: .16em; word-break: keep-all; }
+  [data-row="1"] .s { display: none; }
+  body[data-row="1"] { padding: 3px 2px 0; }
+  @media (max-width: 96px) { [data-row="1"] .t { font-size: 9.5px; letter-spacing: .09em; padding-left: .09em; } }
+  @media (max-width: 66px) { [data-row="1"] .t { font-size: 8.5px; letter-spacing: .04em; padding-left: .04em; } }
+  @media (max-width: 46px) { [data-row="1"] .t { font-size: 7.5px; letter-spacing: 0; padding-left: 0; } }
+  body.stack { align-items: flex-start; }
+  body.stack .row { width: var(--lw); }
   /* 한글 제목(「작은 습관 → 목표 · 연결」 · 「나의 수업」)은 영문 대문자용 넓은 자간이면 글자가 흩어진다(R5 폰 검수 2026-10-06) — 한글이 들어가면 자간을 좁힌다 */
   .ko { letter-spacing: .03em !important; }
 </style>
@@ -82,6 +93,13 @@
     document.getElementById('ms').textContent = (IDP.q.get('s') || '').slice(0, 60);
   }
   if (IDP.q.get('rule') === '0') document.body.dataset.rule = '0';
+  if (document.body.dataset.style === 'label' && IDP.q.get('row') === '1') {
+    document.body.dataset.row = '1';
+    var lw = Math.max(40, Math.min(240, +IDP.q.get('lw') || 96));
+    document.body.style.setProperty('--lw', lw + 'px');
+    var fit = function () { document.body.classList.toggle('stack', innerWidth > lw * 1.6); };
+    fit(); addEventListener('resize', fit);
+  }
   document.getElementById('t').textContent = (IDP.q.get('t') || 'TODAY').slice(0, 40);
   document.getElementById('s').textContent = (IDP.q.get('s') || '').slice(0, 60);
   document.title = 'ID PLANNER · ' + document.getElementById('t').textContent;
