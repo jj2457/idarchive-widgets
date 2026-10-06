@@ -97,8 +97,18 @@
     document.body.dataset.row = '1';
     var lw = Math.max(40, Math.min(240, +IDP.q.get('lw') || 96));
     document.body.style.setProperty('--lw', lw + 'px');
-    var fit = function () { document.body.classList.toggle('stack', innerWidth > lw * 1.6); };
+    // 칸이 아주 좁으면(1280 · 사이드바 열림 ≈ 22px) 글자가 잘리지 않게 줄여서 맞춘다 — 잘림 0 이 먼저(6px 아래로는 줄이지 않고 음절에서 줄바꿈)
+    var te = document.getElementById('t');
+    var fit = function () {
+      document.body.classList.toggle('stack', innerWidth > lw * 1.6);
+      te.style.fontSize = ''; te.style.letterSpacing = ''; te.style.wordBreak = '';
+      var fs = parseFloat(getComputedStyle(te).fontSize), box = document.body.clientWidth - 4;
+      var over = function () { return te.scrollWidth > box || te.getBoundingClientRect().width > box + 0.5; };
+      while (over() && fs > 6) { fs -= 0.5; te.style.fontSize = fs + 'px'; te.style.letterSpacing = '0'; }
+      if (over()) te.style.wordBreak = 'break-all';
+    };
     fit(); addEventListener('resize', fit);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
   }
   document.getElementById('t').textContent = (IDP.q.get('t') || 'TODAY').slice(0, 40);
   document.getElementById('s').textContent = (IDP.q.get('s') || '').slice(0, 60);
