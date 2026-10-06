@@ -261,7 +261,9 @@
   function effective() {
     var p = new URLSearchParams(q.toString()), s = saved();
     if (q.get('lock') === '1') return p;
-    if (s) Object.keys(s).forEach(function (k) { if (SYNCED && COLOUR.indexOf(k) >= 0) return; if (s[k] === '') p.delete(k); else p.set(k, s[k]); });
+    // (R6 2026-10-06) 페이지에 적힌 frame=none 은 그 자리의 디자인(카드 없이 놓기) — 이 기기의 ⚙ 테두리 저장(frame: '')이 지우지 않게
+    var keepFrame = q.get('frame') === 'none';
+    if (s) Object.keys(s).forEach(function (k) { if (SYNCED && COLOUR.indexOf(k) >= 0) return; if (keepFrame && (k === 'frame' || k === 'border')) return; if (s[k] === '') p.delete(k); else p.set(k, s[k]); });
     if (SYNCED && q.get('wt')) { p.set('theme', q.get('wt')); if (q.get('ws')) { p.set('soft', q.get('ws')); p.set('deep', q.get('wd') || q.get('ws')); } else { p.delete('soft'); p.delete('deep'); } }
     return layered(p);
   }
