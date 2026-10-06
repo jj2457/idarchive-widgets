@@ -35,10 +35,12 @@
   .ms { margin-left: auto; font-size: 11.5px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-left: 10px; }
   [data-style="module"] .rule { margin-top: 10px; background: color-mix(in srgb, var(--deep) 22%, transparent); }
   /* style=label (R5 메뉴 2026-10-06 「IMAGE CENTER = LABEL CENTER = TILE CENTER」): 그림 메뉴 칸 밑 이름표 — 칸 가운데 한 줄, 선 없음.
-     누르면 가는 곳은 바로 위 노션 그림 블록의 링크(복제해도 새 페이지로 따라감)가 맡는다 — 이 이름표는 링크를 갖지 않는다 */
-  [data-style="label"] body, body[data-style="label"] { padding: 0 4px; }
+     누르면 가는 곳은 바로 위 노션 그림 블록의 링크(복제해도 새 페이지로 따라감)가 맡는다 — 이 이름표는 링크를 갖지 않는다.
+     노션은 임베드를 최소 100px 로 그린다(2026-10-06 실측) — 이름은 맨 위, 그 밑 작은 한 줄(s), 남는 아래 칸은 줄 사이 여백이 된다 */
+  body[data-style="label"] { justify-content: flex-start; padding: 2px 4px 0; }
   [data-style="label"] .t { font-size: 12.5px; letter-spacing: .3em; padding: 0 0 0 .3em; color: color-mix(in srgb, var(--deep) 52%, #2f2b27); }
-  [data-style="label"] .rule, [data-style="label"] .s { display: none; }
+  [data-style="label"] .s { margin-top: 4px; font-size: 10.5px; letter-spacing: .06em; }
+  [data-style="label"] .rule { display: none; }
 </style>
 </head>
 <body>
