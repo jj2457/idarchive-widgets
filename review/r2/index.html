@@ -45,6 +45,16 @@
   .crit th { color: var(--sub); font-weight: 500; }
   .crit td:nth-child(2) { white-space: nowrap; font-weight: 500; }
   @media (max-width: 560px) { .crit td:nth-child(3) { min-width: 160px; } }
+  .owner { display: grid; gap: 34px; padding: 8px 0 26px; border-bottom: 2px solid var(--line); }
+  .owner > h2 { font-size: 22px; }
+  .owner .status { display: flex; flex-wrap: wrap; gap: 8px; }
+  .owner .status span { font-size: 12.5px; padding: 4px 10px; border-radius: 999px; background: var(--chip); border: 1px solid var(--line); }
+  .owner .status span.ok { background: color-mix(in srgb, #4f8a5b 14%, var(--chip)); }
+  .owner .status span.no { background: color-mix(in srgb, #b4533c 14%, var(--chip)); }
+  .owner .big figure img { width: 100%; }
+  .owner .phones { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .owner h3 { margin: 0; font-size: 17px; letter-spacing: .02em; }
+  .owner .k { font-family: var(--display); color: var(--accent); font-size: 22px; margin-right: 8px; }
 </style>
 </head>
 <body>
@@ -53,6 +63,80 @@
     <h1>ID PLANNER · REVIEW</h1>
     <p class="lead">2026-10-06 디자인 패스. 🎬 DEMO 에만 반영 · 🛒 판매본 그대로. 판단할 것: 예쁜가 · 정돈됐나 · 쓰기 쉬운가 · 팔 만한가 · 페이지마다 목적이 보이는가. 고칠 점은 노션 「2️⃣ 노션 템플릿 자동화」에.</p>
   </header>
+
+  <section class="owner" id="owner" aria-label="OWNER REVIEW">
+    <h2>OWNER REVIEW — R6 DEMO (고정 · 판매본 그대로)</h2>
+    <p class="lead">R6 DEMO = OWNER REVIEW READY. 아래는 실제 노션 화면(사이드바 열림). 기술 QA 표는 맨 아래로 옮겼습니다.</p>
+    <div class="status"><span class="no">1280 잘림: FAIL(부분 — 가운데 목록 속성)</span><span class="ok">1440 잘림: PASS</span><span class="ok">1526 · 1728 · 1920 잘림: PASS</span><span class="ok">넓은 화면 첫 화면 파란 버튼: 0</span><span class="ok">AUTOMATED MOBILE: PASS</span><span class="ok">FRESH DUPLICATE: PASS</span><span>SALE MASTER: UNTOUCHED</span></div>
+
+    <article class="item big" id="o-a">
+      <h3><span class="k">A</span>HOME 1526 — FULL FIRST VIEWPORT</h3>
+      <p>1526 × 854 첫 화면: 머리(아이콘 · 제목) ~368 · 사진 띠 384–547 · 「폰에서는 …」 547–587 · 메뉴 587 시작(1줄 그림 607–723 · 이름표 739–839). 메뉴 2줄째와 TODAY 는 첫 화면 아래 — TODAY(첫 대시보드 모듈)는 1119px 에서 시작, 첫 화면보다 265px 아래. 메뉴 높이는 고치지 않았습니다(오너 판단용).</p>
+      <figure><img src="r6o-1526-first-annotated.jpg" alt="1526 첫 화면" loading="lazy"></figure>
+    </article>
+
+    <article class="item big" id="o-b">
+      <h3><span class="k">B</span>HOME 1526 — FULL PAGE</h3>
+      <figure><img src="r6o-1526-fullpage.jpg" alt="1526 전체" loading="lazy"><figcaption>위에서 아래까지 이어 붙인 실제 화면(0 · 854 · 1708 · 1989 지점)</figcaption></figure>
+    </article>
+
+    <article class="item big" id="o-c">
+      <h3><span class="k">C</span>HOME LEFT / CENTER / RIGHT</h3>
+      <p>왼쪽 0.19 · 가운데 0.60 · 오른쪽 0.21 (1440 에서 가운데 목록이 잘리지 않게 가운데를 넓힘). TODAY 두 목록 · HABIT(「오늘 체크」 — 주간 달성률 고리는 HOME 에서 숨기고 HABIT 페이지에 그대로) · GOAL / FOCUS.</p>
+      <figure><img src="r6o-1526-lcr.jpg" alt="세 구역" loading="lazy"></figure>
+    </article>
+
+    <article class="item big" id="o-d">
+      <h3><span class="k">D</span>MENU DETAIL</h3>
+      <figure><img src="r6-menu-2x5.jpg" alt="메뉴" loading="lazy"><figcaption>2 × 5 · 그림 = 이름 = 칸 가운데 0px · 사진: 가로 권장 · 정사각 지원 · 세로 제한 지원</figcaption></figure>
+    </article>
+
+    <article class="item big" id="o-e">
+      <h3><span class="k">E</span>HOME 1280</h3>
+      <p>양옆 위젯(프로필 이름 · 시계 숫자 · 달력 날짜 · 진행률 숫자)은 좁은 칸 규칙으로 잘리지 않게 고쳤습니다. 가운데 목록은 노션 목록 구조(아이콘 39px + 제목 최소 80px + 속성)라 1280(사이드바 열림)에서는 TODAY 체크 칸 · 끝 시각 · GOAL 고리가 가려집니다 — 구조를 바꾸지 않고는 해결되지 않아 <b>FAIL(부분)</b>. 화면을 더 넓게 보고 싶을 때 사이드바를 접는 방법은 가이드북 선택 TIP.</p>
+      <div class="pair"><figure><img src="r6o-1280-first.jpg" alt="1280 첫 화면" loading="lazy"><figcaption>1280 첫 화면</figcaption></figure><figure><img src="r6o-1280-dash.jpg" alt="1280 대시보드" loading="lazy"><figcaption>1280 대시보드</figcaption></figure></div>
+    </article>
+
+    <article class="item big" id="o-f">
+      <h3><span class="k">F</span>HOME 1920</h3>
+      <p>잘림 0. 파란 「새로 만들기」는 첫 화면 0 · 아래 카드 안 3개(오늘 시간표 · HABIT · GOAL) — 노션 동작(목록 폭 약 308px 이상이면 보임), PLATFORM LIMITATION 으로 기록.</p>
+      <figure><img src="r6o-1920-first.jpg" alt="1920 첫 화면" loading="lazy"><figcaption>1920 첫 화면 — 파란 버튼 0</figcaption></figure>
+      <div class="pair"><figure><img src="r6o-1920-dash.jpg" alt="1920 대시보드" loading="lazy"></figure><figure><img src="r6o-1920-low.jpg" alt="1920 아래" loading="lazy"></figure></div>
+    </article>
+
+    <article class="item big" id="o-g">
+      <h3><span class="k">G</span>VISION</h3>
+      <div class="pair"><figure><img src="r6-vision-hero.jpg" alt="VISION" loading="lazy"></figure><figure><img src="r6-vision-goals.jpg" alt="VISION 목표" loading="lazy"></figure></div>
+    </article>
+
+    <article class="item big" id="o-h">
+      <h3><span class="k">H</span>FITNESS</h3>
+      <div class="pair"><figure><img src="r6-fitness-top.jpg" alt="FITNESS" loading="lazy"></figure><figure><img src="r6-fitness-low.jpg" alt="FITNESS 아래" loading="lazy"></figure></div>
+    </article>
+
+    <article class="item big" id="o-i">
+      <h3><span class="k">I</span>MONTHLY</h3>
+      <figure><img src="r6-monthly.jpg" alt="MONTHLY" loading="lazy"></figure>
+    </article>
+
+    <article class="item big" id="o-j">
+      <h3><span class="k">J</span>WEEKLY</h3>
+      <figure><img src="r6-weekly.jpg" alt="WEEKLY" loading="lazy"></figure>
+    </article>
+
+    <article class="item" id="o-k">
+      <h3><span class="k">K</span>MOBILE 390</h3>
+      <div class="phones"><figure><img src="r6o-m390-hometop.jpg" alt="HOME 폰" loading="lazy"><figcaption>HOME</figcaption></figure><figure><img src="r6o-m390-home.jpg" alt="HOME 폰 TODAY" loading="lazy"><figcaption>HOME · TODAY</figcaption></figure><figure><img src="r6o-m390-mainboard.jpg" alt="MAIN BOARD MOBILE" loading="lazy"><figcaption>MAIN BOARD MOBILE</figcaption></figure><figure><img src="r6o-m390-daily.jpg" alt="DAILY" loading="lazy"><figcaption>DAILY</figcaption></figure><figure><img src="r6o-m390-habit.jpg" alt="HABIT" loading="lazy"><figcaption>HABIT</figcaption></figure></div>
+    </article>
+
+    <article class="item big" id="o-l">
+      <h3><span class="k">L</span>IVORY · BLUE · LAVENDER · CUSTOM</h3>
+      <figure><img src="theme-compare.jpg" alt="테마 비교" loading="lazy"><figcaption>BUYER QA 실제 테마 적용 — 큰 면은 밝게, 포인트만 그 색, CUSTOM #8A5A3C 는 그 HEX 그대로</figcaption></figure>
+      <figure><img src="r5-menu-blue.jpg" alt="파랑 메뉴" loading="lazy"><figcaption>BLUE — 기본 메뉴 그림 · 이름표가 테마를 따라가고 구매자 사진은 그대로</figcaption></figure>
+    </article>
+  </section>
+
+  <h2 style="font-size:15px;color:var(--sub);margin:0">아래 — 기술 QA · 측정 · 회귀 기록</h2>
 
   <section class="quick" aria-label="바로 확인하기">
     <h2>바로 확인하기 — DEMO</h2>
@@ -207,7 +291,7 @@
 
     <article class="item" id="r6-wide">
       <div class="head"><span class="idx">R6·13</span><h2>WIDE DESKTOP — HOME 1280 · 1526 · 1920</h2><span class="tag">사이드바 열림 · 실제 화면</span></div>
-      <p>다섯 폭(1280 · 1440 · 1526 · 1728 · 1920) 실측. <b>첫 화면(제목 · 띠 · 메뉴)의 파란 「새로 만들기」는 다섯 폭 모두 0</b> — 대시보드는 모든 폭에서 첫 화면 아래에서 시작합니다. 아래쪽은 1526 까지 0, 1728 에서 HABIT 1개, 1920 에서 HABIT · 오늘 시간표 2개(카드 오른쪽 위). 원인(실측): 노션은 목록 폭이 약 308px 보다 좁을 때만 그 버튼을 숨기는데, 노션 칸은 창 폭에 비례 — 1920 에서 숨기려면 1280 에서 목록이 잘립니다(HABIT 은 이름 + 「오늘 체크」 + 고리에 약 300px 필요). 버튼을 숨기는 노션 설정은 없어 <b>PLATFORM LIMITATION</b> 으로 기록하고, 기능은 그대로 두었습니다. GOAL 은 0.5 로 1920 까지 숨김.</p>
+      <p>다섯 폭(1280 · 1440 · 1526 · 1728 · 1920) 실측. <b>첫 화면(제목 · 띠 · 메뉴)의 파란 「새로 만들기」는 다섯 폭 모두 0</b> — 대시보드는 모든 폭에서 첫 화면 아래에서 시작합니다. 아래쪽은 1526 까지 0, 1728 에서 2개(오늘 시간표 · HABIT), 1920 에서 3개(+ GOAL) — 1440 에서 목록 내용이 잘리지 않게 가운데 칸을 넓힌 결과(OWNER REVIEW 정리). 원인(실측): 노션은 목록 폭이 약 308px 보다 좁을 때만 그 버튼을 숨기는데, 노션 칸은 창 폭에 비례 — 1920 에서 숨기려면 1280 에서 목록이 잘립니다(HABIT 은 이름 + 「오늘 체크」 + 고리에 약 300px 필요). 버튼을 숨기는 노션 설정은 없어 <b>PLATFORM LIMITATION</b> 으로 기록하고, 기능은 그대로 두었습니다. GOAL 은 0.5 로 1920 까지 숨김.</p>
       <p>이번에 고친 넓은 · 좁은 화면 약점: 1920 VISION 핀(세 번째 줄 잘림 → 상자에 맞게 6장) · 1280 메뉴 이름표 「ISION BOAR」 잘림 → 줄인 글자 · 1280 달력 날짜 붙음 · 제목 두 줄 → 한 줄. 1280(사이드바 열림)은 칸이 좁아 목록 일부가 잘리는 「컴팩트」 — 사이드바를 접으면 1526 과 같은 폭(가이드북 FAQ 에 Ctrl / ⌘ + \).</p>
       <div class="pair">
         <figure><img src="r6w-1920-first.jpg" alt="1920 첫 화면" loading="lazy"><figcaption>1920 첫 화면 — 파란 버튼 0</figcaption></figure>
@@ -230,11 +314,11 @@
       </div>
       <table class="crit">
         <tr><th>폭</th><th>파란 버튼 (첫 화면 / 아래)</th><th>세 열 · 메뉴 그림</th></tr>
-        <tr><td>1280</td><td>0 / 0</td><td>154 · 377 · 168 · 105×79 — 컴팩트</td></tr>
-        <tr><td>1440</td><td>0 / 0</td><td>189 · 463 · 206 · 137×103</td></tr>
-        <tr><td>1526</td><td>0 / 0</td><td>208 · 510 · 227 · 154×116 — 기준</td></tr>
-        <tr><td>1728</td><td>0 / 1</td><td>252 · 619 · 275 · 195×146</td></tr>
-        <tr><td>1920</td><td>0 / 2</td><td>294 · 723 · 321 · 233×175</td></tr>
+        <tr><td>1280</td><td>0 / 0</td><td>133 · 419 · 147 · 105×79 — 양옆 위젯 잘림 고침 · 가운데 목록 속성 잘림(FAIL 부분)</td></tr>
+        <tr><td>1440</td><td>0 / 0</td><td>163 · 515 · 180 · 137×103 — 잘림 0</td></tr>
+        <tr><td>1526</td><td>0 / 0</td><td>180 · 567 · 198 · 154×116 — 기준 · 잘림 0</td></tr>
+        <tr><td>1728</td><td>0 / 2</td><td>218 · 688 · 241 · 195×146 — 잘림 0</td></tr>
+        <tr><td>1920</td><td>0 / 3</td><td>254 · 803 · 281 · 233×175 — 잘림 0</td></tr>
       </table>
     </article>
 
@@ -249,9 +333,10 @@
         <tr><td>REMAINING MOBILE</td><td>AUTOMATED MOBILE VIEWPORT PASS</td><td>R6·9 (실제 폰은 오너 최종)</td></tr>
         <tr><td>FULL ABSOLUTE-LINK AUDIT</td><td>PASS</td><td>노션 절대 링크 0 · 숨은 예전 값 53 기록</td></tr>
         <tr><td>FRESH DUPLICATE</td><td>PASS</td><td>R6·10</td></tr>
-        <tr><td>WIDE DESKTOP</td><td>첫 화면 PASS · 아래 PLATFORM LIMITATION</td><td>R6·13 (1728 이상 파란 버튼 1~2개 · 첫 화면 아래)</td></tr>
+        <tr><td>WIDE DESKTOP</td><td>첫 화면 PASS · 아래 PLATFORM LIMITATION</td><td>R6·13 (1728 에서 2 · 1920 에서 3, 모두 첫 화면 아래)</td></tr>
         <tr><td>EMBED 정본 검사</td><td>PASS (221 · 0)</td><td>릴리스 QA 자동 검사 추가</td></tr>
-        <tr><td>OWNER VISUAL REVIEW</td><td>대기</td><td>승인 전 판매본으로 옮기지 않음 · 승격 계획 docs/R6_SALE_MIGRATION.md</td></tr>
+        <tr><td>CONTENT CLIPPING</td><td>1440 · 1526 · 1728 · 1920 PASS / 1280 FAIL(부분)</td><td>가운데 목록 속성(TODAY 체크 · 끝 시각 · GOAL 고리) — 구조를 바꿔야 해결</td></tr>
+        <tr><td>OWNER VISUAL REVIEW</td><td>대기(R6 DEMO = OWNER REVIEW READY)</td><td>승인 전 판매본으로 옮기지 않음 · 승격 계획 docs/R6_SALE_MIGRATION.md</td></tr>
       </table>
     </article>
   </section>
