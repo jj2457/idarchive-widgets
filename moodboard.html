@@ -42,6 +42,8 @@
   // look=pin: the same photos pinned to the wall like polaroids (REQ-186) — photos from 「사진 고르기」 or links, each with a short caption
   var urls = [], every = 8, i = 0, tick = null, TITLE = 'MOODBOARD';
   var PIN = IDP.opt('moodboard', 'look', IDP.q.get('look') || '') === 'pin', pins = [];
+  // head=0 (R5 VISION 2026-10-06): 페이지에 모듈 제목이 이미 있을 때 위젯 안 이름표(VISION BOARD) 줄을 숨긴다
+  if (IDP.q.get('head') === '0') document.querySelector('.row').style.display = 'none';
   function readOpts() {
     PIN = String(IDP.opt('moodboard', 'look', IDP.q.get('look') || '')).trim() === 'pin';
     TITLE = IDP.opt('moodboard', 'title', PIN ? 'VISION BOARD' : 'MOODBOARD');
