@@ -45,6 +45,9 @@
   [data-style="label"] .t { font-size: 12.5px; letter-spacing: .3em; padding: 0 0 0 .3em; color: color-mix(in srgb, var(--deep) 52%, #2f2b27); }
   [data-style="label"] .s { margin-top: 4px; font-size: 10.5px; letter-spacing: .06em; }
   [data-style="label"] .rule { display: none; }
+  /* R6 (2026-10-06) 1280px 화면(칸 약 120px)에서 「VISION BOARD」가 「ISION BOAR」로 잘림 → 좁은 칸은 글자 · 자간을 줄인다 */
+  @media (max-width: 190px) { [data-style="label"] .t { font-size: 11px; letter-spacing: .16em; padding-left: .16em; } [data-style="label"] .s { font-size: 9.5px; letter-spacing: 0; } }
+  @media (max-width: 135px) { [data-style="label"] .t { font-size: 10px; letter-spacing: .08em; padding-left: .08em; } }
   /* 한글 제목(「작은 습관 → 목표 · 연결」 · 「나의 수업」)은 영문 대문자용 넓은 자간이면 글자가 흩어진다(R5 폰 검수 2026-10-06) — 한글이 들어가면 자간을 좁힌다 */
   .ko { letter-spacing: .03em !important; }
 </style>
