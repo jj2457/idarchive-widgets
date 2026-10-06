@@ -4,11 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ID PLANNER · Progress</title>
-<link rel="stylesheet" href="assets/core.css?v=r6b">
+<link rel="stylesheet" href="assets/core.css?v=r6c">
 <style>
   .item { margin-top: 14px; }
   .item:first-child { margin-top: 0; }
   .pct { font-size: 13px; color: var(--deep); }
+  @media (max-width: 170px) { .pct { font-size: 11px; } .item .lab, .item span { letter-spacing: .06em !important; } }
   .bar { height: 8px; border-radius: 999px; background: var(--tint); margin-top: 6px; overflow: hidden; }
   .bar b { display: block; height: 100%; border-radius: 999px; background: var(--soft); transition: width .6s ease; }
 </style>
@@ -19,7 +20,7 @@
   <div class="grow" style="display:flex;flex-direction:column;justify-content:center;margin-top:14px" id="list"></div>
 </div>
 <script src="config/themes.js"></script>
-<script src="assets/core.js?v=r6b"></script>
+<script src="assets/core.js?v=r6c"></script>
 <script>
   // how far through the day / week / month / year we are — the "time left" view of the planner
   var mon = IDP.weekStart === 'mon'; // weekStart=mon|sun (legacy: start)

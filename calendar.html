@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ID PLANNER · Mini Calendar</title>
-<link rel="stylesheet" href="assets/core.css?v=r6b">
+<link rel="stylesheet" href="assets/core.css?v=r6c">
 <style>
   .nav { background: none; border: 0; padding: 4px 8px; font-size: 14px; color: var(--sub); letter-spacing: 0; }
   .nav:hover { background: var(--tint); color: var(--ink); }
@@ -73,6 +73,7 @@
   @media (max-width: 240px) { th.wk, td.wk { display: none; } td { font-size: 10px; letter-spacing: -.02em; } .title { font-size: 13px; letter-spacing: .05em; } .title span { margin-left: .3em; } }
   @media (max-width: 240px) { body.editorial .title { font-size: 17px; letter-spacing: .06em; } body.editorial td { font-size: 11px; height: 28px; } body.editorial td i { width: 22px; line-height: 22px; } }
   @media (max-width: 200px) { body.editorial .title, .title { font-size: 14px; letter-spacing: .03em; } body.editorial .title span { font-size: 10px; } body.editorial td i, td i { width: 19px; line-height: 19px; } }
+  @media (max-width: 165px) { td { font-size: 9px; letter-spacing: -.05em; padding: 2px 0; } th { font-size: 8px; letter-spacing: 0; } .title, body.editorial .title { font-size: 12px; letter-spacing: .02em; } .nav { padding: 2px 3px; } td i, body.editorial td i { width: 16px; line-height: 16px; } }
 </style>
 </head>
 <body>
@@ -92,7 +93,7 @@
 </div>
 <script src="assets/holidays.js"></script>
 <script src="config/themes.js"></script>
-<script src="assets/core.js?v=r6b"></script>
+<script src="assets/core.js?v=r6c"></script>
 <script>
   // start=mon|sun — the two week-start editions of the planner
   var mon = IDP.weekStart === 'mon'; // weekStart=mon|sun (legacy: start)
