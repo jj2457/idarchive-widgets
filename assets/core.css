@@ -59,7 +59,7 @@ body {
   display: flex; flex-direction: column;
   overflow: hidden;
 }
-:root[data-frame="none"] .card { border: 0; background: transparent; padding: 8px; }
+:root[data-frame="none"] .card { border: 0; background: transparent; padding: 8px; box-shadow: none; }
 :root[data-frame="line"] .card { border: 0; border-top: 1px solid var(--line); border-radius: 0; background: transparent; }
 
 /* the planner's oval title badge */
@@ -143,6 +143,8 @@ button:focus-visible { outline: 2px solid var(--deep); outline-offset: 2px; }
   --badge-rule: 1px solid var(--soft);
 }
 :root[data-style="editorial"] .card { background: color-mix(in srgb, var(--tint) 45%, var(--paper)); }
+/* frame=none 은 어떤 모양(editorial …)에서도 카드 바탕 · 그림자 없이 — R5 VISION 「흰 카드 반복 없이」(2026-10-06: editorial 바탕이 frame=none 을 덮던 것) */
+:root[data-frame="none"][data-style] .card { background: transparent; box-shadow: none; }
 :root[data-style="editorial"] .row { align-items: flex-end; }
 
 /* MINIMAL PASTEL — the planner's own default, tightened. Hairline edge, soft corner. */
