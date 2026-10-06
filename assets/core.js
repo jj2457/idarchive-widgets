@@ -288,14 +288,15 @@
     // 색을 「모든 위젯」에 줄지 「이 위젯만」 줄지 — 처음엔 모든 위젯(이 위젯을 따로 정해 두었으면 이 위젯만)
     var ownNow = layers().widgets[WKEY];
     var scope = (ownNow && !ownNow.inherit) || (SYNCED && q.get('wt') && !(ownNow && ownNow.inherit)) ? 'one' : 'all';   // (R6.1) 따로 정한 색이 없으면 「전체 따르기」
-    var html = '<div class="idp-panel-title">STYLE</div><div class="idp-styles">';
+    // R6.1 (오너 2026-10-07) 두 칸을 분명하게 · 맨 위부터 — GLOBAL THEME(플래너 전체: Theme Studio 와 같은 적용 → 커버 · 맨 위 이미지 · 메뉴 그림 ·
+    // 아이콘 · 위젯 · 달력 · 카드 색이 함께) / THIS WIDGET(전체 따르기 · 이 위젯만 · 전체로 되돌리기). 우선순위는 그대로 위젯 > 페이지 > 전체.
+    // 그 아래 STYLE · 라이트/다크 · 테두리 · 둥글기는 이 기기의 위젯 모양
+    var styleHtml = '<div class="idp-panel-title" style="margin-top:14px">STYLE · 이 기기의 위젯 모양</div><div class="idp-styles">';
     STYLES.forEach(function (st) {
-      html += '<button type="button" data-style="' + st[0] + '">' + st[1] + '</button>';
+      styleHtml += '<button type="button" data-style="' + st[0] + '">' + st[1] + '</button>';
     });
-    // R6.1 (오너 2026-10-07) 두 칸을 분명하게 — GLOBAL THEME(플래너 전체: Theme Studio 와 같은 적용 → 커버 · 맨 위 이미지 · 메뉴 그림 · 아이콘 ·
-    // 위젯 · 달력 · 카드 색이 함께) / THIS WIDGET(전체 따르기 · 이 위젯만 · 전체로 되돌리기). 우선순위는 그대로 위젯 > 페이지 > 전체
-    html += '<button type="button" data-style="">기본</button></div>' +
-      '<div class="idp-panel-title" style="margin-top:14px">GLOBAL THEME · 플래너 전체</div><div class="idp-swatches idp-global">';
+    styleHtml += '<button type="button" data-style="">기본</button></div>';
+    var html = '<div class="idp-panel-title">GLOBAL THEME · 플래너 전체</div><div class="idp-swatches idp-global">';
     Object.keys(THEMES).forEach(function (name) {
       html += '<button type="button" data-gtheme="' + name + '" title="' + name + '" aria-label="' + name + '" style="background:linear-gradient(135deg,' +
         THEMES[name].soft + ' 50%,' + THEMES[name].deep + ' 50%)"></button>';
@@ -309,12 +310,12 @@
       html += '<button type="button" data-theme="' + name + '" title="' + name + '" aria-label="' + name + '" style="background:linear-gradient(135deg,' +
         THEMES[name].soft + ' 50%,' + THEMES[name].deep + ' 50%)"></button>';
     });
-    html += '</div><label class="idp-row">나만의 색 <input type="color" data-k="soft"></label>' +
+    html += '</div><label class="idp-row">이 위젯만 나만의 색 <input type="color" data-k="soft"></label>' + styleHtml +
       '<div class="idp-row"><button type="button" data-mode="light">라이트</button><button type="button" data-mode="dark">다크</button></div>' +
       '<div class="idp-row"><button type="button" data-border="card">카드</button><button type="button" data-border="line">윗선</button><button type="button" data-border="none">없음</button></div>' +
       '<label class="idp-row">둥글기 <input type="range" min="0" max="32" step="2" data-k="radius"></label>' +
       '<div class="idp-row"><button type="button" data-reset>기본값</button><button type="button" data-close>닫기</button></div>' +
-      '<div class="idp-note idp-tail">이 기기의 모든 ID Archive 위젯에 적용돼요</div>';
+      '<div class="idp-note idp-tail">STYLE · 라이트/다크 · 테두리 · 둥글기는 이 기기의 모든 ID Archive 위젯에 적용돼요</div>';
     panel.innerHTML = html;
     function save(patch) {
       var cur = saved() || {};
@@ -324,7 +325,12 @@
       Object.keys(cur).forEach(function (k) { if (cur[k] === '') p.delete(k); else p.set(k, cur[k]); });
       applyTheme(layered(p));
     }
+    function markWidgetSwatch() {
+      var own = layers().widgets[WKEY];
+      Array.prototype.forEach.call(panel.querySelectorAll('[data-theme]'), function (b) { b.className = own && own.theme === b.dataset.theme ? 'on' : ''; });
+    }
     function markScope() {
+      markWidgetSwatch();
       Array.prototype.forEach.call(panel.querySelectorAll('[data-scope]'), function (b) { b.className = b.dataset.scope === scope ? 'on' : ''; });
       var own = layers().widgets[WKEY], note = panel.querySelector('.idp-scope-note');
       var followed = own && own.inherit;
