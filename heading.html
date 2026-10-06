@@ -23,17 +23,48 @@
   .rule { width: 100%; height: 1px; margin-top: 9px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--deep) 35%, transparent) 18%, color-mix(in srgb, var(--deep) 35%, transparent) 82%, transparent); }
   [data-style="line"] .rule, [data-style="plain"] .rule, [data-rule="0"] .rule { display: none; }
   :root[data-mode="dark"] .t { color: color-mix(in srgb, var(--soft) 70%, #ffffff); }
+  /* style=module (R2 HOME 2026-10-06 「모듈마다 분명한 제목 · 작은 선 아이콘 · 요약」): 왼쪽 정렬 한 줄 — 아이콘 칩 · 제목 · 오른쪽 작은 요약(s), 아래 머리카락 선.
+     i = 아이콘(today · week · goal · habit · focus · month · project · reading · money · time) */
+  [data-style="module"] body, body[data-style="module"] { align-items: stretch; padding: 4px 6px 0; }
+  .mod { display: none; align-items: center; gap: 10px; width: 100%; min-width: 0; }
+  [data-style="module"] .row, [data-style="module"] > .s { display: none; }
+  [data-style="module"] .mod { display: flex; }
+  .ic { flex: none; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: color-mix(in srgb, var(--soft) 55%, #ffffff); }
+  .ic svg { width: 17px; height: 17px; fill: none; stroke: var(--deep); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .mt { font-family: var(--serif); font-size: 15px; letter-spacing: .2em; text-transform: uppercase; white-space: nowrap; color: color-mix(in srgb, var(--deep) 45%, #2f2b27); }
+  .ms { margin-left: auto; font-size: 11.5px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-left: 10px; }
+  [data-style="module"] .rule { margin-top: 10px; background: color-mix(in srgb, var(--deep) 22%, transparent); }
 </style>
 </head>
 <body>
 <div class="row"><span class="ln"></span><span class="t" id="t"></span><span class="ln"></span></div>
 <div class="s" id="s"></div>
+<div class="mod"><span class="ic" id="ic" aria-hidden="true"></span><span class="mt" id="mt"></span><span class="ms" id="ms"></span></div>
 <div class="rule"></div>
 <script src="config/themes.js"></script>
 <script src="assets/core.js"></script>
 <script>
   var st = IDP.q.get('style');
-  document.body.dataset.style = /^(mark|line|plain)$/.test(st || '') ? st : 'mark';
+  document.body.dataset.style = /^(mark|line|plain|module)$/.test(st || '') ? st : 'mark';
+  // 작은 선 아이콘(24 그리드 · 테마 포인트 색 선) — 글자 아님, 그림만
+  var ICONS = {
+    today: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/>',
+    week: '<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4M7.5 13.5h2M11 13.5h2M14.5 13.5h2M7.5 16.5h2"/>',
+    month: '<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><circle cx="15.5" cy="15" r="1.6"/>',
+    goal: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.8"/><circle cx="12" cy="12" r="1.2"/>',
+    habit: '<circle cx="12" cy="12" r="8.5"/><path d="M8.2 12.3l2.6 2.6 5-5.4"/>',
+    focus: '<circle cx="12" cy="12" r="3"/><path d="M12 3v3.5M12 17.5V21M3 12h3.5M17.5 12H21"/>',
+    project: '<path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>',
+    reading: '<path d="M12 6.5C9.5 5 6.5 4.6 3.5 5v13c3-.4 6 0 8.5 1.5 2.5-1.5 5.5-1.9 8.5-1.5V5c-3-.4-6 0-8.5 1.5zM12 6.5v13"/>',
+    money: '<rect x="3.5" y="6.5" width="17" height="12" rx="2.5"/><path d="M3.5 10.5h17M15.5 14.5h2"/>',
+    time: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'
+  };
+  if (document.body.dataset.style === 'module') {
+    var ik = IDP.q.get('i') || 'today';
+    document.getElementById('ic').innerHTML = '<svg viewBox="0 0 24 24">' + (ICONS[ik] || ICONS.today) + '</svg>';
+    document.getElementById('mt').textContent = (IDP.q.get('t') || 'TODAY').slice(0, 40);
+    document.getElementById('ms').textContent = (IDP.q.get('s') || '').slice(0, 60);
+  }
   if (IDP.q.get('rule') === '0') document.body.dataset.rule = '0';
   document.getElementById('t').textContent = (IDP.q.get('t') || 'TODAY').slice(0, 40);
   document.getElementById('s').textContent = (IDP.q.get('s') || '').slice(0, 60);
