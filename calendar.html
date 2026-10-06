@@ -19,6 +19,9 @@
   .today i { background: var(--deep); color: #fff; }
   .foot { margin-top: 8px; font-size: 10px; color: var(--red); min-height: 13px; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+  /* R6 (2026-10-06) 좁은 칸(HOME 오른쪽 · 1280px 화면에서 약 170px): 주 번호를 빼고 숫자 · 제목을 줄여 날짜끼리 붙지 않게 */
+  @media (max-width: 240px) { th.wk, td.wk { display: none; } td { font-size: 10px; letter-spacing: -.02em; } .title { font-size: 13px; letter-spacing: .05em; } .title span { margin-left: .3em; } }
+
   /* style=editorial — the planner's own monthly page: a big serif month, hairline rows, holidays named under the grid */
   body.editorial .title { font-size: 26px; letter-spacing: .14em; }
   body.editorial .title span { display: block; margin: 4px 0 0; font-size: 11px; letter-spacing: .22em; }
