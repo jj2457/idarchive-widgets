@@ -57,7 +57,8 @@
     document.getElementById('n').textContent = '';
     ['stage', 'dots', 'cap'].forEach(function (id) { document.getElementById(id).hidden = true; });
     var wall = document.getElementById('wall'); wall.hidden = false; wall.innerHTML = '';
-    wall.style.setProperty('--cols', pins.length <= 1 ? 1 : pins.length <= 4 ? 2 : 3);
+    // R6 (2026-10-06): 좁은 칸(HOME 오른쪽 ≈ 230px)에서는 여섯 장도 두 줄 — 세 줄이면 사진이 우표만 해진다
+    wall.style.setProperty('--cols', pins.length <= 1 ? 1 : (pins.length <= 4 || window.innerWidth < 300) ? 2 : 3);
     if (!pins.length) { wall.innerHTML = '<div class="empty2">⚙ 에서 「사진 고르기」로 사진을 넣으면<br>벽에 핀으로 꽂은 것처럼 보여요</div>'; return; }
     var ROT = [-3.2, 2.4, -1.4, 3, -2.2, 1.6];
     pins.forEach(function (p, k) {
