@@ -149,6 +149,9 @@
     </div>
     <!-- 전체 색을 바꿔도 페이지 · 위젯 개별 설정은 그대로(기본) — 지우고 적용하는 것은 따로, 확인을 받고 -->
     <div class="keep" id="keepNote" hidden></div>
+    <!-- (R6 2026-10-06) HOME 그림 메뉴의 내 사진을 지금 테마의 기본 그림으로 — 사진 설명 「기본」(한 칸)과 같은 일을 모든 칸에 -->
+    <div class="keep" id="menuReset" hidden>HOME 메뉴에 넣은 내 사진을 기본 그림으로 되돌리고 싶을 때 — 이름 · 누르면 가는 곳은 그대로예요. 한 칸만이면 그 사진 설명에 「기본」이라고 적고 저장하세요.
+      <button type="button" id="menuResetGo">HOME 메뉴 사진 모두 기본 그림으로</button></div>
   </div>
 
   <!-- 고급 설정(처음 쓰는 사람은 열 필요 없음): 페이지별 · 위젯별 색. 우선순위 위젯 > 페이지 > 전체 -->
@@ -528,6 +531,11 @@
   draw = function () { if (lastJob && !running) { lastJob = null; msg(''); } redraw(); if ($('saveGo')) { drawSave(); drawAdv(); } };
   $('saveGo').onclick = function () { save(); };
   $('retryGo').onclick = retry;
+  $('menuResetGo').onclick = function () {
+    if (running || !linked()) return;
+    if (!confirm('HOME 메뉴에 넣은 내 사진을 모두 지금 색의 기본 그림으로 바꿀까요?\n사진 파일은 노션에서 지워지지 않고, 메뉴 칸에서만 기본 그림으로 바뀌어요.')) return;
+    startWith(Object.assign(pick(), { resetMenu: true }));
+  };
   $('connectGo').onclick = function () { S.connectHere(location.origin + location.pathname + location.search); };
   // 결정 A: 한 번에 — 노션 연결 해제(토큰 폐기) + 서버의 연결 기록 삭제. 플래너 내용 · 색은 그대로 남는다
   $('disconnectGo').onclick = function () {
@@ -609,6 +617,7 @@
   }
   // 전체 색을 바꿔도 개별 설정은 그대로 — 무엇이 그대로인지 보여 주고, 지우고 적용하는 길은 따로(확인을 받고)
   function drawKeep() {
+    if ($('menuReset')) $('menuReset').hidden = !linked();
     var list = linked() ? overrides(cfg) : [];
     $('keepNote').hidden = !list.length;
     if (!list.length) return;

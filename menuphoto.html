@@ -6,41 +6,38 @@
 <title>ID PLANNER · Menu Photo</title>
 <link rel="stylesheet" href="assets/core.css?v=r6b">
 <style>
+  /* R6 (2026-10-06) — HOME 그림 메뉴는 「그림 ⋯ → 바꾸기 → 내 사진」이 기본. 이 화면은 선택: 세로 · 정사각 사진을
+     메뉴 칸 비율(4:3)로 잘라 주는 도우미일 뿐 — 이름은 HOME 이름표가 따로 맡으므로 그림에 넣지 않는다. 사진은 이 화면 안에서만 다뤄진다 */
   html, body { height: auto; }
   body { display: block; padding: 0; background: var(--paper); font-weight: 400; }
-  .wrap { max-width: 1000px; margin: 0 auto; padding: 36px 20px 70px; }
-  header h1 { font-family: 'Playfair Display', serif; font-weight: 400; font-size: 30px; letter-spacing: .08em; margin-top: 14px; }
-  header p { color: var(--sub); margin-top: 8px; font-size: 14px; line-height: 1.6; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 18px 64px; }
+  header h1 { font-family: 'Playfair Display', serif; font-weight: 400; font-size: clamp(24px, 6vw, 30px); letter-spacing: .08em; margin-top: 12px; }
+  header p { color: var(--sub); margin-top: 8px; font-size: 14px; line-height: 1.65; max-width: 62ch; }
   .nav { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
   .nav a { font-size: 12px; letter-spacing: .06em; padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px; color: var(--sub); text-decoration: none; background: #fff; }
   .nav a.on { background: var(--soft); border-color: var(--soft); color: color-mix(in srgb, var(--deep) 55%, #2a2a2a); }
-  h2 { font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--sub); font-weight: 500; margin: 26px 0 10px; }
-  .grid { display: grid; grid-template-columns: minmax(260px, 320px) 1fr; gap: 28px; align-items: start; margin-top: 10px; }
+  h2 { font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--sub); font-weight: 500; margin: 24px 0 10px; }
+  .grid { display: grid; grid-template-columns: minmax(240px, 300px) 1fr; gap: 28px; align-items: start; margin-top: 8px; }
   @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip[aria-pressed="true"] { background: var(--soft); border-color: var(--soft); }
-  .sw { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); padding: 0; }
-  .sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--ink); }
   label.f { display: block; font-size: 12px; color: var(--sub); margin-top: 12px; }
-  input[type=text] { width: 100%; margin-top: 6px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; font: inherit; font-size: 14px; background: #fff; }
   input[type=range] { width: 100%; }
   .pick { display: block; margin-top: 6px; padding: 18px; border: 1.5px dashed var(--line); border-radius: 12px; text-align: center; font-size: 13px; color: var(--sub); cursor: pointer; background: #fff; }
   .pick input { display: none; }
-  .preview { position: sticky; top: 16px; }
-  canvas { width: 100%; max-width: 520px; height: auto; border-radius: 12px; border: 1px solid var(--line); background: #fff; display: block; }
-  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
-  .go { background: var(--deep); color: #fff; border-color: var(--deep); }
-  .how { margin-top: 16px; font-size: 13px; line-height: 1.9; color: var(--ink); background: var(--tint); border-radius: 14px; padding: 16px 18px; max-width: 520px; }
-  .how b { font-weight: 500; }
-  .note { font-size: 12px; color: var(--sub); margin-top: 10px; line-height: 1.7; }
+  .preview { position: sticky; top: 16px; min-width: 0; }
+  canvas { width: 100%; max-width: 520px; height: auto; border-radius: 10px; border: 1px solid var(--line); background: var(--tint); display: block; }
+  .row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .go { background: var(--soft); border-color: var(--soft); }
+  .how { margin-top: 14px; font-size: 13px; line-height: 1.75; color: var(--ink); max-width: 520px; }
+  .note { margin-top: 10px; font-size: 12px; color: var(--sub); }
+  .ratio { font-size: 12px; color: var(--sub); margin-top: 8px; min-height: 1.4em; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="badge" style="display:inline-block">Menu Photo</div>
-    <h1>MY MENU PHOTO</h1>
-    <p>HOME 메뉴 카드에 내 사진을 넣을 때, 사진 아래 페이지 이름이 기본 그림처럼 가운데에 들어가도록 만들어 드려요.</p>
+    <div class="badge" style="display:inline-block">Menu Photo · 선택</div>
+    <h1>MENU PHOTO 4:3</h1>
+    <p>HOME 메뉴 사진은 그림 위 <b>⋯ → 바꾸기 → 내 사진</b>이면 끝이에요. 가로 사진(4:3 · 3:2)은 그대로 꽉 차요. 세로 · 정사각 사진이 칸보다 좁게 보일 때만 여기서 4:3 으로 잘라 저장해 쓰세요.</p>
     <nav class="nav">
       <a href="index.html">Dashboard Studio</a>
       <a href="theme.html">Theme Studio</a>
@@ -53,86 +50,47 @@
     <div>
       <h2>1 · 사진</h2>
       <label class="pick" id="pickBox">사진 고르기<input type="file" id="file" accept="image/*"></label>
-      <label class="f">위아래 위치 <input type="range" id="pos" min="0" max="100" value="50"></label>
-      <h2>2 · 이름</h2>
-      <label class="f">사진 아래 글자 <input type="text" id="name" value="GOALS" maxlength="14"></label>
-      <div class="chips" id="names" style="margin-top:10px"></div>
-      <h2>3 · 색</h2>
-      <div class="chips" id="colours"></div>
+      <div class="ratio" id="ratio"></div>
+      <h2>2 · 보일 부분</h2>
+      <label class="f">위 ↔ 아래 <input type="range" id="py" min="0" max="100" value="50"></label>
+      <label class="f">왼쪽 ↔ 오른쪽 <input type="range" id="px" min="0" max="100" value="50"></label>
     </div>
     <div class="preview">
-      <canvas id="cv" width="640" height="400" aria-label="메뉴 카드 미리보기"></canvas>
-      <div class="row"><button class="chip go" id="save">그림 저장하기</button></div>
-      <div class="how">
-        ① <b>그림 저장하기</b> → ② 노션 HOME 에서 바꿀 메뉴 카드를 눌러 페이지를 열고 → ③ 제목 아래 <b>세부 정보 보기</b> → <b>메뉴 그림</b> 칸 → 저장한 그림 올리기.<br>
-        HOME 으로 돌아가면 카드가 내 사진으로 바뀌어 있어요. 이름 · 누르면 가는 곳은 그대로예요.
-      </div>
-      <p class="note">사진은 이 화면 안에서만 그려지고 기기에 저장됩니다. 어디에도 올라가지 않아요.</p>
+      <canvas id="cv" width="1200" height="900" aria-label="메뉴 사진 미리보기 (4:3)"></canvas>
+      <div class="row"><button class="chip go" id="save" disabled>4:3 사진 저장하기</button></div>
+      <div class="how">① <b>4:3 사진 저장하기</b> → ② 노션 HOME 메뉴에서 바꿀 그림 위 <b>⋯ → 바꾸기 → 업로드</b> → 저장한 사진. 이름 · 누르면 가는 곳은 그대로예요.</div>
+      <p class="note">사진은 이 화면 안에서만 다뤄지고 어디에도 올라가지 않아요.</p>
     </div>
   </div>
 </div>
 
-<script src="config/themes.js"></script>
 <script>
-  // Menu Photo — a no-record tool (like Cover Studio): the buyer's photo + the page name centred under it, at the
-  // HOME menu tile size (640 × 400, sync/scene-art.mjs tileSvg), so a photo tile keeps the label the default art has.
-  var W = 640, H = 400, PH = 300;   // 사진 칸 0 … 300 · 이름은 기본 그림과 같은 줄(y ≈ 350)
-  var cv = document.getElementById('cv'), g = cv.getContext('2d');
-  var THEMES = (window.IDP_CONFIG && window.IDP_CONFIG.themes) || { ivory: { soft: '#f6f1e8', deep: '#c4b096', tint: '#fdfbf8' } };
-  var NAMES = ['HOME', 'GOALS', 'PLANNER', 'HABIT', 'WORK', 'FINANCE', 'FITNESS', 'VISION', 'ARCHIVE', 'TRAVEL', 'CONTENT'];
-  var st = { colour: THEMES.ivory ? 'ivory' : Object.keys(THEMES)[0], img: null };
-
-  function hex(h) { h = String(h).replace('#', ''); return [0, 2, 4].map(function (i) { return parseInt(h.slice(i, i + 2), 16); }); }
-  function mix(a, b, t) { var A = hex(a), B = hex(b); return 'rgb(' + A.map(function (v, i) { return Math.round(v + (B[i] - v) * t); }).join(',') + ')'; }
-  function round(x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
-
+  var W = 1200, H = 900, cv = document.getElementById('cv'), g = cv.getContext('2d'), img = null;
   function draw() {
-    var c = THEMES[st.colour] || THEMES.ivory;
-    g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H);
-    // 사진 칸 — 가로세로 어떤 사진이든 칸을 꽉 채우고(잘라서) 위아래 위치만 고른다
-    g.save(); round(0, 0, W, PH, 0); g.clip();
-    if (st.img) {
-      var iw = st.img.naturalWidth, ih = st.img.naturalHeight, s = Math.max(W / iw, PH / ih);
-      var dw = iw * s, dh = ih * s, pos = +document.getElementById('pos').value / 100;
-      g.drawImage(st.img, (W - dw) / 2, -(dh - PH) * pos, dw, dh);
-    } else {
-      g.fillStyle = mix(c.soft, '#ffffff', 0.42); g.fillRect(0, 0, W, PH);
-      g.fillStyle = mix(c.deep, '#2b2622', 0.5); g.font = '20px "Noto Sans KR", sans-serif'; g.textAlign = 'center';
-      g.fillText('사진을 고르면 여기에 들어가요', W / 2, PH / 2);
-    }
-    g.restore();
-    // 이름 — 기본 그림(tileSvg)과 같은 글꼴 · 크기 · 자간 · 색
-    var word = (document.getElementById('name').value || '').toUpperCase().slice(0, 14);
-    var size = word.length > 7 ? 54 : 62, track = word.length > 7 ? 6 : 8;
-    g.fillStyle = mix(c.deep, '#2b2622', 0.62);
-    g.font = size + 'px "Playfair Display", Georgia, serif'; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
-    if ('letterSpacing' in g) { g.letterSpacing = track + 'px'; g.fillText(word, W / 2 + track / 2, 372); g.letterSpacing = '0px'; }
-    else g.fillText(word.split('').join(String.fromCharCode(8202)), W / 2, 372);
+    g.clearRect(0, 0, W, H);
+    if (!img) { g.fillStyle = '#8a8178'; g.font = '34px "Noto Sans KR", sans-serif'; g.textAlign = 'center'; g.fillText('사진을 고르면 4:3 으로 맞춰 보여요', W / 2, H / 2); return; }
+    var iw = img.naturalWidth, ih = img.naturalHeight, s = Math.max(W / iw, H / ih), dw = iw * s, dh = ih * s;
+    var px = +document.getElementById('px').value / 100, py = +document.getElementById('py').value / 100;
+    g.drawImage(img, -(dw - W) * px, -(dh - H) * py, dw, dh);
   }
-
   document.getElementById('file').onchange = function (e) {
     var f = e.target.files && e.target.files[0]; if (!f) return;
-    var url = URL.createObjectURL(f), im = new Image();
-    im.onload = function () { st.img = im; document.getElementById('pickBox').firstChild.textContent = '다른 사진 고르기'; draw(); };
-    im.src = url;
+    var im = new Image();
+    im.onload = function () {
+      img = im; document.getElementById('save').disabled = false;
+      document.getElementById('pickBox').firstChild.textContent = '다른 사진 고르기';
+      var r = im.naturalWidth / im.naturalHeight;
+      document.getElementById('ratio').textContent = r >= 1.3 ? '가로 사진이에요 — 바로 바꿔도 칸에 꽉 차요.' : (r >= 0.95 ? '정사각에 가까운 사진 — 4:3 으로 맞추면 칸에 꽉 차요.' : '세로 사진 — 4:3 으로 맞춰 쓰면 칸에 꽉 차요.');
+      draw();
+    };
+    im.src = URL.createObjectURL(f);
   };
-  document.getElementById('pos').oninput = draw;
-  document.getElementById('name').oninput = draw;
-  var nb = document.getElementById('names');
-  NAMES.forEach(function (n) { var b = document.createElement('button'); b.className = 'chip'; b.textContent = n; b.onclick = function () { document.getElementById('name').value = n; draw(); }; nb.appendChild(b); });
-  var cs = document.getElementById('colours');
-  Object.keys(THEMES).forEach(function (k) {
-    var b = document.createElement('button'); b.className = 'sw'; b.title = k; b.style.background = THEMES[k].deep;
-    b.setAttribute('aria-pressed', k === st.colour ? 'true' : 'false');
-    b.onclick = function () { st.colour = k; [].forEach.call(cs.children, function (x) { x.setAttribute('aria-pressed', 'false'); }); b.setAttribute('aria-pressed', 'true'); draw(); };
-    cs.appendChild(b);
-  });
+  document.getElementById('px').oninput = draw;
+  document.getElementById('py').oninput = draw;
   document.getElementById('save').onclick = function () {
-    var a = document.createElement('a');
-    a.download = 'menu-' + ((document.getElementById('name').value || 'photo').toLowerCase().replace(/[^a-z0-9]+/g, '-')) + '.png';
-    a.href = cv.toDataURL('image/png'); a.click();
+    if (!img) return;
+    var a = document.createElement('a'); a.download = 'menu-photo-4x3.jpg'; a.href = cv.toDataURL('image/jpeg', 0.9); a.click();
   };
-  (document.fonts && document.fonts.load ? document.fonts.load('62px "Playfair Display"') : Promise.resolve()).then(draw, draw);
   draw();
 </script>
 </body>
