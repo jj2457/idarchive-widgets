@@ -33,7 +33,7 @@
 <script>
   // Weekly and monthly focus in one card: the two lines people re-read most, without opening the planner.
   // head=0 — 모듈 카드(HOME 「CURRENT FOCUS」) 안에 넣을 때 위젯 자기 머리줄(FOCUS 배지)은 숨긴다(제목은 모듈 머리가 맡음)
-  if (IDP.q.get('head') === '0') document.querySelector('.card > .row').style.display = 'none';
+  if (IDP.q.get('head') === '0') { document.querySelector('.card > .row').style.display = 'none'; var cd = document.querySelector('.card'); cd.style.background = 'transparent'; cd.style.boxShadow = 'none'; cd.style.border = '0'; cd.style.padding = '2px 4px'; }
   var KEY = 'idarchive.focusnote.' + (IDP.q.get('id') || 'v1');
   function weekKey(d) {
     d = d || IDP.now();
