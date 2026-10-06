@@ -71,7 +71,7 @@
       <a href="https://jj2457.github.io/idarchive-widgets/menuphoto.html">MENU PHOTO 4:3 (선택 도구)</a>
     </div>
     <nav class="toc" aria-label="목차">
-      <a href="#r6-home">R6 HOME</a><a href="#r6-menu">MENU 2×5</a><a href="#r6-photo">사진 비율</a><a href="#r6-dash">대시보드</a><a href="#r6-critique">R6 검토</a><a href="#r6-vision">VISION</a><a href="#r6-fitness">FITNESS</a><a href="#r6-mw">MONTHLY · WEEKLY</a><a href="#r6-mobile">MOBILE</a><a href="#r6-dup">복제 · 링크</a><a href="#r6-gate">GATE</a>
+      <a href="#r6-home">R6 HOME</a><a href="#r6-menu">MENU 2×5</a><a href="#r6-photo">사진 비율</a><a href="#r6-dash">대시보드</a><a href="#r6-critique">R6 검토</a><a href="#r6-vision">VISION</a><a href="#r6-fitness">FITNESS</a><a href="#r6-mw">MONTHLY · WEEKLY</a><a href="#r6-mobile">MOBILE</a><a href="#r6-dup">복제 · 링크</a><a href="#r6-wide">WIDE 1280 · 1526 · 1920</a><a href="#r6-gate">GATE</a>
       <a href="#r5-menu">R5 MENU A→C</a><a href="#r5-photo">USER PHOTO</a><a href="#r5-fitness">FITNESS</a><a href="#r5-vision">VISION</a><a href="#r5-mobile">R5 MOBILE</a><a href="#r5-critique">HOME 검토</a><a href="#r5-modules">뺀 위젯</a><a href="#r5-dup">복제 회귀</a>
       <a href="#home">HOME FULL</a><a href="#left">LEFT · CENTER · RIGHT</a><a href="#menu">TOP MENU</a>
       <a href="#ivory">IVORY</a><a href="#themes">BLUE · LAVENDER · CUSTOM</a><a href="#custom">CUSTOM HEX</a><a href="#photo">USER PHOTO · RESET</a>
@@ -205,6 +205,39 @@
       <figure><img src="r6-custom-map.jpg" alt="CUSTOM 지도" loading="lazy"></figure>
     </article>
 
+    <article class="item" id="r6-wide">
+      <div class="head"><span class="idx">R6·13</span><h2>WIDE DESKTOP — HOME 1280 · 1526 · 1920</h2><span class="tag">사이드바 열림 · 실제 화면</span></div>
+      <p>다섯 폭(1280 · 1440 · 1526 · 1728 · 1920) 실측. <b>첫 화면(제목 · 띠 · 메뉴)의 파란 「새로 만들기」는 다섯 폭 모두 0</b> — 대시보드는 모든 폭에서 첫 화면 아래에서 시작합니다. 아래쪽은 1526 까지 0, 1728 에서 HABIT 1개, 1920 에서 HABIT · 오늘 시간표 2개(카드 오른쪽 위). 원인(실측): 노션은 목록 폭이 약 308px 보다 좁을 때만 그 버튼을 숨기는데, 노션 칸은 창 폭에 비례 — 1920 에서 숨기려면 1280 에서 목록이 잘립니다(HABIT 은 이름 + 「오늘 체크」 + 고리에 약 300px 필요). 버튼을 숨기는 노션 설정은 없어 <b>PLATFORM LIMITATION</b> 으로 기록하고, 기능은 그대로 두었습니다. GOAL 은 0.5 로 1920 까지 숨김.</p>
+      <p>이번에 고친 넓은 · 좁은 화면 약점: 1920 VISION 핀(세 번째 줄 잘림 → 상자에 맞게 6장) · 1280 메뉴 이름표 「ISION BOAR」 잘림 → 줄인 글자 · 1280 달력 날짜 붙음 · 제목 두 줄 → 한 줄. 1280(사이드바 열림)은 칸이 좁아 목록 일부가 잘리는 「컴팩트」 — 사이드바를 접으면 1526 과 같은 폭(가이드북 FAQ 에 Ctrl / ⌘ + \).</p>
+      <div class="pair">
+        <figure><img src="r6w-1920-first.jpg" alt="1920 첫 화면" loading="lazy"><figcaption>1920 첫 화면 — 파란 버튼 0</figcaption></figure>
+        <figure><img src="r6w-1526-first.jpg" alt="1526 첫 화면" loading="lazy"><figcaption>1526 첫 화면</figcaption></figure>
+        <figure><img src="r6w-1280-menu.jpg" alt="1280 메뉴" loading="lazy"><figcaption>1280 메뉴 — 이름표 잘림 고친 뒤</figcaption></figure>
+      </div>
+      <div class="pair">
+        <figure><img src="r6w-1920-dash.jpg" alt="1920 대시보드" loading="lazy"><figcaption>1920 대시보드 — 오늘 시간표 · HABIT 에 파란 버튼(첫 화면 아래)</figcaption></figure>
+        <figure><img src="r6w-1526-dash.jpg" alt="1526 대시보드" loading="lazy"><figcaption>1526 대시보드 — 파란 버튼 0</figcaption></figure>
+        <figure><img src="r6w-1280-dash.jpg" alt="1280 대시보드" loading="lazy"><figcaption>1280 대시보드 — 컴팩트(목록 제목 줄임)</figcaption></figure>
+      </div>
+      <div class="pair">
+        <figure><img src="r6w-1920-low.jpg" alt="1920 아래" loading="lazy"><figcaption>1920 아래 — 세 열 끝 같음 · VISION 6장</figcaption></figure>
+        <figure><img src="r6w-1526-low.jpg" alt="1526 아래" loading="lazy"><figcaption>1526 아래</figcaption></figure>
+        <figure><img src="r6w-1280-habit.jpg" alt="1280 HABIT" loading="lazy"><figcaption>1280 HABIT — 「오늘 체크」 일부 잘림(사이드바 접으면 해결)</figcaption></figure>
+      </div>
+      <div class="pair">
+        <figure><img src="r6w-1440-dash.jpg" alt="1440" loading="lazy"><figcaption>1440 — 파란 버튼 0 · 시간 20px 잘림</figcaption></figure>
+        <figure><img src="r6w-1728-dash.jpg" alt="1728" loading="lazy"><figcaption>1728 — HABIT 1개</figcaption></figure>
+      </div>
+      <table class="crit">
+        <tr><th>폭</th><th>파란 버튼 (첫 화면 / 아래)</th><th>세 열 · 메뉴 그림</th></tr>
+        <tr><td>1280</td><td>0 / 0</td><td>154 · 377 · 168 · 105×79 — 컴팩트</td></tr>
+        <tr><td>1440</td><td>0 / 0</td><td>189 · 463 · 206 · 137×103</td></tr>
+        <tr><td>1526</td><td>0 / 0</td><td>208 · 510 · 227 · 154×116 — 기준</td></tr>
+        <tr><td>1728</td><td>0 / 1</td><td>252 · 619 · 275 · 195×146</td></tr>
+        <tr><td>1920</td><td>0 / 2</td><td>294 · 723 · 321 · 233×175</td></tr>
+      </table>
+    </article>
+
     <article class="item" id="r6-gate">
       <div class="head"><span class="idx">R6·12</span><h2>SALE PROMOTION GATE</h2><span class="tag">판매본 이동 없음</span></div>
       <table class="crit">
@@ -216,7 +249,9 @@
         <tr><td>REMAINING MOBILE</td><td>AUTOMATED MOBILE VIEWPORT PASS</td><td>R6·9 (실제 폰은 오너 최종)</td></tr>
         <tr><td>FULL ABSOLUTE-LINK AUDIT</td><td>PASS</td><td>노션 절대 링크 0 · 숨은 예전 값 53 기록</td></tr>
         <tr><td>FRESH DUPLICATE</td><td>PASS</td><td>R6·10</td></tr>
-        <tr><td>OWNER VISUAL REVIEW</td><td>대기</td><td>승인 전 판매본으로 옮기지 않음</td></tr>
+        <tr><td>WIDE DESKTOP</td><td>첫 화면 PASS · 아래 PLATFORM LIMITATION</td><td>R6·13 (1728 이상 파란 버튼 1~2개 · 첫 화면 아래)</td></tr>
+        <tr><td>EMBED 정본 검사</td><td>PASS (221 · 0)</td><td>릴리스 QA 자동 검사 추가</td></tr>
+        <tr><td>OWNER VISUAL REVIEW</td><td>대기</td><td>승인 전 판매본으로 옮기지 않음 · 승격 계획 docs/R6_SALE_MIGRATION.md</td></tr>
       </table>
     </article>
   </section>
