@@ -148,7 +148,34 @@
     });
   }
 
-  IDP.sync = { base: BASE, on: !!BASE, popup: popup, wid: wid, forget: forget, onConnect: onConnect, connect: connect, api: api, disconnect: disconnect, choosePlanner: choosePlanner, follow: follow, seen: seen, notice: notice, syncLayers: syncLayers, connectHere: connectHere };
+  // R6.1 (오너 2026-10-07 「어느 위젯 설정에서든 전체 테마를 바로」) — Theme Studio 와 같은 서버 적용(/v1/theme/start → step …)을
+  // 위젯 ⚙ 에서도 부른다. 같은 잠금 · 같은 작업 저장소(idarchive.theme.job)라 Theme Studio 의 「이어서 적용」과도 이어진다.
+  // body = { theme } | { custom: { deep: '#HEX' } }(포인트 = 그 HEX 그대로, 바탕은 서버가 옅게). onStep(d) = 단계마다 진행
+  var JOBKEY = 'idarchive.theme.job';
+  function keepJob(job, label) { try { if (job) localStorage.setItem(JOBKEY, JSON.stringify({ job: job, theme: label, custom: /^custom/.test(label), at: Date.now() })); else localStorage.removeItem(JOBKEY); } catch (e) {} }
+  function stepOnce(job, tries) {
+    var cap = new Promise(function (_, no) { setTimeout(function () { var e = new Error('timeout'); e.code = 'timeout'; no(e); }, 90000); });
+    return Promise.race([api('POST', '/v1/theme/step', { job: job }), cap]).catch(function (e) {
+      var transient = e.code === 'offline' || e.code === 'timeout' || e.code === 'notion_error' || /^http_5/.test(e.code || '');
+      if (!transient || tries >= 2) throw e;
+      return new Promise(function (r) { setTimeout(r, 3000 * (tries + 1)); }).then(function () { return stepOnce(job, tries + 1); });
+    });
+  }
+  function applyGlobal(body, onStep) {
+    var label = body.custom ? 'custom:' + (body.custom.deep || body.custom.soft) : body.theme;
+    function loop(job) {
+      keepJob(job, label);
+      return stepOnce(job, 0).then(function (d) {
+        if (onStep) onStep(d);
+        if (!d.done) return (document.hidden ? Promise.resolve() : new Promise(function (r) { setTimeout(r, 700); })).then(function () { return loop(d.job); });
+        keepJob(null); seen(label);
+        return d;
+      });
+    }
+    return api('POST', '/v1/theme/start', body).then(function (d) { return loop(d.job); });
+  }
+
+  IDP.sync = { base: BASE, on: !!BASE, popup: popup, wid: wid, forget: forget, onConnect: onConnect, connect: connect, api: api, disconnect: disconnect, choosePlanner: choosePlanner, follow: follow, seen: seen, notice: notice, syncLayers: syncLayers, connectHere: connectHere, applyGlobal: applyGlobal };
 
   // 연결된 위젯을 열면 저절로 — 올릴 것이 있으면 바로, 아니면 10분에 한 번(서버를 두드리지 않게)
   if (BASE && wid() && IDP.layers && IDP.q.get('lock') !== '1') {

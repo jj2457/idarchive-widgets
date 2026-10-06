@@ -287,14 +287,23 @@
     var s = saved() || {};
     // 색을 「모든 위젯」에 줄지 「이 위젯만」 줄지 — 처음엔 모든 위젯(이 위젯을 따로 정해 두었으면 이 위젯만)
     var ownNow = layers().widgets[WKEY];
-    var scope = SYNCED || (ownNow && !ownNow.inherit) ? 'one' : 'all';
+    var scope = (ownNow && !ownNow.inherit) || (SYNCED && q.get('wt') && !(ownNow && ownNow.inherit)) ? 'one' : 'all';   // (R6.1) 따로 정한 색이 없으면 「전체 따르기」
     var html = '<div class="idp-panel-title">STYLE</div><div class="idp-styles">';
     STYLES.forEach(function (st) {
       html += '<button type="button" data-style="' + st[0] + '">' + st[1] + '</button>';
     });
+    // R6.1 (오너 2026-10-07) 두 칸을 분명하게 — GLOBAL THEME(플래너 전체: Theme Studio 와 같은 적용 → 커버 · 맨 위 이미지 · 메뉴 그림 · 아이콘 ·
+    // 위젯 · 달력 · 카드 색이 함께) / THIS WIDGET(전체 따르기 · 이 위젯만 · 전체로 되돌리기). 우선순위는 그대로 위젯 > 페이지 > 전체
     html += '<button type="button" data-style="">기본</button></div>' +
-      '<div class="idp-panel-title" style="margin-top:14px">THEME</div>' +
-      '<div class="idp-row idp-scope"><button type="button" data-scope="all">모든 위젯</button><button type="button" data-scope="one">이 위젯만</button></div>' +
+      '<div class="idp-panel-title" style="margin-top:14px">GLOBAL THEME · 플래너 전체</div><div class="idp-swatches idp-global">';
+    Object.keys(THEMES).forEach(function (name) {
+      html += '<button type="button" data-gtheme="' + name + '" title="' + name + '" aria-label="' + name + '" style="background:linear-gradient(135deg,' +
+        THEMES[name].soft + ' 50%,' + THEMES[name].deep + ' 50%)"></button>';
+    });
+    html += '</div><label class="idp-row">나만의 색 HEX <input type="text" data-ghex placeholder="#8A5A3C" maxlength="7" spellcheck="false" style="width:86px;font:inherit;padding:4px 6px;border:1px solid var(--line);border-radius:6px"></label>' +
+      '<div class="idp-row"><button type="button" data-gapply>플래너 전체에 적용</button></div><div class="idp-note idp-gnote"></div>' +
+      '<div class="idp-panel-title" style="margin-top:14px">THIS WIDGET · 이 위젯</div>' +
+      '<div class="idp-row idp-scope"><button type="button" data-scope="all">전체 따르기</button><button type="button" data-scope="one">이 위젯만</button></div>' +
       '<div class="idp-note idp-scope-note"></div><div class="idp-note idp-sync-note"></div><div class="idp-swatches">';
     Object.keys(THEMES).forEach(function (name) {
       html += '<button type="button" data-theme="' + name + '" title="' + name + '" aria-label="' + name + '" style="background:linear-gradient(135deg,' +
@@ -322,23 +331,25 @@
       if (followed) own = null;
       // 노션이 링크에 적어 둔 위젯별 색(Theme Studio 에서 정한 것) — 이 기기에서 「따르기」를 누르지 않았으면 그것이 이 위젯의 색
       var linkOwn = SYNCED && !followed && q.get('wt') ? (q.get('ws') ? '#' + q.get('ws').toUpperCase() : q.get('wt').toUpperCase()) : '';
-      if (SYNCED) panel.querySelector('[data-scope="all"]').hidden = true;   // 노션과 연결된 플래너의 전체 색은 Theme Studio 에서
+      // (R6.1) 「전체 따르기」 = INHERIT GLOBAL — 연결된 위젯에도 보인다(전체 색 자체는 위 GLOBAL THEME 에서)
       note.innerHTML = '';
-      note.appendChild(document.createTextNode(scope === 'all' ? '고른 색이 이 기기의 모든 위젯에 적용돼요'
+      note.appendChild(document.createTextNode(scope === 'all' && !own && !linkOwn ? '이 위젯은 플래너 전체 색(GLOBAL)을 따라요 · 아래 색을 누르면 이 위젯만 바뀌어요'
         : own ? '이 위젯만 ' + (own.theme ? own.theme.toUpperCase() : own.custom.soft.toUpperCase()) + ' · '
         : linkOwn ? '이 위젯만 ' + linkOwn + ' · '
         : SYNCED ? '이 위젯은 페이지 · 전체 테마를 따라요. 색을 누르면 이 위젯만 바뀌어요'
         : '이 위젯만 다른 색으로 — 지금은 전체 테마를 따라요'));
       if (scope === 'one' && (own || linkOwn)) {
-        var b = document.createElement('button'); b.type = 'button'; b.setAttribute('data-inherit', ''); b.className = 'idp-link-btn'; b.textContent = SYNCED ? '페이지 · 전체 테마 따르기' : '전체 테마 따르기';
+        var b = document.createElement('button'); b.type = 'button'; b.setAttribute('data-inherit', ''); b.className = 'idp-link-btn'; b.textContent = '전체로 되돌리기 (RESET TO GLOBAL)';
         note.appendChild(b);
       }
     }
     panel.addEventListener('click', function (e) {
       var t = e.target;
-      if (t.dataset.scope) { scope = t.dataset.scope; markScope(); }
+      if (t.dataset.gtheme) { gsel = { theme: t.dataset.gtheme }; panel.querySelector('[data-ghex]').value = ''; markGlobal(); }
+      else if (t.hasAttribute('data-gapply')) applyGlobal();
+      else if (t.dataset.scope) { scope = t.dataset.scope; if (scope === 'all') setWidget(null); markScope(); }
       else if (t.hasAttribute('data-inherit')) { setWidget(null); markScope(); }
-      else if (t.dataset.theme && scope === 'one') { setWidget({ theme: t.dataset.theme }); markScope(); }
+      else if (t.dataset.theme) { scope = 'one'; setWidget({ theme: t.dataset.theme }); markScope(); }
       else if (t.hasAttribute('data-style')) { save({ style: t.dataset.style }); markStyle(panel); }
       else if (t.dataset.theme) save({ theme: t.dataset.theme, soft: '', deep: '' });
       else if (t.dataset.mode) save({ mode: t.dataset.mode });
@@ -346,10 +357,54 @@
       else if (t.hasAttribute('data-reset')) { try { localStorage.removeItem(STORE); } catch (err) {} applyTheme(effective()); }
       else if (t.hasAttribute('data-close')) panel.hidden = true;
     });
+    // ── GLOBAL THEME: 고른 색 → 노션과 연결된 플래너면 서버 적용(전체), 아니면 이 기기의 모든 위젯(정직하게 알린다)
+    var gsel = null, gbusy = false;
+    function gname(sp) { return sp.custom ? '나만의 색 ' + sp.custom.deep.toUpperCase() : sp.theme.toUpperCase(); }
+    function gnote(t, err) { var el = panel.querySelector('.idp-gnote'); el.textContent = t || ''; el.style.color = err ? '#b5473a' : ''; }
+    function markGlobal() {
+      Array.prototype.forEach.call(panel.querySelectorAll('[data-gtheme]'), function (b) { b.className = gsel && gsel.theme === b.dataset.gtheme ? 'on' : ''; });
+      gnote(gsel ? gname(gsel) + ' — 「플래너 전체에 적용」을 누르면 커버 · 맨 위 이미지 · 메뉴 그림 · 아이콘 · 위젯 · 달력 색이 함께 바뀌어요. 내가 넣은 사진은 그대로예요.' : '');
+    }
+    panel.querySelector('[data-ghex]').addEventListener('input', function (e) {
+      var v = String(e.target.value || '').trim().replace(/^#?/, '#');
+      if (/^#[0-9a-fA-F]{6}$/.test(v)) { gsel = { custom: { deep: v.toLowerCase() } }; markGlobal(); }
+    });
+    function withSync(cb) {
+      if (IDP.sync) return cb();
+      var sc = document.createElement('script'); sc.src = 'assets/sync.js'; sc.onload = cb; sc.onerror = cb; document.head.appendChild(sc);
+    }
+    function applyGlobal() {
+      if (gbusy) return;
+      if (!gsel) { gnote('먼저 위에서 색을 골라 주세요.', true); return; }
+      var sp = gsel;
+      withSync(function () {
+        var S = IDP.sync, on = S && S.on && S.wid();
+        // 노션 연결이 없으면: 노션이 색을 적어 둔 위젯(ts=1)은 이 기기 저장으로 바뀌지 않는다 — 있는 그대로 알린다
+        if (!on) {
+          if (SYNCED) { gnote('플래너 전체 색(커버 · 아이콘 · 메뉴 그림 · 위젯)은 노션과 연결해야 바뀌어요. CUSTOM 의 Theme Studio 에서 한 번만 연결하면, 그다음부터는 어느 위젯의 ⚙ 에서든 여기서 바로 바꿀 수 있어요.', true); return; }
+          save(sp.custom ? { theme: '', soft: sp.custom.deep.slice(1), deep: sp.custom.deep.slice(1) } : { theme: sp.theme, soft: '', deep: '' });
+          gnote('이 기기의 모든 위젯을 ' + gname(sp) + '(으)로 바꿨어요. 커버 · 아이콘 · 메뉴 그림까지 바꾸려면 Theme Studio 에서 노션과 한 번 연결해 주세요.');
+          return;
+        }
+        if (!confirm('플래너 전체를 ' + gname(sp) + '(으)로 바꿀까요?\n커버 · 맨 위 이미지 · 메뉴 그림 · 아이콘 · 위젯 · 달력 색이 함께 바뀌어요.\n내가 넣은 사진 · 기록은 그대로예요.')) return;
+        gbusy = true; gnote('플래너 전체를 바꾸는 중…');
+        S.applyGlobal(sp.custom ? { custom: sp.custom } : { theme: sp.theme }, function (d) {
+          var p = d.progress || {};
+          if (!d.done) gnote('적용 중 · 페이지 ' + (p.pagesDone || 0) + ' / ' + (p.pagesTotal || '?') + ' · ' + (p.changed || 0) + '곳 바꿈 — 이 창을 닫지 마세요');
+        }).then(function (d) {
+          gbusy = false;
+          var r = d.result || {}, n = r.ok != null ? r.ok : (d.changed ? d.changed.blocks + d.changed.pages : 0);
+          gnote(r.status && r.status !== 'SUCCESS' ? n + '곳 바꿈 · ' + (r.fail || 0) + '곳은 노션 오류로 남았어요 — Theme Studio 의 「남은 부분 다시 적용」으로 마저 바꿀 수 있어요.'
+            : '✓ 플래너 전체를 ' + gname(sp) + '(으)로 바꿨어요 · ' + n + '곳. 노션 화면을 새로고침하면 보여요.', r.status && r.status !== 'SUCCESS');
+        }, function (e) {
+          gbusy = false;
+          gnote(e.code === 'apply_busy' ? '다른 기기에서 테마를 적용 중이에요. 끝난 뒤 다시 눌러 주세요.' : '노션에 적용하지 못했어요(' + (e.message || e.code || '오류') + '). 잠시 뒤 다시 눌러 주세요 — 이어서 바꿔요.', true);
+        });
+      });
+    }
     panel.querySelector('[data-k="soft"]').addEventListener('input', function (e) {
       var v = e.target.value.slice(1);
-      if (scope === 'one') { setWidget({ custom: { soft: '#' + v, deep: '#' + v } }); markScope(); }
-      else save({ soft: v, deep: v });
+      scope = 'one'; setWidget({ custom: { soft: '#' + v, deep: '#' + v } }); markScope();
     });
     var range = panel.querySelector('[data-k="radius"]');
     range.value = s.radius || D.radius;
