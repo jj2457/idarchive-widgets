@@ -152,6 +152,12 @@
     <!-- (R6 2026-10-06) HOME 그림 메뉴의 내 사진을 지금 테마의 기본 그림으로 — 사진 설명 「기본」(한 칸)과 같은 일을 모든 칸에 -->
     <div class="keep" id="menuReset" hidden>HOME 메뉴에 넣은 내 사진을 기본 그림으로 되돌리고 싶을 때 — 이름 · 누르면 가는 곳은 그대로예요. 한 칸만이면 그 사진 설명에 「기본」이라고 적고 저장하세요.
       <button type="button" id="menuResetGo">HOME 메뉴 사진 모두 기본 그림으로</button></div>
+    <!-- R6.1 (2026-10-07) 커버 · 맨 위 그림 · 프로필 사진은 서로 따로 — 내 사진은 테마를 바꿔도 그대로, 되돌리기는 여기서 하나씩 -->
+    <div class="keep" id="partReset" hidden>내 사진으로 바꾼 곳을 지금 색의 기본 그림으로 되돌리고 싶을 때(하나씩 따로) — 한 장만이면 그 그림 설명에 「기본」이라고 적어도 돼요.
+      <span class="row" style="margin-top:8px;gap:6px;flex-wrap:wrap">
+        <button type="button" id="coverResetGo">페이지 커버 모두 기본으로</button>
+        <button type="button" id="topResetGo">맨 위 이미지 모두 기본으로</button>
+        <button type="button" id="profileResetGo">프로필 사진 기본으로</button></span></div>
   </div>
 
   <!-- 고급 설정(처음 쓰는 사람은 열 필요 없음): 페이지별 · 위젯별 색. 우선순위 위젯 > 페이지 > 전체 -->
@@ -536,6 +542,10 @@
     if (!confirm('HOME 메뉴에 넣은 내 사진을 모두 지금 색의 기본 그림으로 바꿀까요?\n사진 파일은 노션에서 지워지지 않고, 메뉴 칸에서만 기본 그림으로 바뀌어요.')) return;
     startWith(Object.assign(pick(), { resetMenu: true }));
   };
+  function partReset(flag, ask) { return function () { if (running || !linked()) return; if (!confirm(ask)) return; var b = pick(); b[flag] = true; startWith(b); }; }
+  $('coverResetGo').onclick = partReset('resetCovers', '내가 바꾼 페이지 커버를 모두 지금 색의 기본 커버로 바꿀까요?\n맨 위 이미지 · 프로필 사진 · 메뉴 사진은 그대로예요.');
+  $('topResetGo').onclick = partReset('resetTop', '페이지 맨 위 이미지에 넣은 내 사진을 모두 지금 색의 기본 이미지로 바꿀까요?\n커버 · 프로필 · 메뉴 사진은 그대로예요.');
+  $('profileResetGo').onclick = partReset('resetProfile', 'HOME 프로필 사진을 ID Archive 기본 그림으로 바꿀까요?\n커버 · 맨 위 이미지 · 메뉴 사진은 그대로예요.');
   $('connectGo').onclick = function () { S.connectHere(location.origin + location.pathname + location.search); };
   // 결정 A: 한 번에 — 노션 연결 해제(토큰 폐기) + 서버의 연결 기록 삭제. 플래너 내용 · 색은 그대로 남는다
   $('disconnectGo').onclick = function () {
@@ -618,6 +628,7 @@
   // 전체 색을 바꿔도 개별 설정은 그대로 — 무엇이 그대로인지 보여 주고, 지우고 적용하는 길은 따로(확인을 받고)
   function drawKeep() {
     if ($('menuReset')) $('menuReset').hidden = !linked();
+    if ($('partReset')) $('partReset').hidden = !linked();
     var list = linked() ? overrides(cfg) : [];
     $('keepNote').hidden = !list.length;
     if (!list.length) return;
