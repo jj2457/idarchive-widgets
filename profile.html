@@ -31,6 +31,7 @@
   .now { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; font-size: 11px; color: var(--ink); line-height: 1.55; }
   .now b { display: block; font-size: 9px; font-weight: 500; letter-spacing: .24em; color: color-mix(in srgb, var(--deep) 75%, #2a2a2a); margin-bottom: 2px; }
   .qt { margin-top: 8px; font-family: var(--serif); font-style: italic; font-size: 11.5px; color: var(--sub); line-height: 1.55; }
+  body.nopic .card { padding-top: 4px; } body.nopic .nm { margin-top: 2px; }
   .empty { margin-top: 10px; font-size: 11px; color: var(--sub); text-align: center; line-height: 1.7; }
 </style>
 </head>
@@ -64,6 +65,9 @@
     var ph = IDP.listParse(IDP.opt('profile', 'photo', ''), 1)[0], src = ph ? IDP.photo(ph[0]) : '';
     $('pic').hidden = !src; if (src) $('pic').src = src; else $('pic').removeAttribute('src');
     $('ph0').hidden = !!src;
+    // R6.1 (오너 2026-10-07 「프로필 사진 클릭 → 내 사진으로 교체」) pic=0: 사진은 바로 위 노션 그림 블록이 맡는다(⋯ → 바꾸기 · 모든 기기 같음 · 테마 적용이 덮지 않음) — 위젯은 이름 · 한 줄만
+    document.querySelector('.ph').hidden = IDP.q.get('pic') === '0';
+    document.body.classList.toggle('nopic', IDP.q.get('pic') === '0');
     var d = IDP.now(); $('today').textContent = 'TODAY · ' + (d.getMonth() + 1) + '.' + d.getDate() + ' ' + W[d.getDay()];
     $('name').textContent = name || '닉네임';
     $('tag').textContent = tag;
