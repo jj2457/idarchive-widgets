@@ -23,6 +23,9 @@
   .pol i { position: absolute; left: 0; right: 0; bottom: 3px; text-align: center; font-style: normal; font-family: 'Nanum Pen Script', cursive; font-size: 14px; color: #6b6158; line-height: 1; }
   .pol .tape { position: absolute; top: -8px; left: 50%; width: 44%; height: 14px; transform: translateX(-50%) rotate(var(--trot, -3deg)); background: color-mix(in srgb, var(--soft) 70%, #fff); opacity: .85; box-shadow: 0 1px 1px rgba(0,0,0,.06); }
   .pol .pin { position: absolute; top: -6px; left: 50%; width: 11px; height: 11px; margin-left: -5.5px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff 0 18%, var(--deep) 26% 100%); box-shadow: 0 2px 3px rgba(0,0,0,.25); }
+  /* R6.1 (오너 2026-10-07 「VISION 사진만 아주 조금 크게 · 사진 사이 간격 일정하게」) 좁은 칸(두 줄)은 사이 간격 · 액자 여백을 조금 줄여 사진을 키운다 */
+  .wall[data-narrow] { gap: 12px 10px; padding: 8px 2px 4px; }
+  .wall[data-narrow] .pol { padding: 5px 5px 16px; }
   .wall .empty2 { grid-column: 1 / -1; text-align: center; font-size: 11px; line-height: 1.7; color: var(--sub); padding: 30px 12px; }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap" rel="stylesheet">
@@ -61,6 +64,7 @@
     // 상자 높이를 넘을 때만 세 줄(노션 임베드 높이는 고정 · 폭만 화면 따라 바뀜 → 폭만 보고 정하면 1920px 에서 사진이 우표만 해짐)
     var prefer = pins.length <= 1 ? 1 : pins.length <= 4 ? 2 : (window.innerWidth < 420 ? 2 : 3);
     wall.style.setProperty('--cols', prefer);
+    if (prefer === 2 && window.innerWidth < 300) wall.setAttribute('data-narrow', ''); else wall.removeAttribute('data-narrow');
     if (!pins.length) { wall.innerHTML = '<div class="empty2">⚙ 에서 「사진 고르기」로 사진을 넣으면<br>벽에 핀으로 꽂은 것처럼 보여요</div>'; return; }
     var ROT = [-3.2, 2.4, -1.4, 3, -2.2, 1.6];
     pins.forEach(function (p, k) {
@@ -76,7 +80,8 @@
       var check = function () {
         if (fits()) return;
         var rows = Math.ceil(pins.length / 2), avail = window.innerHeight - wall.getBoundingClientRect().top - 12;
-        var rowH = (avail - (rows - 1) * 14) / rows, w = Math.floor((rowH - 24) / 1.12 + 12);
+        var vgap = wall.hasAttribute('data-narrow') ? 12 : 14, pad = wall.hasAttribute('data-narrow') ? 21 : 24;
+        var rowH = (avail - (rows - 1) * vgap) / rows, w = Math.floor((rowH - pad) / 1.12 + (pad === 21 ? 10 : 12));
         if (w < 70) { wall.style.setProperty('--cols', 3); return; }
         wall.style.gridTemplateColumns = 'repeat(2, ' + w + 'px)'; wall.style.justifyContent = 'center';
       };
