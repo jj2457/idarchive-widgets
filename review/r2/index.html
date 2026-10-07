@@ -60,7 +60,7 @@
   .ws-page { margin:22px 0 8px; font-size:16px; scroll-margin-top:52px; } .ws-page small { color:var(--sub); font-weight:400; }
   .ws-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; }
   .ws-card { border:1px solid var(--line); border-radius:12px; background:var(--panel); padding:10px; display:grid; gap:6px; min-width:0; }
-  .ws-card header { display:flex; gap:8px; align-items:baseline; flex-wrap:wrap; } .ws-card header b { font-family:var(--display); color:var(--accent); font-size:17px; } .ws-card header span { font-size:12.5px; font-weight:600; }
+  .ws-card header { display:flex; gap:8px; align-items:baseline; flex-wrap:wrap; } .ws-card header b { font-family:var(--body); font-variant-numeric:lining-nums tabular-nums; color:var(--accent); font-size:14px; letter-spacing:.02em; } .ws-card header span { font-size:12.5px; font-weight:600; }
   .ws-card p { margin:0; font-size:12px; color:var(--sub); }
   .ws-prev { height:220px; overflow:hidden; border-radius:8px; background:#fff; border:1px solid var(--line); position:relative; }
   .ws-prev iframe { width:142.86%; border:0; transform:scale(.7); transform-origin:0 0; pointer-events:none; }
@@ -70,7 +70,7 @@
   .ws-btns button[aria-pressed="true"][data-v="MOVE"] { background:#9a7b55; color:#fff; border-color:#9a7b55; }
   .ws-card[data-v="REMOVE"] .ws-prev { opacity:.45; }
   .ws-move { font:13px var(--body); padding:6px 8px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); }
-  .ws-out { position:sticky; bottom:0; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px 12px; display:grid; gap:6px; box-shadow:0 -4px 16px rgba(0,0,0,.06); z-index:3; }
+  .ws-out { position:sticky; bottom:0; max-height:40vh; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px 12px; display:grid; gap:6px; box-shadow:0 -4px 16px rgba(0,0,0,.06); z-index:3; }
   .ws-out textarea { width:100%; box-sizing:border-box; font:13px/1.5 ui-monospace,Consolas,monospace; border:1px solid var(--line); border-radius:8px; padding:6px 8px; background:var(--bg); color:var(--ink); }
   .ws-row { display:flex; gap:8px; } .ws-row button { font:600 12.5px var(--body); padding:7px 14px; border-radius:999px; border:1px solid var(--line); background:var(--chip); color:var(--ink); cursor:pointer; }
 </style>
@@ -85,15 +85,59 @@
   <section class="owner" id="current" aria-label="R6.2 OWNER REVIEW">
     <h2>R6.2 OWNER REVIEW — 지금 개발 기준 (2026-10-08 · 🎬 DEMO · 🛒 판매본 그대로)</h2>
     <p class="lead">R6 = 되돌리기 기준점 · R6.1 = 이전 피드백 판 · <b>R6.2 = 지금 개발 기준</b>. 아래 1–17 은 실제 노션 화면이에요. 오너가 지금 고를 것은 <a href="#widget-selection">WIDGET SELECTION</a> 하나뿐이에요.</p>
-    <div class="status" id="cur-chips"></div>
-    <div id="cur-items"></div>
+    <div class="status" id="cur-chips"><span class="ok">ONE ROW COMPACT</span><span class="ok">FIXED NAV (PC 실측 같은 자리)</span><span class="ok">PROFILE UNIFIED (19쪽)</span><span class="ok">TOP IMAGE ICON 0</span><span class="ok">GLOBAL THEME FROM WIDGET (사본)</span><span class="no">DEMO 직접 테마 = 오너 허락 필요</span><span class="ok" id="chip-reset">IVORY RESET</span><span class="ok">QUICK CAPTURE GUIDE</span><span class="ok">MOBILE 옆 넘침 0</span><span class="ok">새 복제 링크 원본 0</span></div>
+    <style>#cur-items{display:grid;gap:34px}</style>
+    <div id="cur-items">
+    <article class="item big" id="c1"><h3><span class="k">1</span>HOME FULL</h3>
+      <p>커버 → 메뉴 줄(모든 쪽 같은 자리) → 맨 위 사진(아이콘 없음) → 한 줄 메뉴 10칸 → 프로필 카드 · TODAY · 시계 · 달력. 오른쪽 칸 = 오너가 직접 맞춘 너비(0.2766).</p>
+      <figure><img src="cur-01-home.jpg" alt="HOME 전체" loading="lazy"></figure></article>
+    <article class="item big" id="c2"><h3><span class="k">2</span>COMPACT ONE ROW MENU</h3>
+      <p>노션 칸 사이(46px)는 바꿀 수 없어서, 그림 안 빈 테두리를 없애 아치가 칸을 꽉 채우게 했어요(메뉴 그림 v4 · 3:4 그대로 · 테마 · 나만의 색 그대로). 1줄 10칸 유지, 2줄로 돌아가지 않아요.</p>
+      <figure><img src="cur-02-menu.jpg" alt="메뉴 전후" loading="lazy"></figure></article>
+    <article class="item" id="c3"><h3><span class="k">3</span>CENTERED MENU TITLE</h3>
+      <p>그림 가운데 = 이름 가운데 = 칸 가운데. 글자 사이 간격만큼 왼쪽을 채워 눈으로 보는 가운데. 긴 이름(VISION BOARD)도 칸을 넘지 않아요(좁으면 두 줄 · 글자만 작게).</p>
+      <figure><img src="cur-03-title.jpg" alt="이름표 확대" loading="lazy"></figure></article>
+    <article class="item big" id="c4"><h3><span class="k">4</span>UNIFIED PROFILE</h3>
+      <p>그림 + 이름이 카드 하나(노션 콜아웃). 캐릭터는 조금 작게(118 → 90). HOME 기본 = ARCHIE · 쪽마다 같은 카드에 맞는 모습(GOALS 목표 · HABIT 체크 · WORK 일 · FINANCE 돈 · FITNESS 운동 · VISION 꿈 · ARCHIVE 책 · TRAVEL 여행 · UNIV 공부 …). FITNESS · VISION 에도 같은 카드를 새로 넣었어요. 사진 ⋯ → 바꾸기 → 내 사진(테마를 바꿔도 그대로) · 설명 「기본」 → 지금 테마의 기본 그림.</p>
+      <div class="pair"><figure><img src="cur-04-home-card.jpg" alt="HOME 프로필" loading="lazy"><figcaption>HOME</figcaption></figure><figure><img src="cur-04-fitness-card.jpg" alt="FITNESS 프로필" loading="lazy"><figcaption>FITNESS(새로)</figcaption></figure></div></article>
+    <article class="item big" id="c5"><h3><span class="k">5</span>FIXED TOP NAV</h3>
+      <p>페이지를 옮겨 다녀도 메뉴 줄이 같은 자리에 있어요. 메뉴 데이터베이스 안 10쪽은 노션이 제목 밑에 「세부 정보 보기」 줄(40px)을 그려서, 나머지 10쪽(HOME 포함)에는 같은 높이의 빈 줄을 하나 두었어요 — 1526 · 넓은 창 모두 메뉴 줄 y 같음(실측). 문장 · 높이 40 · 글자 16 · 순서 같음, 지금 쪽만 굵게.</p>
+      <figure><img src="cur-05-nav.jpg" alt="메뉴 줄 위치 비교" loading="lazy"></figure></article>
+    <article class="item big" id="c6"><h3><span class="k">6</span>GOALS NAV</h3>
+      <p>왼쪽 메뉴 「STEP 5 · YEARLY PLAN」(가는 곳 · 목표 연결 그대로). 5 STEP 카드는 글자 넘침 0.</p>
+      <div class="pair"><figure><img src="cur-06-goals-nav.jpg" alt="GOALS 왼쪽 메뉴" loading="lazy"></figure><figure><img src="r62-goals-steps.jpg" alt="5 STEP" loading="lazy"></figure></div></article>
+    <article class="item big" id="c7"><h3><span class="k">7</span>COVER / NAV / TOP IMAGE / PROFILE</h3>
+      <p>네 가지는 서로 따로예요: 커버(테마가 관리 · 내 커버는 테마를 바꿔도 그대로 · 되돌리기 = 지금 테마 기본) · 메뉴 줄 · 맨 위 사진(그림만) · 프로필 카드.</p>
+      <figure><img src="r62-anatomy-goals.jpg" alt="GOALS 해부" loading="lazy"></figure></article>
+    <article class="item big" id="c8"><h3><span class="k">8</span>GLOBAL THEME FROM WIDGET</h3>
+      <p id="c8-p">아무 위젯 ⚙ → 맨 위 GLOBAL THEME → 색(또는 나만의 색 HEX) → 「플래너 전체에 적용」 — Theme Studio 와 같은 설정 하나(같은 서버 · 같은 테마 상태). 지금 오너가 바로 눌러 볼 곳은 <b>「DEMO THEME TEST · R6.2b (테마 시험용)」</b>(BUYER QA 아래 · 오늘 DEMO 를 그대로 새로 복제 · 이 사본의 위젯 ⚙ 이 테마 서버에 연결됨). <b>DEMO 자체</b>는 테마 서버가 판매본 · DEMO 를 바꾸지 못하게 잠가 둔 상태예요 — DEMO 잠금을 푸는 일은 보안 설정이라 Claude 가 혼자 바꾸지 않았어요. 오너가 「DEMO 잠금 풀어」라고 허락하면 바로 풀고, DEMO 위젯 ⚙ → 「노션과 연결하기」에서 DEMO 를 한 번 허용하면 DEMO 에서도 같은 버튼으로 바뀌어요(테마를 바꿔도 견본 날짜가 그대로 남도록 DEMO 위젯 28개는 미리 고쳐 둠).</p>
+      <figure><img src="cur-08-gear.jpg" alt="위젯 설정 GLOBAL THEME" loading="lazy"></figure></article>
+    <article class="item big" id="c9"><h3><span class="k">9–12</span>IVORY → BLUE → LAVENDER → IVORY RESET</h3>
+      <p id="c9-p">새 사본에서 실제로 차례대로 적용(BLUE 753 · LAVENDER 755 · IVORY 블록). 1526 화면 블록 상자(위치 · 크기) 첫 화면 35 · 대시보드 75 비교 — <b>BLUE 0 · LAVENDER 0 · IVORY RESET 0</b>. 바뀌는 것 = 커버 · 아이콘 · 맨 위 사진 바탕 · 메뉴 그림 · ARCHIE 액자 · 위젯 색. 메뉴 · 제목 · 테두리 · 제목 자리 · 배치 · 간격은 그대로.</p>
+      <div class="pair"><figure><img src="cur-09-ivory.jpg" alt="IVORY" loading="lazy"><figcaption>9 · IVORY</figcaption></figure><figure><img src="cur-10-blue.jpg" alt="BLUE" loading="lazy"><figcaption>10 · BLUE</figcaption></figure><figure><img src="cur-11-lavender.jpg" alt="LAVENDER" loading="lazy"><figcaption>11 · LAVENDER</figcaption></figure><figure><img src="cur-12-ivory.jpg" alt="IVORY 되돌림" loading="lazy"><figcaption>12 · IVORY RESET</figcaption></figure></div></article>
+    <article class="item big" id="c13"><h3><span class="k">13</span>HOME RELATED WIDGETS (후보 32)</h3>
+      <p>HOME 대시보드 아래 후보 그대로(정하지 않음). 노션에서 위젯 위 번호 H01–H32 · 아래 <a href="#widget-selection">WIDGET SELECTION</a> 에서 실제 위젯을 보며 고르기.</p>
+      <figure><img src="r61-home-widgets.jpg" alt="HOME 후보" loading="lazy"></figure></article>
+    <article class="item" id="c14"><h3><span class="k">14</span>PAGE RELATED WIDGETS (18쪽 · 후보 106)</h3>
+      <p>쪽마다 맨 아래 후보(번호 G01 · Y01 · D01 …). 예전 보고의 「107」은 제 셈 실수 — 쪽마다 실제 수와 제목 숫자가 같고 합은 106.</p>
+      <figure><img src="r61-daily-widgets.jpg" alt="DAILY 후보" loading="lazy"></figure></article>
+    <article class="item" id="c15"><h3><span class="k">15</span>＋ ADD WIDGET</h3>
+      <p>그대로. 위젯 이름을 한 번 누르면 그 페이지 맨 아래 「MY WIDGETS」에 들어와요. 오너가 직접 눌러 보기 좋게 HOME · 18쪽에 있어요. 가이드북 HOW TO 에 더하기 · 옮기기 · 빼기 · 다시 더하기.</p>
+      <figure><img src="r61-add-widget.jpg" alt="ADD WIDGET" loading="lazy"></figure></article>
+    <article class="item big" id="c16"><h3><span class="k">16</span>QUICK CAPTURE GUIDE</h3>
+      <p>가이드북 「HOW TO · 하나씩 바꾸는 법」: 빠르게 적기 버튼이 하는 일(+ 메모 → 메모 목록 · + 일정 → 오늘 날짜 일정 · + 독서 → 읽는 중) · 저장되는 곳 · 새 버튼 더하기(복제 → ⚙ 버튼 편집) · 고치기 · 숨기기 · 빼기 · 옮기기 · 폰.</p>
+      <figure><img src="r62-guide-quick.jpg" alt="빠르게 적기 안내" loading="lazy"></figure></article>
+    <article class="item" id="c17"><h3><span class="k">17</span>MOBILE</h3>
+      <p id="c17-p">아이폰 화면으로 띄워 실측(2026-10-08): HOME 375 · 390 · 430, GOALS 390, HABIT 390, DAILY 390, FITNESS 390, VISION 375 — 페이지 옆 넘침 0(넓은 표 보기 안의 가로 스크롤은 노션 기본). 메뉴 줄은 네 줄로 접혀 모두 눌러져요. 폰에서는 노션이 제목 위 줄(백링크 · 세부 정보)을 쪽마다 다르게 그려 메뉴 줄 위치는 PC 만큼 같지 않아요.</p>
+      <div class="phones"><figure><img src="cur-17-home430.jpg" alt="HOME 430" loading="lazy"><figcaption>HOME 430</figcaption></figure><figure><img src="cur-17-daily390.jpg" alt="DAILY 390" loading="lazy"><figcaption>DAILY 390</figcaption></figure><figure><img src="cur-17-fitness390.jpg" alt="FITNESS 390" loading="lazy"><figcaption>FITNESS 390 (새 프로필 카드)</figcaption></figure><figure><img src="cur-17-vision375.jpg" alt="VISION 375" loading="lazy"><figcaption>VISION 375</figcaption></figure><figure><img src="r62-m390-goals.jpg" alt="GOALS 390" loading="lazy"><figcaption>GOALS 390</figcaption></figure></div></article>
+    </div>
   </section>
 
   <section class="owner" id="widget-selection" aria-label="WIDGET SELECTION">
     <h2>👤 WIDGET SELECTION — KEEP · REMOVE · MOVE</h2>
     <p class="lead">HOME 32 · 18쪽 106 = 138개 후보(노션에서도 위젯 위에 같은 번호). 카드마다 KEEP / REMOVE / MOVE 를 누르면 맨 아래 「내 선택」에 「H01 KEEP」처럼 모여요 → 복사해서 노션 인박스에 붙여 주세요. 안 누른 것은 그대로 후보로 남아요. 고른 것은 이 브라우저에만 저장돼요.</p>
     <div id="ws-root">후보를 불러오는 중…</div>
-    <div class="ws-out"><b>내 선택</b> <span id="ws-count"></span><textarea id="ws-out" rows="5" readonly placeholder="카드에서 KEEP · REMOVE · MOVE 를 누르면 여기에 모여요"></textarea><div class="ws-row"><button type="button" id="ws-copy">복사하기</button><button type="button" id="ws-clear">모두 지우기</button></div></div>
+    <div class="ws-out"><b>내 선택</b> <span id="ws-count"></span><textarea id="ws-out" rows="2" readonly placeholder="카드에서 KEEP · REMOVE · MOVE 를 누르면 여기에 모여요"></textarea><div class="ws-row"><button type="button" id="ws-copy">복사하기</button><button type="button" id="ws-clear">모두 지우기</button></div></div>
   </section>
 
   <h2 style="font-size:15px;color:var(--sub);margin:0" id="history">HISTORY — 이전 판 기록(지우지 않고 보존)</h2>
