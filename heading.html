@@ -58,6 +58,25 @@
   @media (max-width: 66px) { [data-row="1"] .t { font-size: 9.5px; letter-spacing: .03em; padding-left: .03em; } }
   body.stack { align-items: flex-start; }
   body.stack .row { width: var(--lw); }
+  /* R6.2 style=step (오너 2026-10-07 「5 STEP 카드 — 박스 안 가운데 · 글자가 넘치지 않게」): n = 「STEP 1」 · t = 제목 · s = 한 줄.
+     노션 글 블록은 가운데 정렬이 안 되고 좁은 칸에서 단어 중간이 끊겨서 — 카드 하나를 이 위젯으로. 단어 단위로만 줄바꿈, 넘치면 글자를 줄여 맞춤 */
+  .step { display: none; }
+  body[data-style="step"] { padding: 3px; justify-content: stretch; }
+  [data-style="step"] .row, [data-style="step"] > .s, [data-style="step"] .rule, [data-style="step"] .mod { display: none !important; }
+  [data-style="step"] .step, .steps .step { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 3px; width: 100%; height: 100%;
+    border-radius: 10px; background: color-mix(in srgb, var(--soft) 45%, #ffffff); padding: 8px 6px; box-sizing: border-box; }
+  .step .sn { font-size: 10px; letter-spacing: .16em; padding-left: .16em; font-weight: 600; color: color-mix(in srgb, var(--deep) 75%, #3a2f26); }
+  .step .st { font-family: var(--serif); font-size: 15px; letter-spacing: .06em; padding-left: .06em; line-height: 1.15; color: color-mix(in srgb, var(--deep) 40%, #2a2622); word-break: keep-all; overflow-wrap: normal; }
+  .step .ss { font-size: 11px; line-height: 1.35; color: var(--sub); word-break: keep-all; }
+  /* style=steps: 카드 여러 장을 한 위젯 안에 한 줄로(노션 칸 사이 46px 를 없애 카드 폭을 넓힘) — items = 「번호|제목|한 줄」을 쉼표로 */
+  .steps { display: none; }
+  body[data-style="steps"] { padding: 3px 2px; justify-content: stretch; }
+  [data-style="steps"] .row, [data-style="steps"] > .s, [data-style="steps"] .rule, [data-style="steps"] .mod { display: none !important; }
+  [data-style="steps"] .steps { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; width: 100%; height: 100%; }
+  [data-style="steps"] .steps .step { display: flex; height: 100%; min-width: 0; overflow: hidden; }
+  @media (max-width: 420px) { [data-style="steps"] .steps { gap: 5px; } .step .sn { letter-spacing: .06em; padding-left: .06em; } }
+  .step .sn { white-space: nowrap; }
+  :root[data-mode="dark"] .step .st { color: color-mix(in srgb, var(--soft) 70%, #ffffff); }
   /* 한글 제목(「작은 습관 → 목표 · 연결」 · 「나의 수업」)은 영문 대문자용 넓은 자간이면 글자가 흩어진다(R5 폰 검수 2026-10-06) — 한글이 들어가면 자간을 좁힌다 */
   .ko { letter-spacing: .03em !important; }
 </style>
@@ -66,12 +85,14 @@
 <div class="row"><span class="ln"></span><span class="t" id="t"></span><span class="ln"></span></div>
 <div class="s" id="s"></div>
 <div class="mod"><span class="ic" id="ic" aria-hidden="true"></span><span class="mt" id="mt"></span><span class="ms" id="ms"></span></div>
+<div class="step"><span class="sn" id="sn"></span><span class="st" id="st"></span><span class="ss" id="ss"></span></div>
+<div class="steps" id="steps"></div>
 <div class="rule"></div>
 <script src="config/themes.js"></script>
 <script src="assets/core.js?v=r62"></script>
 <script>
   var st = IDP.q.get('style');
-  document.body.dataset.style = /^(mark|line|plain|module|label)$/.test(st || '') ? st : 'mark';
+  document.body.dataset.style = /^(mark|line|plain|module|label|step|steps)$/.test(st || '') ? st : 'mark';
   // 작은 선 아이콘(24 그리드 · 테마 포인트 색 선) — 글자 아님, 그림만
   var ICONS = {
     today: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/>',
@@ -92,6 +113,37 @@
     document.getElementById('ms').textContent = (IDP.q.get('s') || '').slice(0, 60);
   }
   if (IDP.q.get('rule') === '0') document.body.dataset.rule = '0';
+  if (document.body.dataset.style === 'step') {
+    document.getElementById('sn').textContent = (IDP.q.get('n') || '').slice(0, 20);
+    // 하이픈 · 마지막 한 글자 단어에서 줄이 끊기지 않게(MANDAL-ART · 이번 주)
+    document.getElementById('st').textContent = (IDP.q.get('t') || '').slice(0, 30).replace(/-/g, '‑');
+    document.getElementById('ss').textContent = (IDP.q.get('s') || '').slice(0, 40).replace(/ (\S)$/, ' $1');
+    // 넘치면(가로 · 세로) 제목부터 조금씩 줄인다 — 10px 아래로는 줄이지 않는다
+    var fitStep = function () {
+      var box = document.querySelector('.step'), t = document.getElementById('st'), ss = document.getElementById('ss');
+      t.style.fontSize = ''; ss.style.fontSize = '';
+      var fs = 15, s2 = 11;
+      var over = function () { return box.scrollHeight > box.clientHeight + 1 || [t, ss].some(function (e) { return e.scrollWidth > box.clientWidth - 8; }); };
+      while (over() && fs > 10) { fs -= 0.5; t.style.fontSize = fs + 'px'; if (s2 > 10) { s2 -= 0.25; ss.style.fontSize = s2 + 'px'; } }
+    };
+    fitStep(); addEventListener('resize', fitStep); if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitStep);
+  }
+  if (document.body.dataset.style === 'steps') {
+    var wrap = document.getElementById('steps');
+    (IDP.q.get('items') || '').split(',').slice(0, 6).forEach(function (it) {
+      var f = it.split('|'), c = document.createElement('div'); c.className = 'step';
+      [['sn', f[0] || ''], ['st', (f[1] || '').replace(/-/g, '‑')], ['ss', (f[2] || '').replace(/ (\S)$/, ' $1')]].forEach(function (x) { var e = document.createElement('span'); e.className = x[0]; e.textContent = x[1].slice(0, 40); c.appendChild(e); });
+      wrap.appendChild(c);
+    });
+    var fitAll = function () {
+      var cards = wrap.children, fs = 15, s2 = 11, n = 10;
+      var set = function () { Array.prototype.forEach.call(cards, function (c) { c.querySelector('.st').style.fontSize = fs + 'px'; c.querySelector('.ss').style.fontSize = s2 + 'px'; c.querySelector('.sn').style.fontSize = n + 'px'; }); };
+      var over = function () { return Array.prototype.some.call(cards, function (c) { return c.scrollHeight > c.clientHeight + 1 || Array.prototype.some.call(c.children, function (e) { return e.scrollWidth > c.clientWidth - 6; }); }); };
+      set();
+      while (over() && fs > 9) { fs -= 0.5; if (s2 > 9.5) s2 -= 0.25; if (n > 8.5) n -= 0.25; set(); }
+    };
+    fitAll(); addEventListener('resize', fitAll); if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
+  }
   if (document.body.dataset.style === 'label' && IDP.q.get('row') === '1') {
     document.body.dataset.row = '1';
     var lw = Math.max(40, Math.min(240, +IDP.q.get('lw') || 96));
