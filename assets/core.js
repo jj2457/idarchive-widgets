@@ -387,6 +387,14 @@
         var S = IDP.sync, on = S && S.on && S.wid();
         // 노션 연결이 없으면: 노션이 색을 적어 둔 위젯(ts=1)은 이 기기 저장으로 바뀌지 않는다 — 있는 그대로 알린다
         if (!on) {
+          // R6.2: 이 자리에서 바로 연결(Theme Studio 와 같은 연결 · 같은 설정 정본) — 연결 창이 닫히면 같은 버튼을 다시 누르면 적용
+          if (SYNCED && S && S.on) {
+            gnote('플래너 전체 색(커버 · 아이콘 · 메뉴 그림 · 위젯)은 노션과 한 번 연결하면 여기서 바로 바뀌어요.');
+            var cb = panel.querySelector('[data-gconnect]');
+            if (!cb) { cb = document.createElement('button'); cb.type = 'button'; cb.setAttribute('data-gconnect', ''); cb.textContent = '노션과 연결하기'; panel.querySelector('[data-gapply]').parentNode.appendChild(cb);
+              cb.onclick = function () { S.onConnect(function () { gnote('연결했어요 — 「플래너 전체에 적용」을 다시 눌러 주세요.'); cb.remove(); }); S.connect(location.href); }; }
+            return;
+          }
           if (SYNCED) { gnote('플래너 전체 색(커버 · 아이콘 · 메뉴 그림 · 위젯)은 노션과 연결해야 바뀌어요. CUSTOM 의 Theme Studio 에서 한 번만 연결하면, 그다음부터는 어느 위젯의 ⚙ 에서든 여기서 바로 바꿀 수 있어요.', true); return; }
           save(sp.custom ? { theme: '', soft: sp.custom.deep.slice(1), deep: sp.custom.deep.slice(1) } : { theme: sp.theme, soft: '', deep: '' });
           gnote('이 기기의 모든 위젯을 ' + gname(sp) + '(으)로 바꿨어요. 커버 · 아이콘 · 메뉴 그림까지 바꾸려면 Theme Studio 에서 노션과 한 번 연결해 주세요.');
@@ -406,6 +414,7 @@
             : '✓ 플래너 전체를 ' + gname(sp) + '(으)로 바꿨어요 · ' + n + '곳. 노션 화면을 새로고침하면 보여요.', r.status && r.status !== 'SUCCESS');
         }, function (e) {
           gbusy = false;
+          if (e.code === 'choose_planner' && S.choosePlanner) { gnote('연결된 플래너가 여러 개예요. 색을 바꿀 플래너를 골라 주세요.'); S.choosePlanner(panel.querySelector('.idp-gnote'), function () { gnote('골랐어요 — 「플래너 전체에 적용」을 다시 눌러 주세요.'); }); return; }
           gnote(e.code === 'apply_busy' ? '다른 기기에서 테마를 적용 중이에요. 끝난 뒤 다시 눌러 주세요.' : '노션에 적용하지 못했어요(' + (e.message || e.code || '오류') + '). 잠시 뒤 다시 눌러 주세요 — 이어서 바꿔요.', true);
         });
       });
