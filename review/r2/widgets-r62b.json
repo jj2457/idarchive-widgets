@@ -1,0 +1,1270 @@
+{
+ "version": "r62b",
+ "date": "2026-10-08",
+ "total": 138,
+ "pages": {
+  "HOME": 32,
+  "GOALS": 8,
+  "YEAR": 6,
+  "MONTHLY": 6,
+  "WEEKLY": 6,
+  "DAILY": 9,
+  "HABIT": 6,
+  "WORK": 7,
+  "FINANCE": 3,
+  "FITNESS": 7,
+  "VISION": 7,
+  "ARCHIVE": 5,
+  "TRAVEL": 6,
+  "UNIV": 5,
+  "BRAND": 7,
+  "CONTENT": 4,
+  "REVIEW": 7,
+  "CAREER": 3,
+  "SPACE": 4
+ },
+ "items": [
+  {
+   "id": "H01",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "TOP 3",
+   "desc": "오늘 가장 중요한 3가지",
+   "h": 230,
+   "url": "top3.html?id=demo&d=10km+%ED%8E%98%EC%9D%B4%EC%8A%A4+%EC%A3%BC%ED%96%89%7C%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80+%EC%B4%88%EC%95%88+%ED%95%9C+%EC%9E%A5%7C%EC%A0%80%EB%85%81+%EC%82%B0%EC%B1%85+20%EB%B6%84&done=0&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H02",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "TODAY SUMMARY",
+   "desc": "오늘 한눈에",
+   "h": 340,
+   "url": "summary.html?v=1&theme=ivory&ts=1"
+  },
+  {
+   "id": "H03",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "TODAY · 노션 연결",
+   "desc": "오늘 할 일(노션 표)",
+   "h": 380,
+   "url": "todaysync.html?demo=1&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H04",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "DAY TIMELINE",
+   "desc": "하루 시간 띠",
+   "h": 200,
+   "url": "timeline.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H05",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "TIMETABLE · 노션 연결",
+   "desc": "오늘 시간표",
+   "h": 520,
+   "url": "timetable.html?demo=1&from=7&now=2027-03-15T14%3A10&theme=ivory&ts=1"
+  },
+  {
+   "id": "H06",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "D-DAY",
+   "desc": "다가오는 날",
+   "h": 230,
+   "url": "dday.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H07",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "COUNTDOWN",
+   "desc": "남은 시간",
+   "h": 380,
+   "url": "countdown.html?v=1&theme=ivory&ts=1"
+  },
+  {
+   "id": "H08",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "GOAL PROGRESS",
+   "desc": "목표 진행률",
+   "h": 330,
+   "url": "goalprogress.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H09",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "PROGRESS · 노션 연결",
+   "desc": "목표 진행률(노션)",
+   "h": 400,
+   "url": "goalsync.html?demo=1&frame=none&now=2027-03-15T21%3A40&v=5&theme=ivory&ts=1"
+  },
+  {
+   "id": "H10",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "HABIT RING · 노션 연결",
+   "desc": "오늘 습관 고리",
+   "h": 440,
+   "url": "habitsync.html?demo=1&view=ring&now=2027-03-15T21%3A40&v=4&theme=ivory&ts=1"
+  },
+  {
+   "id": "H11",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "HABIT STREAK",
+   "desc": "연속 기록",
+   "h": 290,
+   "url": "streak.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H12",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "HABIT DOTS",
+   "desc": "한 해 습관 점",
+   "h": 400,
+   "url": "habitdots.html?v=1&year=2027&h=%EC%B1%85+%EC%9D%BD%EA%B8%B0%7C%EC%9A%B4%EB%8F%99%7C%EB%AC%BC+%EB%A7%88%EC%8B%9C%EA%B8%B0%7C%EC%9D%BC%EA%B8%B0&d1=1%3A2%2C3%2C5%2C6%2C9%2C10%2C12%2C13%2C16%2C17%2C19%2C20%2C23%2C24%2C26%2C27%2C30%7C2%3A2%2C3%2C6%2C7%2C9%2C10%2C13%2C14%2C17%2C18%2C20%2C21%2C24%2C25%2C27%7C3%3A2%2C3%2C6%2C7%2C9%2C10%2C13%2C14%2C17%2C18%2C20&d2=1%3A2%2C4%2C7%2C9%2C11%2C14%2C16%2C18%2C21%2C23%2C25%2C28%2C30%7C2%3A1%2C3%2C6%2C8%2C10%2C13%2C15%2C17%2C20%2C22%2C24%2C27%7C3%3A1%2C3%2C6%2C8%2C10%2C13%2C15%2C17%2C20&d3=1%3A1%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%2C12%2C13%2C14%2C15%2C16%2C17%2C18%2C19%2C20%2C21%2C22%2C23%2C24%2C25%2C26%2C27%2C28%2C29%2C30%2C31%7C2%3A1%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%2C12%2C13%2C14%2C15%2C16%2C17%2C18%2C19%2C20%7C3%3A1%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%2C12%2C13%2C14%2C15%2C16%2C17%2C18%2C19%2C20&d4=1%3A3%2C6%2C10%2C13%2C17%2C20%2C24%2C27%2C31%7C2%3A3%2C7%2C10%2C14%2C17%2C21%2C24%2C28%7C3%3A3%2C7%2C10%2C14%2C17%2C20&theme=ivory&ts=1"
+  },
+  {
+   "id": "H13",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "FOCUS TIMER",
+   "desc": "집중 타이머",
+   "h": 320,
+   "url": "focus.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H14",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "UP NEXT",
+   "desc": "곧 할 일",
+   "h": 360,
+   "url": "upnext.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H15",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "THIS WEEK",
+   "desc": "이번 주 띠",
+   "h": 200,
+   "url": "week.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H16",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "MOOD",
+   "desc": "오늘 기분",
+   "h": 330,
+   "url": "mood.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H17",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "ENERGY · 노션 연결",
+   "desc": "에너지 · 컨디션",
+   "h": 360,
+   "url": "energysync.html?demo=1&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H18",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "DAILY CHECK-IN",
+   "desc": "하루 점검",
+   "h": 360,
+   "url": "checkin.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H19",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "ONE-LINE JOURNAL",
+   "desc": "한 줄 일기",
+   "h": 290,
+   "url": "journal.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H20",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "MOTTO",
+   "desc": "한 문장",
+   "h": 230,
+   "url": "quote.html?text=%ED%95%98%EB%A3%A8%EA%B0%80+%EC%A0%95%EB%A6%AC%EB%90%98%EB%8A%94+%EC%82%AC%EB%9E%8C&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H21",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "WEATHER",
+   "desc": "날씨",
+   "h": 330,
+   "url": "weather.html?v=3&now=2027-03-15T21%3A40&city=%EC%84%9C%EC%9A%B8&sun=06%3A32%7C18%3A41&d=part%2C11%2C45%2C1.4%7Cpart%2C13%2C3%7Cpart%2C15%2C5%7Ccloud%2C12%2C4%7Crain%2C9%2C3%7Cpart%2C14%2C4%7Csun%2C17%2C6%7Ccloud%2C16%2C7&theme=ivory&ts=1"
+  },
+  {
+   "id": "H22",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "READING",
+   "desc": "읽는 중인 책",
+   "h": 340,
+   "url": "reading.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H23",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "VISION BOARD",
+   "desc": "올해의 장면",
+   "h": 420,
+   "url": "vision.html?year=2027&v=4&line=%EC%98%AC%ED%95%B4+%EB%82%98%EB%8A%94+%EC%9D%B4%EB%9F%B0+%EB%AA%A8%EC%8A%B5%EC%9C%BC%EB%A1%9C+%EC%A7%80%EB%82%B4%EA%B3%A0+%EC%8B%B6%EB%8B%A4&words=%EB%8B%AC%EB%A6%AC%EA%B8%B0%2C%EA%B8%B0%EB%A1%9D%2C%EC%97%AC%ED%96%89%2C%EB%B0%B0%EC%9B%80%2C%EA%B4%80%EA%B3%84%2C%EC%89%BC&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H24",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "MONEY · 노션 연결",
+   "desc": "이번 달 예산 · 지출",
+   "h": 460,
+   "url": "financesync.html?demo=1&now=2027-03-15T21%3A40&v=4&theme=ivory&ts=1"
+  },
+  {
+   "id": "H25",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "ANALOG CLOCK",
+   "desc": "아날로그 시계",
+   "h": 300,
+   "url": "analog.html?v=1&theme=ivory&ts=1"
+  },
+  {
+   "id": "H26",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "YEAR IN DOTS",
+   "desc": "올해 남은 날",
+   "h": 300,
+   "url": "year.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H27",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "REMINDER",
+   "desc": "메모지 한 장",
+   "h": 250,
+   "url": "reminder.html?v=4&theme=ivory&ts=1"
+  },
+  {
+   "id": "H28",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "ROUTINE",
+   "desc": "아침 · 저녁 루틴",
+   "h": 280,
+   "url": "routine.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H29",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "WATER",
+   "desc": "물 마시기",
+   "h": 250,
+   "url": "water.html?id=demo&d=5&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H30",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "PLAYLIST",
+   "desc": "플레이리스트",
+   "h": 360,
+   "url": "playlist.html?items=%EB%B9%84+%EC%98%A4%EB%8A%94+%EB%82%A0+%EC%9E%AC%EC%A6%88%7Chttps%3A%2F%2Fwww.youtube.com%2Fresults%3Fsearch_query%3Drainy%2Bjazz%2C%EC%B1%85+%EC%9D%BD%EC%9D%84+%EB%95%8C+%ED%94%BC%EC%95%84%EB%85%B8%7Chttps%3A%2F%2Fwww.youtube.com%2Fresults%3Fsearch_query%3Dreading%2Bpiano%2C%EC%83%88%EB%B2%BD+%EB%A1%9C%ED%8C%8C%EC%9D%B4%7Chttps%3A%2F%2Fwww.youtube.com%2Fresults%3Fsearch_query%3Dlofi&theme=ivory&ts=1"
+  },
+  {
+   "id": "H31",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "CALENDAR · 노션 연결",
+   "desc": "노션 일정 달력",
+   "h": 380,
+   "url": "calsync.html?demo=1&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "H32",
+   "page": "HOME",
+   "pageName": "HOME",
+   "name": "HOLIDAYS",
+   "desc": "공휴일",
+   "h": 360,
+   "url": "holiday.html?v=1&theme=ivory&ts=1"
+  },
+  {
+   "id": "G01",
+   "page": "GOALS",
+   "pageName": "GOALS",
+   "name": "GOAL PROGRESS",
+   "desc": "목표 진행률",
+   "h": 330,
+   "url": "goalprogress.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "G02",
+   "page": "GOALS",
+   "pageName": "GOALS",
+   "name": "PROGRESS · 노션 연결",
+   "desc": "목표 진행률(노션)",
+   "h": 400,
+   "url": "goalsync.html?demo=1&frame=none&now=2027-03-15T21%3A40&v=5&theme=ivory&ts=1"
+  },
+  {
+   "id": "G03",
+   "page": "GOALS",
+   "pageName": "GOALS",
+   "name": "VISION BOARD",
+   "desc": "올해의 장면",
+   "h": 420,
+   "url": "vision.html?year=2027&v=4&line=%EC%98%AC%ED%95%B4+%EB%82%98%EB%8A%94+%EC%9D%B4%EB%9F%B0+%EB%AA%A8%EC%8A%B5%EC%9C%BC%EB%A1%9C+%EC%A7%80%EB%82%B4%EA%B3%A0+%EC%8B%B6%EB%8B%A4&words=%EB%8B%AC%EB%A6%AC%EA%B8%B0%2C%EA%B8%B0%EB%A1%9D%2C%EC%97%AC%ED%96%89%2C%EB%B0%B0%EC%9B%80%2C%EA%B4%80%EA%B3%84%2C%EC%89%BC&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "G04",
+   "page": "GOALS",
+   "pageName": "GOALS",
+   "name": "COUNTDOWN",
+   "desc": "남은 시간",
+   "h": 380,
+   "url": "countdown.html?v=1&theme=ivory&ts=1"
+  },
+  {
+   "id": "G05",
+   "page": "GOALS",
+   "pageName": "GOALS",
+   "name": "5-STEP GOAL",
+   "desc": "목표 다섯 단계",
+   "h": 380,
+   "url": "goal5.html?id=demo&v=4&d=10km+50%EB%B6%84+%EC%95%88%EC%97%90+%EC%99%84%EC%A3%BC%7C1%EB%85%84+%EB%AA%A9%ED%91%9C%7C%EA%B1%B4%EA%B0%95%7C%EA%B0%80%EC%9D%84+%EB%8C%80%ED%9A%8C%EC%97%90%EC%84%9C+50%EB%B6%84+%EC%95%88%EC%97%90%7C%EC%A3%BC+3%ED%9A%8C+%C2%B7+%EC%9D%B8%ED%84%B0%EB%B2%8C+%ED%95%9C+%EB%B2%88%7C%EC%95%84%EC%B9%A8%EC%97%90+5km+%EB%8B%AC%EB%A6%AC%EA%B8%B0&due=2027-10-17&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "G06",
+   "page": "GOALS",
+   "pageName": "GOALS",
+   "name": "GOAL CHAIN",
+   "desc": "목표 → 오늘 연결",
+   "h": 390,
+   "url": "goalchain.html?v=2&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "G07",
+   "page": "GOALS",
+   "pageName": "GOALS",
+   "name": "MANDAL-ART",
+   "desc": "만다라트",
+   "h": 360,
+   "url": "mandal.html?v=4&id=demo&d=%EC%A3%BC+3%ED%9A%8C+%EB%8B%AC%EB%A6%AC%EA%B8%B0%7C%EC%8A%A4%ED%8A%B8%EB%A0%88%EC%B9%AD%7C%EC%88%98%EB%A9%B4+7%EC%8B%9C%EA%B0%84%7C%EC%8B%9D%EB%8B%A8+%EA%B8%B0%EB%A1%9D%7C10km+50%EB%B6%84%7C%EA%B7%BC%EB%A0%A5+%EC%A3%BC+2%ED%9A%8C%7C%EB%8C%80%ED%9A%8C+%EC%8B%A0%EC%B2%AD%7C%EB%9F%AC%EB%8B%9D+%EC%9D%BC%EC%A7%80%7C%EC%B2%B4%EC%A4%91+%EC%9C%A0%EC%A7%80&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "G08",
+   "page": "GOALS",
+   "pageName": "GOALS",
+   "name": "BUCKET LIST",
+   "desc": "버킷리스트",
+   "h": 300,
+   "url": "bucket.html?year=2027&v=4&id=demo&d=%ED%95%98%ED%94%84%EB%A7%88%EB%9D%BC%ED%86%A4+%EC%99%84%EC%A3%BC%7C%EC%A0%9C%EC%A3%BC+%ED%95%9C+%EB%8B%AC+%EC%82%B4%EA%B8%B0%7C%EC%82%AC%EC%A7%84%EC%A0%84+%EC%97%B4%EA%B8%B0%7C%EB%A7%A4%EB%8B%AC+%EC%B1%85+%EB%91%90+%EA%B6%8C&done=0&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "Y01",
+   "page": "YEAR",
+   "pageName": "YEAR",
+   "name": "YEAR IN DOTS",
+   "desc": "올해 남은 날",
+   "h": 300,
+   "url": "year.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "Y02",
+   "page": "YEAR",
+   "pageName": "YEAR",
+   "name": "GOAL PROGRESS",
+   "desc": "목표 진행률",
+   "h": 330,
+   "url": "goalprogress.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "Y03",
+   "page": "YEAR",
+   "pageName": "YEAR",
+   "name": "MINI CALENDAR",
+   "desc": "미니 달력",
+   "h": 330,
+   "url": "calendar.html?style=editorial&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "Y04",
+   "page": "YEAR",
+   "pageName": "YEAR",
+   "name": "HOLIDAYS",
+   "desc": "공휴일",
+   "h": 360,
+   "url": "holiday.html?v=1&theme=ivory&ts=1"
+  },
+  {
+   "id": "Y05",
+   "page": "YEAR",
+   "pageName": "YEAR",
+   "name": "YEAR TRACKER",
+   "desc": "한 해 기록표",
+   "h": 360,
+   "url": "habityear.html?v=2&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "Y06",
+   "page": "YEAR",
+   "pageName": "YEAR",
+   "name": "LIFE ROADMAP",
+   "desc": "길게 보는 계획",
+   "h": 384,
+   "url": "roadmap.html?id=demo&v=4&d=10km+50%EB%B6%84+%EC%95%88%EC%97%90+%EC%99%84%EC%A3%BC%7C%EB%82%98%EB%A7%8C%EC%9D%98+%EB%B8%8C%EB%9E%9C%EB%93%9C+%EB%A7%8C%EB%93%A4%EA%B8%B0%7C%ED%95%98%EA%B3%A0+%EC%8B%B6%EC%9D%80+%EC%9D%BC%EB%A1%9C+%EB%A8%B9%EA%B3%A0%EC%82%B4%EA%B8%B0&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "M01",
+   "page": "MONTHLY",
+   "pageName": "MONTHLY",
+   "name": "THIS MONTH",
+   "desc": "이달의 그림",
+   "h": 220,
+   "url": "monthbanner.html?v=4&theme=ivory&ts=1"
+  },
+  {
+   "id": "M02",
+   "page": "MONTHLY",
+   "pageName": "MONTHLY",
+   "name": "UP NEXT",
+   "desc": "곧 할 일",
+   "h": 360,
+   "url": "upnext.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "M03",
+   "page": "MONTHLY",
+   "pageName": "MONTHLY",
+   "name": "TOP 3",
+   "desc": "오늘 가장 중요한 3가지",
+   "h": 230,
+   "url": "top3.html?id=demo&d=10km+%ED%8E%98%EC%9D%B4%EC%8A%A4+%EC%A3%BC%ED%96%89%7C%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80+%EC%B4%88%EC%95%88+%ED%95%9C+%EC%9E%A5%7C%EC%A0%80%EB%85%81+%EC%82%B0%EC%B1%85+20%EB%B6%84&done=0&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "M04",
+   "page": "MONTHLY",
+   "pageName": "MONTHLY",
+   "name": "MOOD",
+   "desc": "기분",
+   "h": 330,
+   "url": "mood.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "M05",
+   "page": "MONTHLY",
+   "pageName": "MONTHLY",
+   "name": "HOLIDAYS",
+   "desc": "공휴일",
+   "h": 360,
+   "url": "holiday.html?v=1&theme=ivory&ts=1"
+  },
+  {
+   "id": "M06",
+   "page": "MONTHLY",
+   "pageName": "MONTHLY",
+   "name": "HABIT DOTS",
+   "desc": "한 해 습관 점",
+   "h": 400,
+   "url": "habitdots.html?v=1&year=2027&h=%EC%B1%85+%EC%9D%BD%EA%B8%B0%7C%EC%9A%B4%EB%8F%99%7C%EB%AC%BC+%EB%A7%88%EC%8B%9C%EA%B8%B0%7C%EC%9D%BC%EA%B8%B0&d1=1%3A2%2C3%2C5%2C6%2C9%2C10%2C12%2C13%2C16%2C17%2C19%2C20%2C23%2C24%2C26%2C27%2C30%7C2%3A2%2C3%2C6%2C7%2C9%2C10%2C13%2C14%2C17%2C18%2C20%2C21%2C24%2C25%2C27%7C3%3A2%2C3%2C6%2C7%2C9%2C10%2C13%2C14%2C17%2C18%2C20&d2=1%3A2%2C4%2C7%2C9%2C11%2C14%2C16%2C18%2C21%2C23%2C25%2C28%2C30%7C2%3A1%2C3%2C6%2C8%2C10%2C13%2C15%2C17%2C20%2C22%2C24%2C27%7C3%3A1%2C3%2C6%2C8%2C10%2C13%2C15%2C17%2C20&d3=1%3A1%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%2C12%2C13%2C14%2C15%2C16%2C17%2C18%2C19%2C20%2C21%2C22%2C23%2C24%2C25%2C26%2C27%2C28%2C29%2C30%2C31%7C2%3A1%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%2C12%2C13%2C14%2C15%2C16%2C17%2C18%2C19%2C20%7C3%3A1%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%2C12%2C13%2C14%2C15%2C16%2C17%2C18%2C19%2C20&d4=1%3A3%2C6%2C10%2C13%2C17%2C20%2C24%2C27%2C31%7C2%3A3%2C7%2C10%2C14%2C17%2C21%2C24%2C28%7C3%3A3%2C7%2C10%2C14%2C17%2C20&theme=ivory&ts=1"
+  },
+  {
+   "id": "W01",
+   "page": "WEEKLY",
+   "pageName": "WEEKLY",
+   "name": "WEEK PLAN",
+   "desc": "주간 계획",
+   "h": 360,
+   "url": "weekplan.html?v=1&theme=ivory&ts=1"
+  },
+  {
+   "id": "W02",
+   "page": "WEEKLY",
+   "pageName": "WEEKLY",
+   "name": "TIMETABLE · 노션 연결",
+   "desc": "시간표",
+   "h": 560,
+   "url": "timetable.html?demo=1&from=7&now=2027-03-15T14%3A10&theme=ivory&ts=1"
+  },
+  {
+   "id": "W03",
+   "page": "WEEKLY",
+   "pageName": "WEEKLY",
+   "name": "DAY TIMELINE",
+   "desc": "하루 시간 띠",
+   "h": 200,
+   "url": "timeline.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "W04",
+   "page": "WEEKLY",
+   "pageName": "WEEKLY",
+   "name": "FOCUS",
+   "desc": "이번 주 집중",
+   "h": 280,
+   "url": "focusnote.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "W05",
+   "page": "WEEKLY",
+   "pageName": "WEEKLY",
+   "name": "FOCUS TIMER",
+   "desc": "집중 타이머",
+   "h": 320,
+   "url": "focus.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "W06",
+   "page": "WEEKLY",
+   "pageName": "WEEKLY",
+   "name": "UP NEXT",
+   "desc": "곧 할 일",
+   "h": 360,
+   "url": "upnext.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "D01",
+   "page": "DAILY",
+   "pageName": "DAILY",
+   "name": "TODAY SUMMARY",
+   "desc": "오늘 한눈에",
+   "h": 340,
+   "url": "summary.html?v=1&theme=ivory&ts=1"
+  },
+  {
+   "id": "D02",
+   "page": "DAILY",
+   "pageName": "DAILY",
+   "name": "TODAY · 노션 연결",
+   "desc": "오늘 할 일(노션)",
+   "h": 380,
+   "url": "todaysync.html?demo=1&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "D03",
+   "page": "DAILY",
+   "pageName": "DAILY",
+   "name": "DAY TIMELINE",
+   "desc": "하루 시간 띠",
+   "h": 200,
+   "url": "timeline.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "D04",
+   "page": "DAILY",
+   "pageName": "DAILY",
+   "name": "FOCUS",
+   "desc": "이번 주 집중",
+   "h": 280,
+   "url": "focusnote.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "D05",
+   "page": "DAILY",
+   "pageName": "DAILY",
+   "name": "HABIT · 노션 연결",
+   "desc": "습관 고리 · 달력",
+   "h": 440,
+   "url": "habitsync.html?demo=1&view=ring&now=2027-03-15T21%3A40&v=4&theme=ivory&ts=1"
+  },
+  {
+   "id": "D06",
+   "page": "DAILY",
+   "pageName": "DAILY",
+   "name": "MOOD",
+   "desc": "기분",
+   "h": 330,
+   "url": "mood.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "D07",
+   "page": "DAILY",
+   "pageName": "DAILY",
+   "name": "ONE-LINE JOURNAL",
+   "desc": "한 줄 일기",
+   "h": 290,
+   "url": "journal.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "D08",
+   "page": "DAILY",
+   "pageName": "DAILY",
+   "name": "DAILY CHECK-IN",
+   "desc": "하루 점검",
+   "h": 360,
+   "url": "checkin.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "D09",
+   "page": "DAILY",
+   "pageName": "DAILY",
+   "name": "WATER",
+   "desc": "물 마시기",
+   "h": 250,
+   "url": "water.html?id=demo&d=5&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "HB01",
+   "page": "HABIT",
+   "pageName": "HABIT",
+   "name": "HABIT STREAK",
+   "desc": "연속 기록",
+   "h": 290,
+   "url": "streak.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "HB02",
+   "page": "HABIT",
+   "pageName": "HABIT",
+   "name": "HABIT DOTS",
+   "desc": "한 해 습관 점",
+   "h": 400,
+   "url": "habitdots.html?v=1&year=2027&h=%EC%B1%85+%EC%9D%BD%EA%B8%B0%7C%EC%9A%B4%EB%8F%99%7C%EB%AC%BC+%EB%A7%88%EC%8B%9C%EA%B8%B0%7C%EC%9D%BC%EA%B8%B0&d1=1%3A2%2C3%2C5%2C6%2C9%2C10%2C12%2C13%2C16%2C17%2C19%2C20%2C23%2C24%2C26%2C27%2C30%7C2%3A2%2C3%2C6%2C7%2C9%2C10%2C13%2C14%2C17%2C18%2C20%2C21%2C24%2C25%2C27%7C3%3A2%2C3%2C6%2C7%2C9%2C10%2C13%2C14%2C17%2C18%2C20&d2=1%3A2%2C4%2C7%2C9%2C11%2C14%2C16%2C18%2C21%2C23%2C25%2C28%2C30%7C2%3A1%2C3%2C6%2C8%2C10%2C13%2C15%2C17%2C20%2C22%2C24%2C27%7C3%3A1%2C3%2C6%2C8%2C10%2C13%2C15%2C17%2C20&d3=1%3A1%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%2C12%2C13%2C14%2C15%2C16%2C17%2C18%2C19%2C20%2C21%2C22%2C23%2C24%2C25%2C26%2C27%2C28%2C29%2C30%2C31%7C2%3A1%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%2C12%2C13%2C14%2C15%2C16%2C17%2C18%2C19%2C20%7C3%3A1%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%2C12%2C13%2C14%2C15%2C16%2C17%2C18%2C19%2C20&d4=1%3A3%2C6%2C10%2C13%2C17%2C20%2C24%2C27%2C31%7C2%3A3%2C7%2C10%2C14%2C17%2C21%2C24%2C28%7C3%3A3%2C7%2C10%2C14%2C17%2C20&theme=ivory&ts=1"
+  },
+  {
+   "id": "HB03",
+   "page": "HABIT",
+   "pageName": "HABIT",
+   "name": "YEAR TRACKER",
+   "desc": "한 해 기록표",
+   "h": 360,
+   "url": "habityear.html?v=2&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "HB04",
+   "page": "HABIT",
+   "pageName": "HABIT",
+   "name": "PROGRESS",
+   "desc": "하루 · 주 · 달 · 해 진행률",
+   "h": 290,
+   "url": "progress.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "HB05",
+   "page": "HABIT",
+   "pageName": "HABIT",
+   "name": "MOOD",
+   "desc": "기분",
+   "h": 330,
+   "url": "mood.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "HB06",
+   "page": "HABIT",
+   "pageName": "HABIT",
+   "name": "ENERGY · 노션 연결",
+   "desc": "에너지 · 컨디션",
+   "h": 360,
+   "url": "energysync.html?demo=1&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "WK01",
+   "page": "WORK",
+   "pageName": "WORK",
+   "name": "FOCUS LOG",
+   "desc": "집중 기록",
+   "h": 470,
+   "url": "focuslog.html?v=1&d=%EA%B3%B5%EB%B6%80%3A80%2C%EB%8F%85%EC%84%9C%3A40%2C%EC%9A%B4%EB%8F%99%3A35%2C%EC%97%85%EB%AC%B4%3A130%2C%EC%BD%98%ED%85%90%EC%B8%A0%3A25&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "WK02",
+   "page": "WORK",
+   "pageName": "WORK",
+   "name": "PROGRESS · 노션 연결",
+   "desc": "목표 진행률(노션)",
+   "h": 400,
+   "url": "goalsync.html?demo=1&frame=none&now=2027-03-15T21%3A40&v=5&theme=ivory&ts=1"
+  },
+  {
+   "id": "WK03",
+   "page": "WORK",
+   "pageName": "WORK",
+   "name": "PROGRESS",
+   "desc": "하루 · 주 · 달 · 해 진행률",
+   "h": 290,
+   "url": "progress.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "WK04",
+   "page": "WORK",
+   "pageName": "WORK",
+   "name": "TIMETABLE · 노션 연결",
+   "desc": "시간표",
+   "h": 560,
+   "url": "timetable.html?demo=1&from=7&now=2027-03-15T14%3A10&theme=ivory&ts=1"
+  },
+  {
+   "id": "WK05",
+   "page": "WORK",
+   "pageName": "WORK",
+   "name": "UP NEXT",
+   "desc": "곧 할 일",
+   "h": 360,
+   "url": "upnext.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "WK06",
+   "page": "WORK",
+   "pageName": "WORK",
+   "name": "TO DO",
+   "desc": "할 일",
+   "h": 360,
+   "url": "todo.html?v=1&d=%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80+%EC%B4%88%EC%95%88+%ED%95%9C+%EC%9E%A5%7C%EC%BB%A4%EB%B2%84+9%EC%83%89+%EB%82%B4%EB%B3%B4%EB%82%B4%EA%B8%B0%7C%EC%A0%80%EB%85%81+%EC%82%B0%EC%B1%85+20%EB%B6%84%7C%EC%8A%A4%ED%86%A0%EC%96%B4+%EB%AC%B8%EC%9D%98+%EC%A0%95%EB%A6%AC%7C%EB%9F%AC%EB%8B%9D%ED%99%94+%EB%B0%91%EC%B0%BD+%ED%99%95%EC%9D%B8&done=1%2C3&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "WK07",
+   "page": "WORK",
+   "pageName": "WORK",
+   "name": "TO-DO · 노션 연결",
+   "desc": "할 일(노션)",
+   "h": 380,
+   "url": "todosync.html?demo=1&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "F01",
+   "page": "FINANCE",
+   "pageName": "FINANCE",
+   "name": "CHART",
+   "desc": "차트",
+   "h": 420,
+   "url": "chart.html?v=1&type=bar&theme=ivory&ts=1"
+  },
+  {
+   "id": "F02",
+   "page": "FINANCE",
+   "pageName": "FINANCE",
+   "name": "PROGRESS",
+   "desc": "하루 · 주 · 달 · 해 진행률",
+   "h": 290,
+   "url": "progress.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "F03",
+   "page": "FINANCE",
+   "pageName": "FINANCE",
+   "name": "GOAL PROGRESS",
+   "desc": "목표 진행률",
+   "h": 330,
+   "url": "goalprogress.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "FT01",
+   "page": "FITNESS",
+   "pageName": "FITNESS",
+   "name": "HABIT STREAK",
+   "desc": "연속 기록",
+   "h": 290,
+   "url": "streak.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "FT02",
+   "page": "FITNESS",
+   "pageName": "FITNESS",
+   "name": "HABIT DOTS",
+   "desc": "한 해 습관 점",
+   "h": 400,
+   "url": "habitdots.html?v=1&year=2027&h=%EC%B1%85+%EC%9D%BD%EA%B8%B0%7C%EC%9A%B4%EB%8F%99%7C%EB%AC%BC+%EB%A7%88%EC%8B%9C%EA%B8%B0%7C%EC%9D%BC%EA%B8%B0&d1=1%3A2%2C3%2C5%2C6%2C9%2C10%2C12%2C13%2C16%2C17%2C19%2C20%2C23%2C24%2C26%2C27%2C30%7C2%3A2%2C3%2C6%2C7%2C9%2C10%2C13%2C14%2C17%2C18%2C20%2C21%2C24%2C25%2C27%7C3%3A2%2C3%2C6%2C7%2C9%2C10%2C13%2C14%2C17%2C18%2C20&d2=1%3A2%2C4%2C7%2C9%2C11%2C14%2C16%2C18%2C21%2C23%2C25%2C28%2C30%7C2%3A1%2C3%2C6%2C8%2C10%2C13%2C15%2C17%2C20%2C22%2C24%2C27%7C3%3A1%2C3%2C6%2C8%2C10%2C13%2C15%2C17%2C20&d3=1%3A1%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%2C12%2C13%2C14%2C15%2C16%2C17%2C18%2C19%2C20%2C21%2C22%2C23%2C24%2C25%2C26%2C27%2C28%2C29%2C30%2C31%7C2%3A1%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%2C12%2C13%2C14%2C15%2C16%2C17%2C18%2C19%2C20%7C3%3A1%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%2C12%2C13%2C14%2C15%2C16%2C17%2C18%2C19%2C20&d4=1%3A3%2C6%2C10%2C13%2C17%2C20%2C24%2C27%2C31%7C2%3A3%2C7%2C10%2C14%2C17%2C21%2C24%2C28%7C3%3A3%2C7%2C10%2C14%2C17%2C20&theme=ivory&ts=1"
+  },
+  {
+   "id": "FT03",
+   "page": "FITNESS",
+   "pageName": "FITNESS",
+   "name": "PROGRESS",
+   "desc": "하루 · 주 · 달 · 해 진행률",
+   "h": 290,
+   "url": "progress.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "FT04",
+   "page": "FITNESS",
+   "pageName": "FITNESS",
+   "name": "WATER",
+   "desc": "물 마시기",
+   "h": 250,
+   "url": "water.html?id=demo&d=5&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "FT05",
+   "page": "FITNESS",
+   "pageName": "FITNESS",
+   "name": "ROUTINE",
+   "desc": "루틴",
+   "h": 280,
+   "url": "routine.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "FT06",
+   "page": "FITNESS",
+   "pageName": "FITNESS",
+   "name": "GOAL PROGRESS",
+   "desc": "목표 진행률",
+   "h": 330,
+   "url": "goalprogress.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "FT07",
+   "page": "FITNESS",
+   "pageName": "FITNESS",
+   "name": "ENERGY · 노션 연결",
+   "desc": "에너지 · 컨디션",
+   "h": 360,
+   "url": "energysync.html?demo=1&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "V01",
+   "page": "VISION",
+   "pageName": "VISION BOARD",
+   "name": "VISION BOARD",
+   "desc": "올해의 장면",
+   "h": 420,
+   "url": "vision.html?year=2027&v=4&line=%EC%98%AC%ED%95%B4+%EB%82%98%EB%8A%94+%EC%9D%B4%EB%9F%B0+%EB%AA%A8%EC%8A%B5%EC%9C%BC%EB%A1%9C+%EC%A7%80%EB%82%B4%EA%B3%A0+%EC%8B%B6%EB%8B%A4&words=%EB%8B%AC%EB%A6%AC%EA%B8%B0%2C%EA%B8%B0%EB%A1%9D%2C%EC%97%AC%ED%96%89%2C%EB%B0%B0%EC%9B%80%2C%EA%B4%80%EA%B3%84%2C%EC%89%BC&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "V02",
+   "page": "VISION",
+   "pageName": "VISION BOARD",
+   "name": "VISUAL BOARD",
+   "desc": "사진 보드",
+   "h": 470,
+   "url": "board.html?v=1&layout=grid&line=%EC%98%AC%ED%95%B4+%EC%9D%B4%EB%9F%B0+%EC%9E%A5%EB%A9%B4%EC%9C%BC%EB%A1%9C&urls=https%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fyear.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fmonth-03.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fweekly.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fdaily.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fgoals.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fhabit.png&theme=ivory&ts=1"
+  },
+  {
+   "id": "V03",
+   "page": "VISION",
+   "pageName": "VISION BOARD",
+   "name": "GOAL PROGRESS",
+   "desc": "목표 진행률",
+   "h": 330,
+   "url": "goalprogress.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "V04",
+   "page": "VISION",
+   "pageName": "VISION BOARD",
+   "name": "D-DAY",
+   "desc": "다가오는 날",
+   "h": 230,
+   "url": "dday.html?v=4&theme=ivory&ts=1"
+  },
+  {
+   "id": "V05",
+   "page": "VISION",
+   "pageName": "VISION BOARD",
+   "name": "LIFE ROADMAP",
+   "desc": "길게 보는 계획",
+   "h": 384,
+   "url": "roadmap.html?id=demo&v=4&d=10km+50%EB%B6%84+%EC%95%88%EC%97%90+%EC%99%84%EC%A3%BC%7C%EB%82%98%EB%A7%8C%EC%9D%98+%EB%B8%8C%EB%9E%9C%EB%93%9C+%EB%A7%8C%EB%93%A4%EA%B8%B0%7C%ED%95%98%EA%B3%A0+%EC%8B%B6%EC%9D%80+%EC%9D%BC%EB%A1%9C+%EB%A8%B9%EA%B3%A0%EC%82%B4%EA%B8%B0&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "V06",
+   "page": "VISION",
+   "pageName": "VISION BOARD",
+   "name": "MOTTO",
+   "desc": "한 문장",
+   "h": 230,
+   "url": "quote.html?text=%ED%95%98%EB%A3%A8%EA%B0%80+%EC%A0%95%EB%A6%AC%EB%90%98%EB%8A%94+%EC%82%AC%EB%9E%8C&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "V07",
+   "page": "VISION",
+   "pageName": "VISION BOARD",
+   "name": "BUCKET LIST",
+   "desc": "버킷리스트",
+   "h": 300,
+   "url": "bucket.html?year=2027&v=4&id=demo&d=%ED%95%98%ED%94%84%EB%A7%88%EB%9D%BC%ED%86%A4+%EC%99%84%EC%A3%BC%7C%EC%A0%9C%EC%A3%BC+%ED%95%9C+%EB%8B%AC+%EC%82%B4%EA%B8%B0%7C%EC%82%AC%EC%A7%84%EC%A0%84+%EC%97%B4%EA%B8%B0%7C%EB%A7%A4%EB%8B%AC+%EC%B1%85+%EB%91%90+%EA%B6%8C&done=0&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "A01",
+   "page": "ARCHIVE",
+   "pageName": "ARCHIVE",
+   "name": "READING",
+   "desc": "읽는 중인 책",
+   "h": 340,
+   "url": "reading.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "A02",
+   "page": "ARCHIVE",
+   "pageName": "ARCHIVE",
+   "name": "MP3 PLAYER",
+   "desc": "음악",
+   "h": 470,
+   "url": "mp3.html?items=%EC%B1%85+%EC%9D%BD%EC%9D%84+%EB%95%8C+%ED%94%BC%EC%95%84%EB%85%B8%7Chttps%3A%2F%2Fwww.youtube.com%2Fresults%3Fsearch_query%3Dreading%2Bpiano%7Cassets%2Fmp3%2Fsample-1.jpg%2C%EB%B9%84+%EC%98%A4%EB%8A%94+%EB%82%A0+%EC%9E%AC%EC%A6%88%7Chttps%3A%2F%2Fwww.youtube.com%2Fresults%3Fsearch_query%3Drainy%2Bjazz%7Cassets%2Fmp3%2Fsample-2.jpg%2C%EC%83%88%EB%B2%BD+%EB%A1%9C%ED%8C%8C%EC%9D%B4%7Chttps%3A%2F%2Fwww.youtube.com%2Fresults%3Fsearch_query%3Dlofi%7Cassets%2Fmp3%2Fsample-3.jpg&theme=ivory&ts=1"
+  },
+  {
+   "id": "A03",
+   "page": "ARCHIVE",
+   "pageName": "ARCHIVE",
+   "name": "MEMO",
+   "desc": "메모",
+   "h": 260,
+   "url": "memo.html?id=demo&d=%EB%9F%AC%EB%8B%9D%ED%99%94+3%2F22+%EB%8F%84%EC%B0%A9+%C2%B7+%EB%8C%80%ED%9A%8C+%EC%A0%91%EC%88%98+3%2F30%0A%ED%85%9C%ED%94%8C%EB%A6%BF+%EC%9D%B4%EB%A6%84+%ED%9B%84%EB%B3%B4+%EC%84%B8+%EA%B0%9C&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "A04",
+   "page": "ARCHIVE",
+   "pageName": "ARCHIVE",
+   "name": "MINI CALENDAR",
+   "desc": "미니 달력",
+   "h": 330,
+   "url": "calendar.html?style=editorial&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "A05",
+   "page": "ARCHIVE",
+   "pageName": "ARCHIVE",
+   "name": "ONE-LINE JOURNAL",
+   "desc": "한 줄 일기",
+   "h": 290,
+   "url": "journal.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "T01",
+   "page": "TRAVEL",
+   "pageName": "TRAVEL",
+   "name": "COUNTDOWN",
+   "desc": "남은 시간",
+   "h": 380,
+   "url": "countdown.html?v=1&theme=ivory&ts=1"
+  },
+  {
+   "id": "T02",
+   "page": "TRAVEL",
+   "pageName": "TRAVEL",
+   "name": "WORLD CLOCK",
+   "desc": "세계 시계",
+   "h": 300,
+   "url": "worldclock.html?v=1&theme=ivory&ts=1"
+  },
+  {
+   "id": "T03",
+   "page": "TRAVEL",
+   "pageName": "TRAVEL",
+   "name": "LINKS",
+   "desc": "바로가기 링크",
+   "h": 330,
+   "url": "links.html?v=1&items=%EB%85%B8%EC%85%98%7Chttps%3A%2F%2Fnotion.so%2C%EC%8A%A4%ED%86%A0%EC%96%B4%7Chttps%3A%2F%2Fsmartstore.naver.com%2C%EB%A9%94%EC%9D%BC%7Chttps%3A%2F%2Fmail.google.com%2C%EB%93%9C%EB%9D%BC%EC%9D%B4%EB%B8%8C%7Chttps%3A%2F%2Fdrive.google.com&theme=ivory&ts=1"
+  },
+  {
+   "id": "T04",
+   "page": "TRAVEL",
+   "pageName": "TRAVEL",
+   "name": "VISUAL BOARD",
+   "desc": "사진 보드",
+   "h": 470,
+   "url": "board.html?v=1&layout=grid&line=%EC%98%AC%ED%95%B4+%EC%9D%B4%EB%9F%B0+%EC%9E%A5%EB%A9%B4%EC%9C%BC%EB%A1%9C&urls=https%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fyear.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fmonth-03.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fweekly.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fdaily.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fgoals.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fhabit.png&theme=ivory&ts=1"
+  },
+  {
+   "id": "T05",
+   "page": "TRAVEL",
+   "pageName": "TRAVEL",
+   "name": "MOODBOARD",
+   "desc": "핀 무드보드",
+   "h": 300,
+   "url": "moodboard.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "T06",
+   "page": "TRAVEL",
+   "pageName": "TRAVEL",
+   "name": "BUCKET LIST",
+   "desc": "버킷리스트",
+   "h": 300,
+   "url": "bucket.html?year=2027&v=4&id=demo&d=%ED%95%98%ED%94%84%EB%A7%88%EB%9D%BC%ED%86%A4+%EC%99%84%EC%A3%BC%7C%EC%A0%9C%EC%A3%BC+%ED%95%9C+%EB%8B%AC+%EC%82%B4%EA%B8%B0%7C%EC%82%AC%EC%A7%84%EC%A0%84+%EC%97%B4%EA%B8%B0%7C%EB%A7%A4%EB%8B%AC+%EC%B1%85+%EB%91%90+%EA%B6%8C&done=0&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "U01",
+   "page": "UNIV",
+   "pageName": "UNIV",
+   "name": "TIMETABLE · 노션 연결",
+   "desc": "시간표",
+   "h": 560,
+   "url": "timetable.html?demo=1&from=7&now=2027-03-15T14%3A10&theme=ivory&ts=1"
+  },
+  {
+   "id": "U02",
+   "page": "UNIV",
+   "pageName": "UNIV",
+   "name": "MINI CALENDAR",
+   "desc": "미니 달력",
+   "h": 330,
+   "url": "calendar.html?style=editorial&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "U03",
+   "page": "UNIV",
+   "pageName": "UNIV",
+   "name": "PROGRESS",
+   "desc": "하루 · 주 · 달 · 해 진행률",
+   "h": 290,
+   "url": "progress.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "U04",
+   "page": "UNIV",
+   "pageName": "UNIV",
+   "name": "MEMO",
+   "desc": "메모",
+   "h": 260,
+   "url": "memo.html?id=demo&d=%EB%9F%AC%EB%8B%9D%ED%99%94+3%2F22+%EB%8F%84%EC%B0%A9+%C2%B7+%EB%8C%80%ED%9A%8C+%EC%A0%91%EC%88%98+3%2F30%0A%ED%85%9C%ED%94%8C%EB%A6%BF+%EC%9D%B4%EB%A6%84+%ED%9B%84%EB%B3%B4+%EC%84%B8+%EA%B0%9C&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "U05",
+   "page": "UNIV",
+   "pageName": "UNIV",
+   "name": "TO DO",
+   "desc": "할 일",
+   "h": 360,
+   "url": "todo.html?v=1&d=%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80+%EC%B4%88%EC%95%88+%ED%95%9C+%EC%9E%A5%7C%EC%BB%A4%EB%B2%84+9%EC%83%89+%EB%82%B4%EB%B3%B4%EB%82%B4%EA%B8%B0%7C%EC%A0%80%EB%85%81+%EC%82%B0%EC%B1%85+20%EB%B6%84%7C%EC%8A%A4%ED%86%A0%EC%96%B4+%EB%AC%B8%EC%9D%98+%EC%A0%95%EB%A6%AC%7C%EB%9F%AC%EB%8B%9D%ED%99%94+%EB%B0%91%EC%B0%BD+%ED%99%95%EC%9D%B8&done=1%2C3&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "B01",
+   "page": "BRAND",
+   "pageName": "BRAND",
+   "name": "VISUAL BOARD",
+   "desc": "사진 보드",
+   "h": 470,
+   "url": "board.html?v=1&layout=grid&line=%EC%98%AC%ED%95%B4+%EC%9D%B4%EB%9F%B0+%EC%9E%A5%EB%A9%B4%EC%9C%BC%EB%A1%9C&urls=https%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fyear.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fmonth-03.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fweekly.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fdaily.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fgoals.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fhabit.png&theme=ivory&ts=1"
+  },
+  {
+   "id": "B02",
+   "page": "BRAND",
+   "pageName": "BRAND",
+   "name": "MINI CALENDAR",
+   "desc": "미니 달력",
+   "h": 330,
+   "url": "calendar.html?style=editorial&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "B03",
+   "page": "BRAND",
+   "pageName": "BRAND",
+   "name": "D-DAY",
+   "desc": "다가오는 날",
+   "h": 230,
+   "url": "dday.html?v=4&theme=ivory&ts=1"
+  },
+  {
+   "id": "B04",
+   "page": "BRAND",
+   "pageName": "BRAND",
+   "name": "PROGRESS",
+   "desc": "하루 · 주 · 달 · 해 진행률",
+   "h": 290,
+   "url": "progress.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "B05",
+   "page": "BRAND",
+   "pageName": "BRAND",
+   "name": "LINKS",
+   "desc": "바로가기 링크",
+   "h": 330,
+   "url": "links.html?v=1&items=%EB%85%B8%EC%85%98%7Chttps%3A%2F%2Fnotion.so%2C%EC%8A%A4%ED%86%A0%EC%96%B4%7Chttps%3A%2F%2Fsmartstore.naver.com%2C%EB%A9%94%EC%9D%BC%7Chttps%3A%2F%2Fmail.google.com%2C%EB%93%9C%EB%9D%BC%EC%9D%B4%EB%B8%8C%7Chttps%3A%2F%2Fdrive.google.com&theme=ivory&ts=1"
+  },
+  {
+   "id": "B06",
+   "page": "BRAND",
+   "pageName": "BRAND",
+   "name": "MOODBOARD",
+   "desc": "핀 무드보드",
+   "h": 300,
+   "url": "moodboard.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "B07",
+   "page": "BRAND",
+   "pageName": "BRAND",
+   "name": "CHART",
+   "desc": "차트",
+   "h": 420,
+   "url": "chart.html?v=1&type=bar&theme=ivory&ts=1"
+  },
+  {
+   "id": "C01",
+   "page": "CONTENT",
+   "pageName": "CONTENT",
+   "name": "VISUAL BOARD",
+   "desc": "사진 보드",
+   "h": 470,
+   "url": "board.html?v=1&layout=grid&line=%EC%98%AC%ED%95%B4+%EC%9D%B4%EB%9F%B0+%EC%9E%A5%EB%A9%B4%EC%9C%BC%EB%A1%9C&urls=https%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fyear.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fmonth-03.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fweekly.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fdaily.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fgoals.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fhabit.png&theme=ivory&ts=1"
+  },
+  {
+   "id": "C02",
+   "page": "CONTENT",
+   "pageName": "CONTENT",
+   "name": "LINKS",
+   "desc": "바로가기 링크",
+   "h": 330,
+   "url": "links.html?v=1&items=%EB%85%B8%EC%85%98%7Chttps%3A%2F%2Fnotion.so%2C%EC%8A%A4%ED%86%A0%EC%96%B4%7Chttps%3A%2F%2Fsmartstore.naver.com%2C%EB%A9%94%EC%9D%BC%7Chttps%3A%2F%2Fmail.google.com%2C%EB%93%9C%EB%9D%BC%EC%9D%B4%EB%B8%8C%7Chttps%3A%2F%2Fdrive.google.com&theme=ivory&ts=1"
+  },
+  {
+   "id": "C03",
+   "page": "CONTENT",
+   "pageName": "CONTENT",
+   "name": "CHART",
+   "desc": "차트",
+   "h": 420,
+   "url": "chart.html?v=1&type=bar&theme=ivory&ts=1"
+  },
+  {
+   "id": "C04",
+   "page": "CONTENT",
+   "pageName": "CONTENT",
+   "name": "UP NEXT",
+   "desc": "곧 할 일",
+   "h": 360,
+   "url": "upnext.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "R01",
+   "page": "REVIEW",
+   "pageName": "REVIEW",
+   "name": "REVIEW",
+   "desc": "돌아보기",
+   "h": 380,
+   "url": "review.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "R02",
+   "page": "REVIEW",
+   "pageName": "REVIEW",
+   "name": "HABIT · 노션 연결",
+   "desc": "습관 고리 · 달력",
+   "h": 440,
+   "url": "habitsync.html?demo=1&view=ring&now=2027-03-15T21%3A40&v=4&theme=ivory&ts=1"
+  },
+  {
+   "id": "R03",
+   "page": "REVIEW",
+   "pageName": "REVIEW",
+   "name": "HABIT STREAK",
+   "desc": "연속 기록",
+   "h": 290,
+   "url": "streak.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "R04",
+   "page": "REVIEW",
+   "pageName": "REVIEW",
+   "name": "GOAL PROGRESS",
+   "desc": "목표 진행률",
+   "h": 330,
+   "url": "goalprogress.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "R05",
+   "page": "REVIEW",
+   "pageName": "REVIEW",
+   "name": "ONE-LINE JOURNAL",
+   "desc": "한 줄 일기",
+   "h": 290,
+   "url": "journal.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "R06",
+   "page": "REVIEW",
+   "pageName": "REVIEW",
+   "name": "MOOD",
+   "desc": "기분",
+   "h": 330,
+   "url": "mood.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "R07",
+   "page": "REVIEW",
+   "pageName": "REVIEW",
+   "name": "YEAR IN DOTS",
+   "desc": "올해 남은 날",
+   "h": 300,
+   "url": "year.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "CR01",
+   "page": "CAREER",
+   "pageName": "CAREER",
+   "name": "GOAL PROGRESS",
+   "desc": "목표 진행률",
+   "h": 330,
+   "url": "goalprogress.html?id=demo&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "CR02",
+   "page": "CAREER",
+   "pageName": "CAREER",
+   "name": "PROGRESS",
+   "desc": "하루 · 주 · 달 · 해 진행률",
+   "h": 290,
+   "url": "progress.html?v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "CR03",
+   "page": "CAREER",
+   "pageName": "CAREER",
+   "name": "LINKS",
+   "desc": "바로가기 링크",
+   "h": 330,
+   "url": "links.html?v=1&items=%EB%85%B8%EC%85%98%7Chttps%3A%2F%2Fnotion.so%2C%EC%8A%A4%ED%86%A0%EC%96%B4%7Chttps%3A%2F%2Fsmartstore.naver.com%2C%EB%A9%94%EC%9D%BC%7Chttps%3A%2F%2Fmail.google.com%2C%EB%93%9C%EB%9D%BC%EC%9D%B4%EB%B8%8C%7Chttps%3A%2F%2Fdrive.google.com&theme=ivory&ts=1"
+  },
+  {
+   "id": "S01",
+   "page": "SPACE",
+   "pageName": "SPACE",
+   "name": "VISUAL BOARD",
+   "desc": "사진 보드",
+   "h": 470,
+   "url": "board.html?v=1&layout=grid&line=%EC%98%AC%ED%95%B4+%EC%9D%B4%EB%9F%B0+%EC%9E%A5%EB%A9%B4%EC%9C%BC%EB%A1%9C&urls=https%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fyear.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fmonth-03.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fweekly.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fdaily.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fgoals.png%2Chttps%3A%2F%2Fjj2457.github.io%2Fidarchive-widgets%2Fcovers%2Fgreen%2Fhabit.png&theme=ivory&ts=1"
+  },
+  {
+   "id": "S02",
+   "page": "SPACE",
+   "pageName": "SPACE",
+   "name": "LINKS",
+   "desc": "바로가기 링크",
+   "h": 330,
+   "url": "links.html?v=1&items=%EB%85%B8%EC%85%98%7Chttps%3A%2F%2Fnotion.so%2C%EC%8A%A4%ED%86%A0%EC%96%B4%7Chttps%3A%2F%2Fsmartstore.naver.com%2C%EB%A9%94%EC%9D%BC%7Chttps%3A%2F%2Fmail.google.com%2C%EB%93%9C%EB%9D%BC%EC%9D%B4%EB%B8%8C%7Chttps%3A%2F%2Fdrive.google.com&theme=ivory&ts=1"
+  },
+  {
+   "id": "S03",
+   "page": "SPACE",
+   "pageName": "SPACE",
+   "name": "MEMO",
+   "desc": "메모",
+   "h": 260,
+   "url": "memo.html?id=demo&d=%EB%9F%AC%EB%8B%9D%ED%99%94+3%2F22+%EB%8F%84%EC%B0%A9+%C2%B7+%EB%8C%80%ED%9A%8C+%EC%A0%91%EC%88%98+3%2F30%0A%ED%85%9C%ED%94%8C%EB%A6%BF+%EC%9D%B4%EB%A6%84+%ED%9B%84%EB%B3%B4+%EC%84%B8+%EA%B0%9C&v=4&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  },
+  {
+   "id": "S04",
+   "page": "SPACE",
+   "pageName": "SPACE",
+   "name": "BUCKET LIST",
+   "desc": "버킷리스트",
+   "h": 300,
+   "url": "bucket.html?year=2027&v=4&id=demo&d=%ED%95%98%ED%94%84%EB%A7%88%EB%9D%BC%ED%86%A4+%EC%99%84%EC%A3%BC%7C%EC%A0%9C%EC%A3%BC+%ED%95%9C+%EB%8B%AC+%EC%82%B4%EA%B8%B0%7C%EC%82%AC%EC%A7%84%EC%A0%84+%EC%97%B4%EA%B8%B0%7C%EB%A7%A4%EB%8B%AC+%EC%B1%85+%EB%91%90+%EA%B6%8C&done=0&now=2027-03-15T21%3A40&theme=ivory&ts=1"
+  }
+ ]
+}

@@ -55,6 +55,24 @@
   .owner .phones { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
   .owner h3 { margin: 0; font-size: 17px; letter-spacing: .02em; }
   .owner .k { font-family: var(--display); color: var(--accent); font-size: 22px; margin-right: 8px; }
+  .ws-nav { display:flex; flex-wrap:wrap; gap:6px; position:sticky; top:0; background:var(--bg); padding:8px 0; z-index:2; }
+  .ws-nav a { font-size:12px; padding:4px 10px; border-radius:999px; background:var(--chip); color:var(--ink); text-decoration:none; border:1px solid var(--line); }
+  .ws-page { margin:22px 0 8px; font-size:16px; scroll-margin-top:52px; } .ws-page small { color:var(--sub); font-weight:400; }
+  .ws-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; }
+  .ws-card { border:1px solid var(--line); border-radius:12px; background:var(--panel); padding:10px; display:grid; gap:6px; min-width:0; }
+  .ws-card header { display:flex; gap:8px; align-items:baseline; flex-wrap:wrap; } .ws-card header b { font-family:var(--display); color:var(--accent); font-size:17px; } .ws-card header span { font-size:12.5px; font-weight:600; }
+  .ws-card p { margin:0; font-size:12px; color:var(--sub); }
+  .ws-prev { height:220px; overflow:hidden; border-radius:8px; background:#fff; border:1px solid var(--line); position:relative; }
+  .ws-prev iframe { width:142.86%; border:0; transform:scale(.7); transform-origin:0 0; pointer-events:none; }
+  .ws-btns { display:flex; gap:6px; } .ws-btns button { flex:1; font:600 11.5px var(--body); padding:7px 0; border-radius:8px; border:1px solid var(--line); background:var(--chip); color:var(--ink); cursor:pointer; }
+  .ws-btns button[aria-pressed="true"][data-v="KEEP"] { background:#4f8a5b; color:#fff; border-color:#4f8a5b; }
+  .ws-btns button[aria-pressed="true"][data-v="REMOVE"] { background:#b4533c; color:#fff; border-color:#b4533c; }
+  .ws-btns button[aria-pressed="true"][data-v="MOVE"] { background:#9a7b55; color:#fff; border-color:#9a7b55; }
+  .ws-card[data-v="REMOVE"] .ws-prev { opacity:.45; }
+  .ws-move { font:13px var(--body); padding:6px 8px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); }
+  .ws-out { position:sticky; bottom:0; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px 12px; display:grid; gap:6px; box-shadow:0 -4px 16px rgba(0,0,0,.06); z-index:3; }
+  .ws-out textarea { width:100%; box-sizing:border-box; font:13px/1.5 ui-monospace,Consolas,monospace; border:1px solid var(--line); border-radius:8px; padding:6px 8px; background:var(--bg); color:var(--ink); }
+  .ws-row { display:flex; gap:8px; } .ws-row button { font:600 12.5px var(--body); padding:7px 14px; border-radius:999px; border:1px solid var(--line); background:var(--chip); color:var(--ink); cursor:pointer; }
 </style>
 </head>
 <body>
@@ -64,37 +82,24 @@
     <p class="lead">2026-10-06 디자인 패스. 🎬 DEMO 에만 반영 · 🛒 판매본 그대로. 판단할 것: 예쁜가 · 정돈됐나 · 쓰기 쉬운가 · 팔 만한가 · 페이지마다 목적이 보이는가. 고칠 점은 노션 「2️⃣ 노션 템플릿 자동화」에.</p>
   </header>
 
-  <section class="owner" id="decide" aria-label="OWNER 판단">
-    <h2>👤 OWNER 판단 — 사진으로 비교 (R6.2 · 2026-10-07)</h2>
-    <p class="lead">왼쪽 = 지금 · 오른쪽 = 다른 선택. 초록 줄이 추천이에요. 노션 인박스에 「판단 1 A」처럼 번호와 글자만 적어 주세요.</p>
-
-    <article class="item big" id="d1">
-      <h3><span class="k">1</span>GOALS · YEAR · HABIT 등 10쪽의 메뉴 줄이 40px 아래</h3>
-      <p>이 10쪽은 노션 「메뉴 데이터베이스」 안의 페이지라 노션이 제목 밑에 「세부 정보 보기」 줄을 꼭 그려요(지우기 거절됨). <b>추천 A</b> — 메뉴 줄 문장 · 높이 · 글자는 모든 쪽 같고, 차이는 이 한 줄뿐. B 는 10쪽을 데이터베이스 밖으로 옮기는 큰 구조 변경이라 링크 · 예전 사진 메뉴를 다시 이어야 해요.</p>
-      <figure><img src="r62-decide-1.jpg" alt="판단 1 비교" loading="lazy"></figure>
-    </article>
-
-    <article class="item big" id="d2">
-      <h3><span class="k">2</span>넓은 창(약 1920)에서 HOME 「오늘 시간표」의 파란 「새로 만들기」</h3>
-      <p>목록 폭이 308px 를 넘으면 노션이 파란 버튼을 보여 줘요. 1526 · 1440 · 1280 에서는 안 보여요. <b>추천 A</b> — 누르면 바로 새 일정이라 쓸모 있고, B 는 모든 폭에서 시간 · 체크 칸을 좁혀야 해요.</p>
-      <figure><img src="r62-decide-2.jpg" alt="판단 2 비교" loading="lazy"></figure>
-    </article>
-
-    <article class="item big" id="d3">
-      <h3><span class="k">3</span>위젯 후보 KEEP / REMOVE (HOME 32 · 18쪽 107)</h3>
-      <p>HOME 대시보드 아래 · 각 페이지 맨 아래에 실제로 놓아 둔 후보예요. 사진 속 번호로 「KEEP 1, 4, 7 · 나머지 REMOVE」처럼 적어 주시면 그대로 판매 기본형을 만들어요. <b>추천</b>: HOME 은 6개 이하만 KEEP(첫 화면이 길어지지 않게).</p>
-      <div class="pair"><figure><img src="r61-home-widgets.jpg" alt="HOME 위젯 후보" loading="lazy"><figcaption>HOME 후보 32</figcaption></figure><figure><img src="r61-daily-widgets.jpg" alt="DAILY 위젯 후보" loading="lazy"><figcaption>예: DAILY 후보 9</figcaption></figure></div>
-    </article>
-
-    <article class="item big" id="d4">
-      <h3><span class="k">4</span>판매본 승격 (R6.1 + R6.2 를 실제 판매본에)</h3>
-      <p>왼쪽이 지금 구매자가 받는 화면, 오른쪽이 승격 뒤 모습이에요. <b>추천</b>: 1 · 3 을 정한 뒤 한 번에 승격(판매본은 오너 승인 전 손대지 않음).</p>
-      <figure><img src="r62-decide-4.jpg" alt="판단 4 비교" loading="lazy"></figure>
-    </article>
+  <section class="owner" id="current" aria-label="R6.2 OWNER REVIEW">
+    <h2>R6.2 OWNER REVIEW — 지금 개발 기준 (2026-10-08 · 🎬 DEMO · 🛒 판매본 그대로)</h2>
+    <p class="lead">R6 = 되돌리기 기준점 · R6.1 = 이전 피드백 판 · <b>R6.2 = 지금 개발 기준</b>. 아래 1–17 은 실제 노션 화면이에요. 오너가 지금 고를 것은 <a href="#widget-selection">WIDGET SELECTION</a> 하나뿐이에요.</p>
+    <div class="status" id="cur-chips"></div>
+    <div id="cur-items"></div>
   </section>
 
+  <section class="owner" id="widget-selection" aria-label="WIDGET SELECTION">
+    <h2>👤 WIDGET SELECTION — KEEP · REMOVE · MOVE</h2>
+    <p class="lead">HOME 32 · 18쪽 106 = 138개 후보(노션에서도 위젯 위에 같은 번호). 카드마다 KEEP / REMOVE / MOVE 를 누르면 맨 아래 「내 선택」에 「H01 KEEP」처럼 모여요 → 복사해서 노션 인박스에 붙여 주세요. 안 누른 것은 그대로 후보로 남아요. 고른 것은 이 브라우저에만 저장돼요.</p>
+    <div id="ws-root">후보를 불러오는 중…</div>
+    <div class="ws-out"><b>내 선택</b> <span id="ws-count"></span><textarea id="ws-out" rows="5" readonly placeholder="카드에서 KEEP · REMOVE · MOVE 를 누르면 여기에 모여요"></textarea><div class="ws-row"><button type="button" id="ws-copy">복사하기</button><button type="button" id="ws-clear">모두 지우기</button></div></div>
+  </section>
+
+  <h2 style="font-size:15px;color:var(--sub);margin:0" id="history">HISTORY — 이전 판 기록(지우지 않고 보존)</h2>
+
   <section class="owner" id="r62" aria-label="R6.2 MICRO POLISH">
-    <h2>R6.2 MICRO POLISH — DEMO (2026-10-07 · 판매본 그대로)</h2>
+    <h2>HISTORY · R6.2 1차 작업 기록 (2026-10-07)</h2>
     <p class="lead">R6.1 구조는 그대로 두고 간격 · 정렬 · 메뉴 줄 · 프로필 카드 · 맨 위 사진 · GOALS 카드 · 가이드북을 다듬었어요. 아래는 실제 노션 화면(사이드바 열림 · 1526 × 854). 고칠 점은 노션 인박스에.</p>
     <div class="status" id="r62-chips"><span class="ok">GLOBAL THEME FROM WIDGET</span><span class="ok">IVORY → BLUE → IVORY 블록 상자 차이 0</span><span class="ok">메뉴 줄 20쪽 같은 문장 · 높이 40 · 글자 16</span><span class="ok">프로필 카드 17쪽 같은 틀</span><span class="ok">GOALS 5 STEP 글자 넘침 0</span><span class="ok">맨 위 사진 아이콘 0</span><span class="ok">오른쪽 칸 = 오너 너비 0.2766 (HOME + 16쪽)</span><span class="ok">폰 옆 넘침 0 (4화면)</span><span class="ok">새 복제 메뉴 줄 링크 원본 0</span></div>
 
@@ -708,5 +713,6 @@
 
   <footer>기술 검사(짧게): 테마 E2E 97/97 · Custom HEX 4색 70/70 · 사진 유지/되돌리기 42/42 · 자동 테스트 230. 사진 권리: CC0(StockSnap) — docs/MOOD_PHOTO_MANIFEST.md.</footer>
 </main>
+<script src="widget-select.js?v=1"></script>
 </body>
 </html>
